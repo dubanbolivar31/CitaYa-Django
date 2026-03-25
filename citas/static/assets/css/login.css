@@ -1,0 +1,250 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	font-family: arial, sans-serif;
+	margin: 0;
+	background: linear-gradient(135deg, #A8E6CF, #BBE1FA);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+}
+
+.container_login {
+	display: flex;
+	border-radius: 2rem;
+	width: 60rem;
+	overflow: hidden;
+	margin: 2rem;
+	position: relative;
+	z-index: 1;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.apartado_1 {
+	width: 30rem;
+	padding: 3rem;
+	background-color: #fff;
+}
+
+.logo-name {
+	align-items: center;
+}
+
+.logo-name img {
+	width: 17rem;
+}
+
+.label {
+	color: #222;
+	font-weight: 520;
+	padding: 1.5rem 0 .5rem 0;
+	font-size: 1.25rem;
+}
+
+.label:first-of-type {
+	padding-top: 3rem;
+}
+
+.input input {
+	width: 100%;
+	padding: 1rem;
+	border-radius: .6rem;
+	border: .1rem solid #aaa;
+	background-color: #eee;
+	font-size: 1.05rem;
+	outline: none;
+}
+
+.input input:focus {
+	border: .1rem solid #00f;
+}
+
+/* Estilos para el contenedor de contraseña con ojito */
+.input-password-container {
+	position: relative;
+	width: 100%;
+}
+
+.input-password-container input {
+	width: 100%;
+	padding: 1rem;
+	padding-right: 3rem;
+	border-radius: .6rem;
+	border: .1rem solid #aaa;
+	background-color: #eee;
+	font-size: 1.05rem;
+	outline: none;
+}
+
+.input-password-container input:focus {
+	border: .1rem solid #0F4C75;
+}
+
+.toggle-password {
+	position: absolute;
+	right: 1rem;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	color: #0F4C75;
+	font-size: 1.3rem;
+	transition: color 0.3s ease;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+}
+
+.toggle-password:hover {
+	color: #3B7EA1;
+}
+
+.toggle-password i {
+	pointer-events: none;
+}
+
+button {
+	width: 45%;
+	margin-top: 2rem;
+	padding: 1rem;
+	background-color: #0F4C75;
+	color: #fff;
+	font-size: 1.2rem;
+	border: none;
+	border-radius: 2rem;
+	cursor: pointer;
+	transition: .2s linear;
+}
+
+button:hover {
+	background-color: #BBE1FA;
+	color: #0F4C75;
+}
+
+.cuenta {
+	display: flex;
+	justify-content: center;
+	margin-top: 2rem;
+}
+
+.cuenta a {
+	font-size: 1.15rem;
+	color: #0F4C75;
+	text-decoration: none;
+}
+
+.no-cuenta {
+	display: flex;
+	justify-content: center;
+	margin-top: 1rem;
+}
+
+.no-cuenta p {
+	font-size: 1.15rem;
+	color: #555;
+}
+.no-cuenta a {
+	font-size: 1.15rem;
+	color: #0F4C75;
+	text-decoration: none;
+}
+
+.apartado_2 {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	width: 30rem;
+	padding: 4rem;
+	position: relative;
+	overflow: hidden;
+}
+
+.apartado_2::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image: url('/Assets/img/login.jpg');
+	background-size: cover;
+	background-position: center;
+	filter: blur(5px);
+	z-index: 0;
+}
+
+.apartado_2::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, rgba(15, 76, 117, 0.85), rgba(59, 126, 161, 0.85));
+	z-index: 1;
+}
+
+.emoji-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background-color: #fff;
+	width: 7rem;
+	height: 7rem;
+	font-size: 5rem;
+	margin-top: 1rem;
+	position: relative;
+	z-index: 2;
+}
+
+.emoji-icon img {
+	width: 5.5rem;
+}
+
+.h1-info {
+	color: #fff;
+	margin-top: 1rem;
+	position: relative;
+	z-index: 2;
+}
+
+.P-info {
+	color: #fff;
+	text-align: center;
+	font-weight: lighter;
+	margin-top: 1rem;
+	position: relative;
+	z-index: 2;
+}
+
+.p-info {
+	margin-top: 2rem;
+	position: relative;
+	z-index: 2;
+}
+
+.p-info p {
+	color: #fff;
+	margin-top: 1rem;
+}
+
+.body {
+  animation: aparecer .8s ease;
+}
+
+@keyframes aparecer {
+	0% {
+		transform: translateX(-100%);
+	}
+
+	100% {
+		transform: translateX(0);
+	}
+}

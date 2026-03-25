@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Historial · CitaYa{% endblock %}
+
+{% block content %}
+<div class="confirm-wrap" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+    <div class="confirm-box" style="background: var(--surface); border: 1px solid var(--border); padding: 40px; border-radius: 14px; text-align: center; max-width: 500px;">
+        <div class="confirm-icon" style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+        <h1 class="page-title" style="margin-bottom: 8px;">¿Eliminar Historial?</h1>
+        
+        <div class="confirm-name" style="font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 12px;">
+            Historial #{{ object.id_historial }} <br>
+            <small style="color: var(--text-muted); font-size: 14px;">
+                Paciente: {{ object.paciente.nombre }} {{ object.paciente.apellido }}
+            </small>
+        </div>
+
+        <p class="confirm-sub" style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px;">
+            ¿Estás seguro de que deseas eliminar este registro médico?<br>
+            Esta acción es permanente y no se puede deshacer.
+        </p>
+
+        <div style="display:flex; gap:12px; justify-content:center">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Confirmar Eliminación</button>
+            </form>
+            <a href="{% url 'ver_historiales' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

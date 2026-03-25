@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Médico · CitaYa{% endblock %}
+{% block content %}
+<div class="confirm-wrap">
+    <div class="confirm-box">
+        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-name">Dr. {{ object.nombre }} {{ object.apellido }}</div>
+        <p class="confirm-sub">¿Estás seguro de eliminar este médico?<br>Se eliminarán también sus agendamientos e
+            historiales.<br>Esta acción no se puede deshacer.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+            <form method="post">{% csrf_token %}<button type="submit" class="btn btn-danger">🗑️ Sí, eliminar</button>
+            </form>
+            <a href="{% url 'ver_medicos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

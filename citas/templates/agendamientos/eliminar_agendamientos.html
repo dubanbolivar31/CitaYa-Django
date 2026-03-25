@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Cita · CitaYa{% endblock %}
+
+{% block content %}
+<div class="confirm-wrap">
+    <div class="confirm-box">
+        <div class="confirm-icon" style="color: var(--danger)">📅</div>
+        <h1 class="page-title" style="margin-bottom: 8px;">¿Eliminar esta cita?</h1>
+        
+        <div class="confirm-name">
+            {{ object.cita }} <br>
+            <small style="font-size: 0.6em; color: var(--text-muted)">
+                {{ object.fecha }} — {{ object.hora }}
+            </small>
+        </div>
+        
+        <p class="confirm-sub">
+            Estás a punto de cancelar la cita del paciente:<br>
+            {{ object.id_paciente.nombre }} {{ object.id_paciente.apellido }}<br>
+            con el Dr. {{ object.id_medico.apellido }}.
+        </p>
+        
+        <div style="display:flex; gap:12px; justify-content:center; margin-top: 24px;">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">🗑️ Sí, eliminar cita</button>
+            </form>
+            <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

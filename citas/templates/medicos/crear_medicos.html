@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Médico · CitaYa{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">🩺 Nuevo Médico</h1>
+    <a href="{% url 'ver_medicos' %}" class="btn btn-secondary">← Volver</a>
+</div>
+
+<div class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+            
+            <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select name="{{ form.tipo_doc.html_name }}">
+                    <option value="">— Seleccionar —</option>
+                    <option value="CC" {% if form.tipo_doc.value == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                    <option value="TI" {% if form.tipo_doc.value == 'TI' %}selected{% endif %}>Tarjeta de Identidad</option>
+                    <option value="CE" {% if form.tipo_doc.value == 'CE' %}selected{% endif %}>Cédula Extranjería</option>
+                    <option value="PP" {% if form.tipo_doc.value == 'PP' %}selected{% endif %}>Pasaporte</option>
+                </select>
+                {{ form.tipo_doc.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Número de Documento</label>
+                <input type="text" name="{{ form.numero_doc.html_name }}" value="{{ form.numero_doc.value|default:'' }}" placeholder="Ej: 1234567890">
+                {{ form.numero_doc.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" name="{{ form.nombre.html_name }}" value="{{ form.nombre.value|default:'' }}" placeholder="Nombre">
+                {{ form.nombre.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Apellido</label>
+                <input type="text" name="{{ form.apellido.html_name }}" value="{{ form.apellido.value|default:'' }}" placeholder="Apellido">
+                {{ form.apellido.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Género</label>
+                <select name="{{ form.genero.html_name }}">
+                    <option value="">— Seleccionar —</option>
+                    <option value="M" {% if form.genero.value == 'M' %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if form.genero.value == 'F' %}selected{% endif %}>Femenino</option>
+                    <option value="O" {% if form.genero.value == 'O' %}selected{% endif %}>Otro</option>
+                </select>
+                {{ form.genero.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Especialidad</label>
+                <select name="{{ form.especialidad.html_name }}">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Medicina General" {% if form.especialidad.value == "Medicina General" %}selected{% endif %}>Medicina General</option>
+                    <option value="Ortopedia" {% if form.especialidad.value == "Ortopedia" %}selected{% endif %}>Ortopedia</option>
+                    <option value="Psicología" {% if form.especialidad.value == "Psicología" %}selected{% endif %}>Psicología</option>
+                    <option value="Cardiología" {% if form.especialidad.value == "Cardiología" %}selected{% endif %}>Cardiología</option>
+                    <option value="Pediatría" {% if form.especialidad.value == "Pediatría" %}selected{% endif %}>Pediatría</option>
+                    <option value="Dermatología" {% if form.especialidad.value == "Dermatología" %}selected{% endif %}>Dermatología</option>
+                </select>
+                {{ form.especialidad.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" name="{{ form.telefono.html_name }}" value="{{ form.telefono.value|default:'' }}" placeholder="3001234567">
+                {{ form.telefono.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" name="{{ form.correo.html_name }}" value="{{ form.correo.value|default:'' }}" placeholder="dr@clinica.com">
+                {{ form.correo.errors }}
+            </div>
+            
+            <div class="form-group full">
+                <label>Contraseña</label>
+                <input type="password" name="{{ form.contrasena.html_name }}" placeholder="Mínimo 8 caracteres">
+                {{ form.contrasena.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label>Estado</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+                    <input type="checkbox" name="{{ form.estado.html_name }}" {% if form.estado.value %}checked{% endif %} style="width:16px;height:16px;accent-color:var(--accent)">
+                    <span>Cuenta activa</span>
+                </label>
+            </div>
+            
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Guardar Médico</button>
+            <a href="{% url 'ver_medicos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

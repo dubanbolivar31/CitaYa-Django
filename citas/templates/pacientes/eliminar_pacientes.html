@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Paciente · CitaYa{% endblock %}
+{% block content %}
+<div class="confirm-wrap">
+    <div class="confirm-box">
+        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-name">{{ object.nombre }} {{ object.apellido }}</div>
+        <p class="confirm-sub">¿Estás seguro de eliminar este paciente?<br>Se eliminarán también sus citas e historial clínico.<br>Esta acción no se puede deshacer.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+            <form method="post">{% csrf_token %}<button type="submit" class="btn btn-danger">🗑️ Sí, eliminar</button></form>
+            <a href="{% url 'ver_pacientes' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

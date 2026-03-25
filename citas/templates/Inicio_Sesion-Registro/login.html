@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
+
+    <title>Cita Ya - Iniciar Sesión</title>
+</head>
+
+<body class="body">
+
+    <div class="container_login">
+
+        <!-- Parte del formulario -->
+        <div class="apartado_1">
+            <div class="container_login-form">
+
+                <div class="logo-name">
+                    <img src="{% static 'assets/img/nom.png' %}">
+                </div>
+
+                <!-- Formulario -->
+                <form class="container_formulario-login" method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+
+                    <!-- Mensaje de error -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div style="background:#ffe6e6; color:#900; padding:10px; border-radius:6px; margin-top:12px;">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Mensaje de éxito -->
+                    {% if 'registro' in request.GET %}
+                    <div style="background:#e6ffe6; color:#090; padding:10px; border-radius:6px; margin-top:12px;">
+                        <p>¡Registro exitoso! Ahora puedes iniciar sesión.</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Documento -->
+                    <div class="label">
+                        <label class="text" for="numero">Número de documento</label>
+                    </div>
+
+                    <div class="input">
+                        <input type="text" id="numero" name="numerodoc" minlength="6" maxlength="10"
+                            placeholder="Ej: 1234567890" oninput="soloNumeros(this)" required>
+                        <small id="errorDocumento" style="color:#900; margin-top: 7px; font-size:12px; display:none;">
+                            El documento debe tener entre 6 y 10 dígitos
+                        </small>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="label">
+                        <label class="text" for="clave">Contraseña</label>
+                    </div>
+
+                    <div class="input">
+                        <input type="password" id="clave" name="contrasena" minlength="8" placeholder="••••••••"
+                            title="Debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial"
+                            required>
+                        <small id="errorContrasena" style="color:#900; margin-top: 7px; font-size:12px; display:none;">
+                            Debe tener mínimo 8 caracteres: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial
+                        </small>
+                    </div>
+
+                    <!-- boton -->
+                    <button type="submit" class="login_button">Iniciar Sesión</button>
+
+                    <!-- links -->
+                    <div class="cuenta">
+                        <a href="#">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <div class="no-cuenta">
+                        <p>¿No tienes cuenta?
+                            <a href="{% url 'registro' %}">Regístrate</a>
+                        </p>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- Parte de texto -->
+        <div class="apartado_2">
+            <div class="emoji-icon">
+                <img src="{% static 'assets/img/logoti.png' %}">
+            </div>
+
+            <div class="h1-info">
+                <h1>¡Bienvenido!</h1>
+            </div>
+
+            <div class="P-info">
+                <p>Accede a tu portal médico y gestiona tus citas de forma fácil y segura</p>
+            </div>
+
+            <div class="p-info">
+                <p>✓ Agenda citas 24/7</p>
+                <p>✓ Consulta tu historial médico</p>
+                <p>✓ Recibe recordatorios de tus citas</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Función para permitir solo números en el documento
+        function soloNumeros(input) {
+            input.value = input.value.replace(/\D/g, '');
+
+            const errorDocumento = document.getElementById('errorDocumento');
+            if (input.value.length > 0 && (input.value.length < 6 || input.value.length > 10)) {
+                errorDocumento.style.display = 'block';
+            } else {
+                errorDocumento.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const claveInput = document.getElementById('clave');
+            const errorContrasena = document.getElementById('errorContrasena');
+            const form = document.querySelector('.container_formulario-login');
+
+            // Validar contraseña en tiempo real (sin bloquear el envío)
+            claveInput.addEventListener('input', function () {
+                const password = this.value;
+                // Regex: al menos 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial, mínimo 8 caracteres
+                const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.\-_])[A-Za-z\d@$!%*?&#.\-_]{8,}$/;
+
+                if (password.length > 0 && password.length < 8) {
+                    errorContrasena.textContent = 'La contraseña debe tener al menos 8 caracteres';
+                    errorContrasena.style.display = 'block';
+                } else if (password.length >= 8 && !regex.test(password)) {
+                    errorContrasena.textContent = 'Debe incluir: mayúscula, minúscula, número y carácter especial';
+                    errorContrasena.style.display = 'block';
+                } else {
+                    errorContrasena.style.display = 'none';
+                }
+            });
+
+            // Validación al enviar (solo advertencias, no bloquea)
+            form.addEventListener('submit', function (e) {
+                const numeroDoc = document.getElementById('numero').value;
+                const contrasena = document.getElementById('clave').value;
+                let hasError = false;
+
+                // Validar documento
+                if (!numeroDoc || numeroDoc.trim() === '') {
+                    document.getElementById('errorDocumento').textContent = 'El documento es requerido';
+                    document.getElementById('errorDocumento').style.display = 'block';
+                    hasError = true;
+                } else if (numeroDoc.length < 6 || numeroDoc.length > 10) {
+                    document.getElementById('errorDocumento').textContent = 'El documento debe tener entre 6 y 10 dígitos';
+                    document.getElementById('errorDocumento').style.display = 'block';
+                    hasError = true;
+                } else {
+                    document.getElementById('errorDocumento').style.display = 'none';
+                }
+
+                // Validar contraseña
+                if (!contrasena || contrasena.trim() === '') {
+                    document.getElementById('errorContrasena').textContent = 'La contraseña es requerida';
+                    document.getElementById('errorContrasena').style.display = 'block';
+                    hasError = true;
+                } else if (contrasena.length < 8) {
+                    document.getElementById('errorContrasena').textContent = 'La contraseña debe tener al menos 8 caracteres';
+                    document.getElementById('errorContrasena').style.display = 'block';
+                    hasError = true;
+                } else {
+                    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.\-_])[A-Za-z\d@$!%*?&#.\-_]{8,}$/;
+                    if (!regex.test(contrasena)) {
+                        document.getElementById('errorContrasena').textContent = 'Debe incluir: mayúscula, minúscula, número y carácter especial';
+                        document.getElementById('errorContrasena').style.display = 'block';
+                        hasError = true;
+                    } else {
+                        document.getElementById('errorContrasena').style.display = 'none';
+                    }
+                }
+
+                if (hasError) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

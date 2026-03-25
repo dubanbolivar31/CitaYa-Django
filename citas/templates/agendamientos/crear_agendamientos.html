@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Cita · CitaYa{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">📅 Nueva Cita</h1>
+    <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">← Volver</a>
+</div>
+
+<div class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+
+            <div class="form-group full">
+                <label>Tipo de Cita</label>
+                <select name="{{ form.cita.html_name }}">
+                    <option value="">— Seleccionar tipo —</option>
+                    <option value="Consulta General" {% if form.cita.value == "Consulta General" %}selected{% endif %}>Consulta General</option>
+                    <option value="Consulta Especializada" {% if form.cita.value == "Consulta Especializada" %}selected{% endif %}>Consulta Especializada</option>
+                    <option value="Control" {% if form.cita.value == "Control" %}selected{% endif %}>Control</option>
+                    <option value="Urgencias" {% if form.cita.value == "Urgencias" %}selected{% endif %}>Urgencias</option>
+                    <option value="Procedimiento" {% if form.cita.value == "Procedimiento" %}selected{% endif %}>Procedimiento</option>
+                    <option value="Examen de laboratorio" {% if form.cita.value == "Examen de laboratorio" %}selected{% endif %}>Examen de laboratorio</option>
+                </select>
+                {{ form.cita.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" name="{{ form.fecha.html_name }}" value="{{ form.fecha.value|default:'' }}">
+                {{ form.fecha.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>Hora</label>
+                <input type="time" name="{{ form.hora.html_name }}" value="{{ form.hora.value|default:'' }}">
+                {{ form.hora.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>Paciente</label>
+                <select name="{{ form.id_paciente.html_name }}">
+                    <option value="">— Seleccionar paciente —</option>
+                    {% for p in form.id_paciente.field.queryset %}
+                    <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ p.nombre }} {{ p.apellido }} ({{ p.numero_doc }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {{ form.id_paciente.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>Médico</label>
+                <select name="{{ form.id_medico.html_name }}">
+                    <option value="">— Seleccionar médico —</option>
+                    {% for m in form.id_medico.field.queryset %}
+                    <option value="{{ m.pk }}" {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
+                        Dr. {{ m.nombre }} {{ m.apellido }} — {{ m.especialidad }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {{ form.id_medico.errors }}
+            </div>
+
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Agendar Cita</button>
+            <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

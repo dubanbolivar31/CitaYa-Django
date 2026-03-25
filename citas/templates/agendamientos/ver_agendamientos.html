@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Agendamientos · CitaYa{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-calendar-check"></i>  Agendamientos</h1>
+    <a href="{% url 'crear_agendamientos' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nueva Cita</a>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>Tipo de Cita</th><th>Fecha</th><th>Hora</th>
+                    <th>Paciente</th><th>Médico</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td style="color:var(--text-muted)">{{ cita.id_agendamiento }}</td>
+                    <td>{{ cita.cita }}</td>
+                    <td>{{ cita.fecha }}</td>
+                    <td><span class="badge" style="background:rgba(0,163,200,0.1);color:#00b4d8;border:1px solid rgba(0,180,216,0.2)">{{ cita.hora }}</span></td>
+                    <td>{{ cita.id_paciente.nombre }} {{ cita.id_paciente.apellido }}</td>
+                    <td>Dr. {{ cita.id_medico.nombre }} {{ cita.id_medico.apellido }}</td>
+                    <td>
+                        <div class="td-actions">
+                            <a href="{% url 'editar_agendamientos' cita.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
+                            <a href="{% url 'eliminar_agendamientos' cita.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7">
+                    <div class="empty-state"><div class="ei">📅</div><p>No hay citas agendadas.<br><a href="{% url 'crear_agendamientos' %}" style="color:var(--accent)">Crear primera cita</a></p></div>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

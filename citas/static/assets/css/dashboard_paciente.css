@@ -1,0 +1,320 @@
+/* ═══════════════════════════════════════════════════════════
+dashboard_paciente.css  — CitaYa
+Solo clases propias del paciente.
+Carga DESPUÉS de dashboard_admin.css para heredar todo
+(topbar, stats, quick-grid, modales, perfil, formularios).
+═══════════════════════════════════════════════════════════ */
+
+/* ── WRAPPER GENERAL ─────────────────────────────────────── */
+body {
+    background: #f0f6fc;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 40px 0;
+}
+
+@media (max-width: 768px) {
+    .dashboard-wrapper {
+        padding: 24px 16px 0;
+    }
+}
+
+/* ── STAT CARDS (variantes de color del paciente) ────────── */
+/*  El admin.css ya tiene la base .stat-card.
+Aquí solo ajustamos los iconos por acento via style= inline  */
+.stat-card .stat-icon {
+    background: rgba(15, 76, 117, 0.1);
+    color: #0F4C75;
+}
+
+/* ── FILAS DE CITAS PRÓXIMAS ─────────────────────────────── */
+.pac-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pac-row {
+    background: #ffffff;
+    border: 1px solid #c5dff0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: box-shadow 0.18s;
+    box-shadow: 0 2px 8px rgba(15, 76, 117, 0.05);
+}
+
+.pac-row:hover {
+    box-shadow: 0 6px 20px rgba(15, 76, 117, 0.12);
+}
+
+/* Fecha badge */
+.pac-fecha {
+    background: linear-gradient(135deg, #0F4C75, #3B7EA1);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 52px;
+}
+
+.pac-dia {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.pac-mes {
+    font-size: 10px;
+    font-weight: 600;
+    color: #BBE1FA;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Ícono historial */
+.pac-hist-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(168, 230, 207, 0.2);
+    border: 1px solid rgba(168, 230, 207, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #1a8a5a;
+    flex-shrink: 0;
+}
+
+/* Info */
+.pac-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pac-nombre {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1a2e3b;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pac-sub {
+    font-size: 12.5px;
+    color: #5a7a90;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 3px;
+}
+
+.pac-preview {
+    font-size: 12px;
+    color: #8aa3b2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pac-hora {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3B7EA1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Botones de fila */
+.pac-btns {
+    display: flex;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.pac-btn-edit,
+.pac-btn-del {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.14s, color 0.14s;
+}
+
+.pac-btn-edit {
+    background: rgba(15, 76, 117, 0.08);
+    color: #0F4C75;
+}
+
+.pac-btn-edit:hover {
+    background: #0F4C75;
+    color: #fff;
+}
+
+.pac-btn-del {
+    background: rgba(217, 48, 37, 0.08);
+    color: #d93025;
+}
+
+.pac-btn-del:hover {
+    background: #d93025;
+    color: #fff;
+}
+
+.pac-btn-ver {
+    background: rgba(15, 76, 117, 0.07);
+    border: 1px solid rgba(15, 76, 117, 0.15);
+    color: #0F4C75;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.14s, color 0.14s;
+    font-family: Arial, sans-serif;
+}
+
+.pac-btn-ver:hover {
+    background: #0F4C75;
+    color: #fff;
+    border-color: #0F4C75;
+}
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.pac-empty {
+    background: #f8fbff;
+    border: 1px dashed #b8d9f0;
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    color: #7a95a8;
+    font-size: 14px;
+}
+
+.pac-empty i {
+    font-size: 36px;
+    color: #b8d9f0;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.pac-link {
+    background: none;
+    border: none;
+    color: #0F4C75;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+/* ── LOADER ──────────────────────────────────────────────── */
+.pac-loader {
+    text-align: center;
+    padding: 36px;
+    color: #5a7a90;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* ── TABLA MODAL ─────────────────────────────────────────── */
+.pac-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+.pac-table thead tr {
+    background: #f0f7ff;
+}
+
+.pac-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #5a7a90;
+    border-bottom: 1px solid #dceef9;
+}
+
+.pac-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid #eef5fb;
+    color: #2c4a5e;
+    font-weight: 500;
+}
+
+.pac-table tbody tr:hover {
+    background: #f8fbff;
+}
+
+.pac-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.pac-chip {
+    background: rgba(15, 76, 117, 0.08);
+    color: #0F4C75;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(15, 76, 117, 0.15);
+    white-space: nowrap;
+}
+
+/* ── TEXT BOX HISTORIAL ──────────────────────────────────── */
+.pac-text-box {
+    background: #f4f9fe;
+    border: 1px solid #dceef9;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 14px;
+    color: #2c4a5e;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+/* ── MODAL LARGE ─────────────────────────────────────────── */
+.modal-lg {
+    max-width: 740px;
+}
+
+.modal-sm {
+    max-width: 420px;
+}

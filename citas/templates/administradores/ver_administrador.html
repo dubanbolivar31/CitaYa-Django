@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Administradores · CitaYa{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user-gear"></i> Administradores</h1>
+    <a href="{% url 'crear_administrador' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Administrador</a>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tipo Doc</th>
+                    <th>Número Doc</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Género</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr>
+                    <td style="color:var(--text-muted)">{{ admin.id_admin }}</td>
+                    <td>{{ admin.tipo_doc }}</td>
+                    <td>{{ admin.numero_doc }}</td>
+                    <td>{{ admin.nombre }}</td>
+                    <td>{{ admin.apellido }}</td>
+                    <td>{{ admin.genero }}</td>
+                    <td>{{ admin.telefono }}</td>
+                    <td style="color:var(--text-muted)">{{ admin.correo }}</td>
+                    <td>
+                        {% if admin.estado %}
+                            <span class="badge badge-on">Activo</span>
+                        {% else %}
+                            <span class="badge badge-off">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="td-actions">
+                            <a href="{% url 'editar_administrador' admin.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
+                            <a href="{% url 'eliminar_administrador' admin.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10">
+                        <div class="empty-state">
+                            <div class="ei">🛡️</div>
+                            <p>No hay administradores registrados.<br>
+                            <a href="{% url 'crear_administrador' %}" style="color:var(--accent)">Crear el primero</a></p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

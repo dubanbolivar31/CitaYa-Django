@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Historiales Clínicos · CitaYa{% endblock %}
+  
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-clipboard-list"></i> Historiales Clínicos</h1>
+    <a href="{% url 'crear_historiales' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Historial</a>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Médico Tratante</th>
+                    <th>Nombre del Paciente</th>
+                    <th>Antecedentes</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for historial in historiales %}
+                <tr>
+                    <td>{{ historial.id_historial }}</td>
+                    
+                    <td>{{ historial.fecha_creacion|date:"d M, Y" }}</td>
+                    
+                    <td>{{ historial.id_medico }}</td>
+                    
+                    <td>{{ historial.id_paciente }}</td>
+                    
+                    <td style="color: var(--text-muted); font-style: italic;">
+                        {{ historial.antecedentes|truncatewords:10 }}
+                    </td>
+                    
+                    <td>
+                        <div class="td-actions" style="justify-content: flex-end;">
+                            <a href="{% url 'editar_historiales' historial.pk %}" class="btn btn-sm btn-edit" title="Editar">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'eliminar_historiales' historial.pk %}" class="btn btn-sm btn-del" title="Eliminar">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding: 48px; color: var(--text-muted);">
+                        No hay registros en el historial clínico.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

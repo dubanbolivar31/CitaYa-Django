@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CitaYa{% endblock %}</title>
+    <script src="https://kit.fontawesome.com/606c3ce39f.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'assets/css/base.css?v=2.1' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/dashboard_admin.css?v=2.1' %}">
+    {% block extra_styles %}{% endblock %}
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo"><img src="{% static 'assets/img/nom.png' %}" class="logo" alt="CitaYa"></div>
+        <nav class="sidebar-nav">
+            <div class="nav-label">Principal</div>
+            <a href="{% url 'dashboard_admin' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}">
+                <i class="fa-solid fa-house"></i> Inicio
+            </a>
+            <div class="nav-label">Gestión</div>
+            <a href="{% url 'ver_administrador' %}"
+                class="nav-link {% if 'administrador' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-user-gear"></i> Administradores
+            </a>
+            <a href="{% url 'ver_medicos' %}"
+                class="nav-link {% if 'medico' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-user-doctor"></i> Médicos
+            </a>
+            <a href="{% url 'ver_pacientes' %}"
+                class="nav-link {% if 'paciente' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-hospital-user"></i> Pacientes
+            </a>
+            <a href="{% url 'ver_agendamientos' %}"
+                class="nav-link {% if 'agendamiento' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-calendar-check"></i> Agendamientos
+            </a>
+            <a href="{% url 'ver_historiales' %}"
+                class="nav-link {% if 'historial' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-clipboard-list"></i> Historiales
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

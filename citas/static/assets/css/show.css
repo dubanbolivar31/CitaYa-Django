@@ -1,0 +1,80 @@
+h1 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+        color: #fff;
+        background: linear-gradient(135deg, #059669, #10b981);
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .card {
+        max-width: 700px;
+        margin: 2rem auto;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+    }
+
+    .card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* dos columnas */
+        gap: 1rem 2rem;
+        padding: 2rem;
+    }
+
+    .card-body p {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .card-body p strong {
+        display: block;
+        color: #059669;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+
+    /* Botones */
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 1rem 2rem;
+        border-top: 1px solid #f3f4f6;
+        background: #fafafa;
+    }
+
+    .btn {
+        border-radius: 0.5rem;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        margin-left: 0.5rem;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary {
+        background-color: #6b7280;
+        color: #fff;
+        text-decoration: none;
+    }
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
+
+    .btn-warning {
+        background-color: #059669;
+        color: #fff;
+        text-decoration: none;
+    }
+    .btn-warning:hover {
+        background-color: #047857;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+        .card-body {
+            grid-template-columns: 1fr; /* 1 sola columna en móvil */
+        }
+    }
