@@ -9,8 +9,44 @@ from django.views.decorators.cache import never_cache
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.contrib.auth.mixins import AccessMixin
 from datetime import datetime, timedelta
+from .utils import enviar_confirmacion_cita
+from apscheduler.schedulers.background import BackgroundScheduler
+from twilio.rest import Client
+from django.db.models import Q
 
 from .models import Administrador, Agendamiento, Historial_Clinico, Medico, Paciente
+
+# RECORDATORIO POR LLAMADA
+
+# --- INICIALIZAMOS EL RELOJ GLOBAL ---
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+# --- FUNCIÓN DE APOYO PARA TWILIO ---
+def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
+    # PEGA TUS CREDENCIALES AQUÍ
+    account_sid = ''
+    auth_token = ''
+    client = Client(account_sid, auth_token)
+    
+    try:
+        client.calls.create(
+            twiml=f'''
+                <Response>
+                    <Say language="es-MX" voice="alice">
+                        Hola {nombre}. Te hablamos de Cita Ya. 
+                        Recordatorio de tu cita de {especialidad} para el {fecha} a las {hora}. 
+                        En caso de no poder asistir por favor entra a citaya.com y reprogramala.
+                        ¡Gracias por usar cita ya!.
+                    </Say>
+                </Response>
+            ''',
+            to='+573146867513', # Tu cel
+            from_='+18128979180' # Tu número Twilio
+        )
+        print(f"📞 Llamada enviada a {nombre}")
+    except Exception as e:
+        print(f"❌ Error en Twilio: {e}")
 
 # =========================================================================
 # MIXINS DE SEGURIDAD (PROTECCIÓN DE RUTAS)
@@ -136,27 +172,40 @@ def dashboard_admin(request):
 def dashboard_paciente(request):
     if request.session.get('rol') != 'paciente':
         return redirect('login')
- 
+
     paciente_id = request.session.get('usuario_id')
-    hoy = date.today()
- 
-    todas_citas   = Agendamiento.objects.filter(id_paciente=paciente_id).select_related('id_medico')
-    proximas_citas = todas_citas.filter(fecha__gte=hoy).order_by('fecha', 'hora')[:5]
-    historiales   = Historial_Clinico.objects.filter(
+    hoy  = date.today()
+    ahora = datetime.now()          # ← fecha Y hora actual
+
+    todas_citas = Agendamiento.objects.filter(
+        id_paciente=paciente_id
+    ).select_related('id_medico')
+
+    # ✅ Filtra por fecha+hora: solo citas que aún NO han ocurrido
+    proximas_citas = todas_citas.filter(
+        Q(fecha__gt=hoy) |                        # días futuros
+        Q(fecha=hoy, hora__gt=ahora.time())       # hoy, hora futura
+    ).order_by('fecha', 'hora')[:5]
+
+    historiales = Historial_Clinico.objects.filter(
         id_paciente=paciente_id
     ).select_related('id_medico').order_by('-fecha_creacion')[:5]
-    medicos_ids   = todas_citas.values_list('id_medico', flat=True).distinct()
+
+    medicos_ids = todas_citas.values_list('id_medico', flat=True).distinct()
     medicos_disponibles = Medico.objects.filter(estado=True).order_by('especialidad', 'nombre')
- 
+
     context = {
-        'nombre':              request.session.get('nombre'),
-        'total_citas':         todas_citas.count(),
-        'citas_proximas':      proximas_citas.count(),
-        'total_historiales':   Historial_Clinico.objects.filter(id_paciente=paciente_id).count(),
-        'total_medicos':       len(set(medicos_ids)),
-        'proximas_citas':      proximas_citas,
-        'historiales':         historiales,
-        'medicos_disponibles': medicos_disponibles,   # <-- necesario para el select del modal
+        'nombre':            request.session.get('nombre'),
+        'total_citas':       todas_citas.count(),
+        'citas_proximas':    todas_citas.filter(      # ← mismo filtro para el stat
+            Q(fecha__gt=hoy) |
+            Q(fecha=hoy, hora__gt=ahora.time())
+        ).count(),
+        'total_historiales': Historial_Clinico.objects.filter(id_paciente=paciente_id).count(),
+        'total_medicos':     len(set(medicos_ids)),
+        'proximas_citas':    proximas_citas,
+        'historiales':       historiales,
+        'medicos_disponibles': medicos_disponibles,
     }
     return render(request, 'dashboard/paciente/inicio_paciente.html', context)
  
@@ -197,7 +246,7 @@ def citas_paciente_json(request):
  
     return JsonResponse({'citas': data})
  
-# ── API: AGENDAR CITA ─────────────────────────────────────────────────────
+# ── API: AGENDAR CITA CON RECORDATORIO TWILIO (30s) ───────────────────────────
 @require_POST
 def agendar_cita_paciente(request):
     if request.session.get('rol') != 'paciente':
@@ -205,50 +254,70 @@ def agendar_cita_paciente(request):
 
     try:
         data = json.loads(request.body)
-        cita_tipo = data.get('cita', '').strip()
+        
+        # 1. Extraemos los datos exactos que manda tu JS
+        cita_tipo = data.get('cita') # Viene de 'ag-especialidad' en tu JS
         medico_id = data.get('id_medico')
-        fecha_str = data.get('fecha')  # '2026-03-25'
-        hora_str  = data.get('hora')   # '08:00'
+        fecha_str = data.get('fecha')
+        hora_str  = data.get('hora')
 
+        # Validación de campos vacíos
         if not all([cita_tipo, medico_id, fecha_str, hora_str]):
-            return JsonResponse({'error': 'Todos los campos son obligatorios.'}, status=400)
+            return JsonResponse({'error': 'Faltan datos en el formulario.'}, status=400)
 
-        # --- VALIDACIÓN DE FECHA Y HORA PASADA ---
+        # --- VALIDACIÓN TEMPORAL (Tu lógica original) ---
         ahora = datetime.now()
         fecha_cita = datetime.strptime(fecha_str, '%Y-%m-%d').date()
         hora_cita = datetime.strptime(hora_str, '%H:%M').time()
 
-        # 1. Si la fecha es de ayer o antes
         if fecha_cita < ahora.date():
-            return JsonResponse({'error': 'La fecha no puede ser en el pasado.'}, status=400)
+            return JsonResponse({'error': 'No puedes agendar en el pasado.'}, status=400)
         
-        # 2. Si la fecha es HOY, validar que la hora no haya pasado
         if fecha_cita == ahora.date() and hora_cita <= ahora.time():
-            return JsonResponse({'error': 'Horario no disponible (ya vencido).'}, status=400)
-        # ------------------------------------------
+            return JsonResponse({'error': 'La hora ya pasó.'}, status=400)
 
+        # --- GUARDADO EN BASE DE DATOS ---
         paciente_id = request.session['usuario_id']
-
-        # Validación choque de horario (la que ya tenías)
-        choque_horario = Agendamiento.objects.filter(
-            id_paciente_id=paciente_id,
-            fecha=fecha_str,
-            hora=hora_str
-        ).exists()
-
-        if choque_horario:
-            return JsonResponse({'error': f'Ya tienes una cita programada para esa hora.'}, status=400)
+        
+        # Validar si ya tiene cita a esa hora
+        if Agendamiento.objects.filter(id_paciente_id=paciente_id, fecha=fecha_str, hora=hora_str).exists():
+            return JsonResponse({'error': 'Ya tienes una cita a esta hora.'}, status=400)
 
         paciente = get_object_or_404(Paciente, pk=paciente_id)
         medico   = get_object_or_404(Medico, pk=medico_id)
 
-        Agendamiento.objects.create(
-            cita=cita_tipo,
+        nueva_cita = Agendamiento.objects.create(
+            cita=cita_tipo, 
             fecha=fecha_str,
             hora=hora_str,
             id_paciente=paciente,
             id_medico=medico,
         )
+
+        # --- ENVÍO DE CORREO ---
+        try:
+            enviar_confirmacion_cita(paciente, nueva_cita)
+        except Exception as e:
+            print(f"Error de correo: {e}")
+
+        # --- PROGRAMAR LLAMADA AUTOMÁTICA (LO NUEVO) ---
+        # Programamos para que suene exactamente en 30 segundos
+        momento_llamada = datetime.now() + timedelta(seconds=30)
+        
+        # Formateamos la fecha para que la voz de Twilio la diga bonito
+        fecha_para_voz = fecha_cita.strftime('%d de %B')
+
+        scheduler.add_job(
+            llamada_twilio_tarea, # La función que definiste con tus credenciales
+            trigger='date',
+            run_date=momento_llamada,
+            args=[paciente.nombre, cita_tipo, fecha_para_voz, hora_str],
+            id=f'llamada_{nueva_cita.id_agendamiento}',
+            replace_existing=True
+        )
+
+        print(f"⏳ Cita guardada. La llamada para {paciente.nombre} saldrá en 30s.")
+
         return JsonResponse({'ok': True})
 
     except Exception as e:
