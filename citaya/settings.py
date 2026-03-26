@@ -75,7 +75,7 @@ WSGI_APPLICATION = 'citaya.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'db_citaya',
+        'NAME': 'citaya_db',
         'USER': 'root',
         'PASSWORD': '',
         'HOST': '127.0.0.1',
@@ -122,3 +122,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'recordatorios.citaya@gmail.com'
+EMAIL_HOST_PASSWORD = 'lauf awhm nnmz vglk'
+DEFAULT_FROM_EMAIL = 'Cita Ya <recordatorios.citaya@gmail.com>'

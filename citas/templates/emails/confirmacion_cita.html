@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f9;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f4f7f9;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            max-width: 550px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            background-color: #0F4C75;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 30px 40px;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .welcome-text {
+            font-size: 18px;
+            color: #1B262C;
+        }
+
+        .details-box {
+            background-color: #F9FBFD;
+            border: 1px solid #E1E8ED;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 8px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #555;
+            width: 110px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .value {
+            color: #0F4C75;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .footer {
+            font-size: 13px;
+            color: #A0AEC0;
+            text-align: center;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .warning {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="card">
+            <div class="header">
+                <h1>CitaYa</h1>
+                <p style="margin-top: 10px; opacity: 0.9;">Confirmación de Cita Médica</p>
+            </div>
+
+            <div class="content">
+                <p class="welcome-text">Hola, <strong>{{ paciente.nombre }}</strong> 👋</p>
+                <p>Te confirmamos que tu cita ha quedado programada exitosamente.</p>
+
+                <div class="details-box">
+                    <div class="detail-row">
+                        <span class="label">🩺 Servicio:</span>
+                        <span class="value">{{ cita.cita }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">👨‍⚕️ Especialista:</span>
+                        <span class="value">Dr. {{ cita.id_medico.nombre }} {{ cita.id_medico.apellido }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">📅 Fecha:</span>
+                        <span class="value">{{ cita.fecha }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">⏰ Hora:</span>
+                        <span class="value">{{ cita.hora }}</span>
+                    </div>
+                </div>
+
+                <p
+                    style="background: #EBF8FF; border-left: 4px solid #3282B8; padding: 10px 15px; font-size: 14px; border-radius: 4px;">
+                    <strong>Nota:</strong> Por favor, preséntate 15 minutos antes con tu documento de identidad.
+                </p>
+
+            </div>
+
+            <div class="footer">
+                © 2026 CitaYa - Sistema de Gestión de Citas Médicas.<br>
+                Bogotá, Colombia.
+                <p class="warning">Este es un mensaje automático, por favor no respondas. Si tienes dudas, contáctanos a
+                    través de nuestra plataforma.</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

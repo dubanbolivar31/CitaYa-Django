@@ -6,122 +6,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CitaYa — Mi Panel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'assets/css/dashboard_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'assets/css/dashboard_paciente.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/dashboard_paciente.css?v=2.1 ' %}">
 </head>
 <body>
-    <div class="dashboard-wrapper">
-        
-        <!-- ── TOP BAR (idéntico al admin) ────────────────── -->
-        <div class="topbar">
+<div class="dashboard-wrapper"> 
+
+    <!-- ── TOP BAR ────────────────────────────────────────────── -->
+    <div class="topbar">
+        <div>
+            <img src="{% static 'assets/img/bienvenida.png' %}" alt="CitaYa logo">
             <div>
-                <div>
-                    <img src="{% static 'assets/img/logoti.png' %}" style="width: 100px;" alt="">
-                </div>
-                <div class="topbar-title">
-                    Hola, <span class="topbar-name">{{ nombre }}</span>
-                </div>
-                <div class="topbar-sub">Panel de paciente · CitaYa</div>
+                <div class="topbar-title">Hola, <span class="topbar-name">{{ nombre }}</span></div>
+                <div class="topbar-sub">Mi Panel</div>
             </div>
-            <div class="topbar-right">
-                <button class="avatar-btn" id="avatarBtn">
-                    <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="topbar-right">
+            <button class="avatar-btn" id="avatarBtn"><i class="fa-solid fa-user"></i></button>
+            <div class="avatar-dropdown" id="avatarDropdown">
+                <button class="drop-item" id="btn-open-perfil">
+                    <i class="fa-solid fa-user-pen"></i> Ver Perfil
                 </button>
-                <div class="avatar-dropdown" id="avatarDropdown">
-                    <button class="drop-item" id="btn-open-perfil">
-                        <i class="fa-solid fa-user-pen"></i> Ver Perfil
-                    </button>
-                    <div class="drop-divider"></div>
-                    <a href="{% url 'logout_admin' %}" class="drop-item drop-danger">
-                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-                    </a>
-                </div>
+                <div class="drop-divider"></div>
+                <a href="{% url 'logout_admin' %}" class="drop-item drop-danger">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                </a>
             </div>
         </div>
-        
-        <!-- ── STATS ───────────────────────────────────────── -->
-        <div class="stats-grid">
-            <div class="stat-card" style="--c:#0F4C75">
-                <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
-                <div class="stat-info">
-                    <span class="stat-num">{{ total_citas }}</span>
-                    <span class="stat-label">Total citas</span>
-                </div>
-                <i class="fa-solid fa-calendar-check stat-bg-icon"></i>
+    </div>
+
+    <!-- ── STATS ──────────────────────────────────────────────── -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--c:#0F4C75">
+            <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_citas }}</span>
+                <span class="stat-label">Total citas</span>
             </div>
-            <div class="stat-card" style="--c:#1a8a5a">
-                <div class="stat-icon" style="background:rgba(26,138,90,.1);color:#1a8a5a">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-num">{{ citas_proximas }}</span>
-                    <span class="stat-label">Próximas citas</span>
-                </div>
-                <i class="fa-solid fa-clock stat-bg-icon"></i>
+            <i class="fa-solid fa-calendar-check stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#1a8a5a">
+            <div class="stat-icon" style="background:rgba(26,138,90,.1);color:#1a8a5a">
+                <i class="fa-solid fa-clock"></i>
             </div>
-            <div class="stat-card" style="--c:#d97706">
-                <div class="stat-icon" style="background:rgba(217,119,6,.1);color:#d97706">
-                    <i class="fa-solid fa-file-medical"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-num">{{ total_historiales }}</span>
-                    <span class="stat-label">Historiales</span>
-                </div>
-                <i class="fa-solid fa-file-medical stat-bg-icon"></i>
+            <div class="stat-info">
+                <span class="stat-num">{{ citas_proximas }}</span>
+                <span class="stat-label">Próximas citas</span>
             </div>
-            <div class="stat-card" style="--c:#6366f1">
-                <div class="stat-icon" style="background:rgba(99,102,241,.1);color:#6366f1">
+            <i class="fa-solid fa-clock stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#d97706">
+            <div class="stat-icon" style="background:rgba(217,119,6,.1);color:#d97706">
+                <i class="fa-solid fa-file-medical"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_historiales }}</span>
+                <span class="stat-label">Historiales</span>
+            </div>
+            <i class="fa-solid fa-file-medical stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#6366f1">
+            <div class="stat-icon" style="background:rgba(99,102,241,.1);color:#6366f1">
+                <i class="fa-solid fa-user-doctor"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_medicos }}</span>
+                <span class="stat-label">Médicos tratantes</span>
+            </div>
+            <i class="fa-solid fa-user-doctor stat-bg-icon"></i>
+        </div>
+    </div>
+
+    <!-- ── ACCIONES RÁPIDAS ────────────────────────────────────── -->
+    <p class="section-title">Acciones rápidas</p>
+    <div class="quick-grid">
+        <button class="quick-card" data-modal="modal-agendar">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <span>Agendar nueva cita</span>
+        </button>
+        <button class="quick-card" data-modal="modal-mis-citas">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Ver mis citas</span>
+        </button>
+        <button class="quick-card" id="btn-open-perfil2">
+            <i class="fa-solid fa-id-card"></i>
+            <span>Mi perfil</span>
+        </button>
+    </div>
+
+    <!-- ── PRÓXIMAS CITAS ──────────────────────────────────────── -->
+    <p class="section-title" style="margin-top:32px">Próximas citas</p>
+    <div class="pac-list">
+        {% for cita in proximas_citas %}
+        <div class="pac-row">
+            <div class="pac-fecha">
+                <span class="pac-dia">{{ cita.fecha|date:"d" }}</span>
+                <span class="pac-mes">{{ cita.fecha|date:"M" }}</span>
+            </div>
+            <div class="pac-info">
+                <div class="pac-nombre">{{ cita.cita }}</div>
+                <div class="pac-sub">
                     <i class="fa-solid fa-user-doctor"></i>
+                    Dr. {{ cita.id_medico.nombre }} {{ cita.id_medico.apellido }} · {{ cita.id_medico.especialidad }}
                 </div>
-                <div class="stat-info">
-                    <span class="stat-num">{{ total_medicos }}</span>
-                    <span class="stat-label">Médicos tratantes</span>
-                </div>
-                <i class="fa-solid fa-user-doctor stat-bg-icon"></i>
             </div>
-        </div>
-        
-        <!-- ── ACCIONES RÁPIDAS ────────────────────────────── -->
-        <p class="section-title">Acciones rápidas</p>
-        <div class="quick-grid">
-            <button class="quick-card" data-modal="modal-agendar">
-                <i class="fa-solid fa-calendar-plus"></i>
-                <span>Agendar nueva cita</span>
-            </button>
-            <button class="quick-card" data-modal="modal-mis-citas">
-                <i class="fa-solid fa-list-check"></i>
-                <span>Ver mis citas</span>
-            </button>
-            <button class="quick-card" id="btn-open-perfil2">
-                <i class="fa-solid fa-id-card"></i>
-                <span>Mi perfil</span>
-            </button>
-        </div>
-        
-        <!-- ── PRÓXIMAS CITAS ──────────────────────────────── -->
-        <p class="section-title" style="margin-top:32px">Próximas citas</p>
-        <div class="pac-list">
-            {% for cita in proximas_citas %}
-            <div class="pac-row">
-                <div class="pac-fecha">
-                    <span class="pac-dia">{{ cita.fecha|date:"d" }}</span>
-                    <span class="pac-mes">{{ cita.fecha|date:"M" }}</span>
-                </div>
-                <div class="pac-info">
-                    <div class="pac-nombre">{{ cita.cita }}</div>
-                    <div class="pac-sub">
-                        <i class="fa-solid fa-user-doctor"></i>
-                        Dr. {{ cita.id_medico.nombre }} {{ cita.id_medico.apellido }} · {{ cita.id_medico.especialidad }}
-                    </div>
-                </div>
-                <div class="pac-hora"><i class="fa-regular fa-clock"></i> {{ cita.hora|time:"H:i" }}</div>
-                <div class="pac-btns">
-                    <button class="pac-btn-edit" title="Reprogramar"
+            <div class="pac-hora"><i class="fa-regular fa-clock"></i> {{ cita.hora|time:"H:i" }}</div>
+            <div class="pac-btns">
+                <button class="pac-btn-edit" title="Reprogramar"
                     onclick="abrirReprogramar({{ cita.id_agendamiento }},'{{ cita.cita }}','{{ cita.fecha }}','{{ cita.hora|time:'H:i' }}',{{ cita.id_medico.id_medico }})">
                     Reprogramar
                 </button>
-                <button class="pac-btn-del" title="Cancelar" onclick="abrirCancelar({{ cita.id_agendamiento }},'{{ cita.cita }}')">
-                    Cancelar cita.
+                <button class="pac-btn-del" title="Cancelar"
+                    onclick="abrirCancelar({{ cita.id_agendamiento }},'{{ cita.cita }}')">
+                    Cancelar cita
                 </button>
             </div>
         </div>
@@ -134,8 +130,8 @@
         </div>
         {% endfor %}
     </div>
-    
-    <!-- ── ÚLTIMOS HISTORIALES ─────────────────────────── -->
+
+    <!-- ── ÚLTIMOS HISTORIALES ────────────────────────────────── -->
     <p class="section-title" style="margin-top:32px">Últimas entradas del historial</p>
     <div class="pac-list" style="margin-bottom:48px">
         {% for h in historiales %}
@@ -150,25 +146,24 @@
                 <div class="pac-preview">{{ h.antecedentes|truncatechars:100 }}</div>
             </div>
             <button class="pac-btn-ver"
-            onclick="verHistorial('{{ h.fecha_creacion|date:'d/m/Y' }}','{{ h.id_medico.nombre }} {{ h.id_medico.apellido }}',`{{ h.antecedentes|escapejs }}`)">
-            <i class="fa-solid fa-eye"></i> Ver
-        </button>
+                onclick="verHistorial('{{ h.fecha_creacion|date:'d/m/Y' }}','{{ h.id_medico.nombre }} {{ h.id_medico.apellido }}',`{{ h.antecedentes|escapejs }}`)">
+                <i class="fa-solid fa-eye"></i> Ver
+            </button>
+        </div>
+        {% empty %}
+        <div class="pac-empty">
+            <i class="fa-solid fa-file-circle-xmark"></i>
+            <p>Aún no tienes historiales registrados.</p>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="pac-empty">
-        <i class="fa-solid fa-file-circle-xmark"></i>
-        <p>Aún no tienes historiales registrados.</p>
-    </div>
-    {% endfor %}
-</div>
 
-</div>
-<!-- /dashboard-wrapper -->
+</div><!-- /dashboard-wrapper -->
 
 
-<!-- ══════════════════════════════════════════════
-MODALES
-══════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════════
+     MODALES
+════════════════════════════════════════════════════════════ -->
 
 <!-- MIS CITAS -->
 <div class="modal-overlay" id="modal-mis-citas">
@@ -213,7 +208,7 @@ MODALES
                 </div>
                 <div class="form-group-m">
                     <label>Fecha</label>
-                    <input type="date" id="ag-fecha" min="{{ hoy|date:'Y-m-d' }}">
+                    <input type="date" id="ag-fecha">
                 </div>
                 <div class="form-group-m">
                     <label>Hora disponible</label>
@@ -233,7 +228,6 @@ MODALES
 </div>
 
 <!-- REPROGRAMAR -->
-
 <div class="modal-overlay" id="modal-reprogramar">
     <div class="modal-box modal-sm">
         <div class="modal-header">
@@ -242,9 +236,9 @@ MODALES
         </div>
         <div class="modal-body">
             <div id="msg-reprogramar"></div>
-            
             <input type="hidden" id="rep-id">
-            <input type="hidden" id="rep-medico-id"> <div class="edit-grid">
+            <input type="hidden" id="rep-medico-id">
+            <div class="edit-grid">
                 <div class="form-group-m full">
                     <label>Nueva fecha</label>
                     <input type="date" id="rep-fecha">
@@ -274,11 +268,11 @@ MODALES
             <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body" style="text-align:center;padding:30px 24px">
-            <div style="font-size:52px;color:#d93025;opacity:.7;margin-bottom:14px">
+            <div style="font-size:52px;color:var(--red-500);opacity:.7;margin-bottom:14px">
                 <i class="fa-solid fa-calendar-xmark"></i>
             </div>
-            <p style="font-size:18px;font-weight:800;color:#1a2e3b;margin-bottom:8px">¿Cancelar esta cita?</p>
-            <p style="font-size:13.5px;color:#5a7a90;line-height:1.5" id="cancel-desc-text"></p>
+            <p style="font-size:18px;font-weight:800;color:var(--gray-900);margin-bottom:8px">¿Cancelar esta cita?</p>
+            <p style="font-size:13.5px;color:var(--gray-400);line-height:1.5" id="cancel-desc-text"></p>
             <input type="hidden" id="cancel-id">
         </div>
         <div class="modal-footer" style="justify-content:center;gap:12px">
@@ -322,7 +316,7 @@ MODALES
                 </div>
             </div>
             <div style="margin-top:16px">
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#0F4C75;display:block;margin-bottom:8px">
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--blue-700);display:block;margin-bottom:8px">
                     Antecedentes / Notas
                 </label>
                 <div class="pac-text-box" id="hd-antecedentes"></div>
@@ -373,7 +367,7 @@ MODALES
                 </div>
                 <div class="form-group-m">
                     <label>Teléfono</label>
-                    <input type="number" id="ep-telefono" minlength="10" maxlength="10">
+                    <input type="number" id="ep-telefono" max="10">
                 </div>
                 <div class="form-group-m">
                     <label>Correo</label>
@@ -385,8 +379,8 @@ MODALES
                 </div>
                 <div class="form-group-m full">
                     <label>Nueva contraseña
-                        <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">
-                                        (Dejar en blanco para mantener la contraseña actual)
+                        <span style="font-weight:400;color:var(--gray-300);text-transform:none;letter-spacing:0">
+                            (Dejar en blanco para mantener la contraseña actual)
                         </span>
                     </label>
                     <input type="password" id="ep-contrasena" placeholder="••••••••">
@@ -403,76 +397,87 @@ MODALES
 </div>
 
 
-<!-- ══════════════════════════════════════════════
-JS
-══════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
 <script>
-    const URLS = {
-        perfilJson:      "{% url 'perfil_paciente_json' %}",
-        editarPerfil:    "{% url 'editar_perfil_paciente' %}",
-        citasJson:       "{% url 'citas_paciente_json' %}",
-        agendarCita:     "{% url 'agendar_cita_paciente' %}",
-        reprogramarBase: "{% url 'reprogramar_cita_paciente' 0 %}".replace('/0/', '/'),
-        cancelarBase:    "{% url 'cancelar_cita_paciente' 0 %}".replace('/0/', '/'),
-        historialJson:   "{% url 'historial_paciente_json' %}",
-    };
-    const CSRF = "{{ csrf_token }}";
-    
-    // ── MODAL ENGINE ──────────────────────────────
-    function openModal(id) {
-        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
-        document.getElementById(id)?.classList.add('show');
-    }
-    
-    document.querySelectorAll('[data-modal]').forEach(el => {
-        el.addEventListener('click', e => {
-            e.preventDefault();
-            const id = el.dataset.modal;
-            openModal(id);
-            if (id === 'modal-mis-citas') loadCitas();
-            if (id === 'modal-historial') loadHistorial();
-        });
+const URLS = {
+    perfilJson:      "{% url 'perfil_paciente_json' %}",
+    editarPerfil:    "{% url 'editar_perfil_paciente' %}",
+    citasJson:       "{% url 'citas_paciente_json' %}",
+    agendarCita:     "{% url 'agendar_cita_paciente' %}",
+    reprogramarBase: "{% url 'reprogramar_cita_paciente' 0 %}".replace('/0/', '/'),
+    cancelarBase:    "{% url 'cancelar_cita_paciente' 0 %}".replace('/0/', '/'),
+    historialJson:   "{% url 'historial_paciente_json' %}",
+};
+const CSRF = "{{ csrf_token }}";
+
+/* ── Utilidad: ¿la cita ya pasó considerando fecha Y hora? ─── */
+function citaYaPaso(fechaStr, horaStr) {
+    // fechaStr viene del JSON: formato "DD/MM/YYYY"
+    // horaStr viene del JSON: formato "HH:MM"
+    const [dia, mes, anio] = fechaStr.split('/');
+    const [hh, mm]         = horaStr.split(':');
+    const fechaHoraCita    = new Date(anio, mes - 1, dia, hh, mm, 0);
+    return Date.now() > fechaHoraCita.getTime();
+}
+
+/* ── MODAL ENGINE ─────────────────────────────────────────── */
+function openModal(id) {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    document.getElementById(id)?.classList.add('show');
+}
+
+document.querySelectorAll('[data-modal]').forEach(el => {
+    el.addEventListener('click', e => {
+        e.preventDefault();
+        const id = el.dataset.modal;
+        openModal(id);
+        if (id === 'modal-mis-citas') loadCitas();
+        if (id === 'modal-historial') loadHistorial();
     });
-    
-    document.querySelectorAll('[data-close]').forEach(btn =>
+});
+
+document.querySelectorAll('[data-close]').forEach(btn =>
     btn.addEventListener('click', () => btn.closest('.modal-overlay').classList.remove('show'))
-    );
-    
-    document.querySelectorAll('.modal-overlay').forEach(ov =>
+);
+
+document.querySelectorAll('.modal-overlay').forEach(ov =>
     ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); })
-    );
-    
-    // ── AVATAR ────────────────────────────────────
-    document.getElementById('avatarBtn').addEventListener('click', e => {
-        e.stopPropagation();
-        document.getElementById('avatarDropdown').classList.toggle('show');
-    });
-    document.addEventListener('click', () =>
+);
+
+/* ── AVATAR ────────────────────────────────────────────────── */
+document.getElementById('avatarBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('avatarDropdown').classList.toggle('show');
+});
+document.addEventListener('click', () =>
     document.getElementById('avatarDropdown').classList.remove('show')
-    );
-    
-    // ── PERFIL SHORTCUTS ──────────────────────────
-    ['btn-open-perfil', 'btn-open-perfil2'].forEach(id => {
-        document.getElementById(id)?.addEventListener('click', () => {
-            openModal('modal-perfil');
-            loadPerfil();
-        });
+);
+
+/* ── PERFIL SHORTCUTS ─────────────────────────────────────── */
+['btn-open-perfil', 'btn-open-perfil2'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => {
+        openModal('modal-perfil');
+        loadPerfil();
     });
-    
-    document.getElementById('btn-ir-editar').addEventListener('click', () => {
-        document.querySelector('.modal-overlay.show')?.classList.remove('show');
-        openModal('modal-editar-perfil');
-    });
-    
-    // ── CITAS ─────────────────────────────────────
-    
-    async function loadCitas() {
+});
+
+document.getElementById('btn-ir-editar').addEventListener('click', () => {
+    document.querySelector('.modal-overlay.show')?.classList.remove('show');
+    openModal('modal-editar-perfil');
+});
+
+/* ════════════════════════════════════════════════════════════
+   CITAS — loadCitas con detección de "ya pasó" por fecha+hora
+════════════════════════════════════════════════════════════ */
+async function loadCitas() {
     const body = document.getElementById('body-mis-citas');
     body.innerHTML = '<div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>';
-    
+
     try {
         const data = await (await fetch(URLS.citasJson)).json();
-        
+
         if (!data.citas?.length) {
             body.innerHTML = '<div class="pac-empty"><i class="fa-solid fa-calendar-xmark"></i><p>No tienes citas registradas.</p></div>';
             return;
@@ -482,13 +487,28 @@ JS
         <table class="pac-table">
             <thead>
                 <tr>
-                    <th>Consulta</th><th>Médico</th><th>Especialidad</th><th>Fecha</th><th>Hora</th><th>Estado</th>
+                    <th>Consulta</th>
+                    <th>Médico</th>
+                    <th>Especialidad</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
             ${data.citas.map(c => {
-                const esCumplida = c.estado === 'Cita Cumplida';
-                
+                /*
+                 * ── LÓGICA DE ESTADO ──────────────────────────────────────────
+                 * Una cita se considera "Cita Cumplida" si:
+                 *   1. El backend ya la marcó como 'Cita Cumplida', O
+                 *   2. La combinación fecha+hora ya pasó (aunque el backend
+                 *      todavía diga "Agendada", p.ej. a las 5:01 PM del mismo día)
+                 *
+                 * c.fecha  → "DD/MM/YYYY"   (viene del JSON Django)
+                 * c.hora   → "HH:MM"         (viene del JSON Django)
+                 * ────────────────────────────────────────────────────────────── */
+                const esCumplida = c.estado === 'Cita Cumplida' || citaYaPaso(c.fecha, c.hora);
+
                 return `
                 <tr>
                     <td><span class="pac-chip">${c.cita}</span></td>
@@ -497,276 +517,244 @@ JS
                     <td>${c.fecha}</td>
                     <td>${c.hora}</td>
                     <td>
-                        <div style="display:flex; align-items:center;">
-                            ${esCumplida ? 
-                                `<span>
-                                    Cita Cumplida
-                                 </span>` 
-                                : 
-                                `<span>
-                                    Agendada
-                                 </span>`
-                            }
-                        </div>
+                        ${esCumplida
+                            ? `<span class="badge-cumplida"><i class="fa-solid fa-circle-check"></i> Cita Cumplida</span>`
+                            : `<span class="badge-agendada"><i class="fa-solid fa-calendar-check"></i> Agendada</span>`
+                        }
                     </td>
                 </tr>`;
             }).join('')}
             </tbody>
         </table>`;
-    } catch (error) { 
-        body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar las citas.</div>'; 
+
+    } catch {
+        body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar las citas.</div>';
     }
 }
 
-        // ── AGENDAR (SISTEMA COMPLETO) ───────────────────────────────────
-        document.getElementById('btn-confirmar-agendar').addEventListener('click', async () => {
-            const msg = document.getElementById('msg-agendar');
-            
-            // Aquí cambiamos 'ag-cita' por 'ag-especialidad' para que coincida con tu select
-            const p = {
-                cita:      document.getElementById('ag-especialidad').value, 
-                id_medico: document.getElementById('ag-medico').value,
-                fecha:     document.getElementById('ag-fecha').value,
-                hora:      document.getElementById('ag-hora').value,
-            };
-            
-            if (!p.cita || !p.id_medico || !p.fecha || !p.hora) {
-                msg.innerHTML = '<div class="edit-msg edit-msg-error">Completa todos los campos.</div>'; 
-                return;
-            }
-            
-            try {
-                const d = await (await fetch(URLS.agendarCita, {
-                    method:'POST', 
-                    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, 
-                    body:JSON.stringify(p)
-                })).json();
-                
-                if (d.ok) {
-                    msg.innerHTML = '<div class="edit-msg edit-msg-success"><i class="fa-solid fa-check"></i> ¡Cita agendada!</div>';
-                    setTimeout(() => { 
-                        document.getElementById('modal-agendar').classList.remove('show'); 
-                        location.reload(); 
-                    }, 1500);
-                } else { 
-                    msg.innerHTML = `<div class="edit-msg edit-msg-error">${d.error || 'Error.'}</div>`; 
-                }
-            } catch { 
-                msg.innerHTML = '<div class="edit-msg edit-msg-error">Error de conexión.</div>'; 
-            }
-        });
-        
-        // ── CONFIGURACIÓN DE FECHA Y CARGA DINÁMICA (MANTENER ESTO) ────────
-        const inputFecha = document.getElementById('ag-fecha');
-        const hoy = new Date().toISOString().split('T')[0];
-        const maxFecha = new Date();
-        maxFecha.setFullYear(maxFecha.getFullYear() + 1);
-        inputFecha.min = hoy;
-        inputFecha.max = maxFecha.toISOString().split('T')[0];
-        
-        document.getElementById('ag-especialidad').addEventListener('change', async (e) => {
-            const esp = e.target.value;
-            const selectMed = document.getElementById('ag-medico');
-            selectMed.innerHTML = '<option value="">Cargando...</option>';
-            
-            if(!esp) { selectMed.disabled = true; return; }
-            
-            const resp = await fetch(`/api/medicos-por-especialidad/?especialidad=${esp}`);
-            const data = await resp.json();
-            
-            selectMed.innerHTML = '<option value="">— Selecciona un médico —</option>';
-            data.medicos.forEach(m => {
-                selectMed.innerHTML += `<option value="${m.id_medico}">Dr. ${m.nombre} ${m.apellido}</option>`;
-            });
-            selectMed.disabled = false;
-        });
-        
-        const cargarHoras = async () => {
-            const medicoId = document.getElementById('ag-medico').value;
-            const fecha = document.getElementById('ag-fecha').value;
-            const selectHora = document.getElementById('ag-hora');
-            
-            if(!medicoId || !fecha) return;
-            
-            selectHora.innerHTML = '<option value="">Cargando horas...</option>';
-            const resp = await fetch(`/api/disponibilidad-medico/?medico_id=${medicoId}&fecha=${fecha}`);
-            const data = await resp.json();
-            
-            selectHora.innerHTML = '<option value="">— Selecciona una hora —</option>';
-            data.horarios.forEach(h => {
-                const option = document.createElement('option');
-                option.value = h.hora;
-                option.textContent = h.hora + (h.disponible ? '' : ' (Ocupado)');
-                option.disabled = !h.disponible;
-                if(!h.disponible) option.style.color = 'red';
-                selectHora.appendChild(option);
-            });
-            selectHora.disabled = false;
-        };
-        
-        document.getElementById('ag-medico').addEventListener('change', cargarHoras);
-        document.getElementById('ag-fecha').addEventListener('change', cargarHoras);
-        
-        const inputFechaRep = document.getElementById('rep-fecha');
-        const hoyRep = new Date().toISOString().split('T')[0];
-        const maxFechaRep = new Date();
-        maxFechaRep.setFullYear(maxFechaRep.getFullYear() + 1); // Máximo 1 año
-        
-        inputFechaRep.min = hoyRep;
-        inputFechaRep.max = maxFechaRep.toISOString().split('T')[0];
-        
-        const cargarHorasRep = async () => {
-            const medicoId = document.getElementById('rep-medico-id').value;
-            const fecha = document.getElementById('rep-fecha').value;
-            const selectHora = document.getElementById('rep-hora');
-            
-            if(!medicoId || !fecha) return;
-            
-            selectHora.innerHTML = '<option value="">Cargando...</option>';
-            const resp = await fetch(`/api/disponibilidad-medico/?medico_id=${medicoId}&fecha=${fecha}`);
-            const data = await resp.json();
-            
-            selectHora.innerHTML = '<option value="">— Selecciona hora —</option>';
-            data.horarios.forEach(h => {
-                const opt = document.createElement('option');
-                opt.value = h.hora;
-                opt.textContent = h.hora + (h.disponible ? '' : ' (Ocupado)');
-                opt.disabled = !h.disponible;
-                selectHora.appendChild(opt);
-            });
-            selectHora.disabled = false;
-        };
-        
-        // Escuchar el cambio de fecha en el modal de reprogramar
-        document.getElementById('rep-fecha').addEventListener('change', cargarHorasRep);
-        
-        // ── REPROGRAMAR ───────────────────────────────
-        function abrirReprogramar(id, cita, fecha, hora, medicoId) {
-            document.getElementById('rep-id').value = id;
-            document.getElementById('rep-medico-id').value = medicoId; 
-            document.getElementById('rep-fecha').value = fecha;
-            document.getElementById('msg-reprogramar').innerHTML = '';
-            
-            // Ejecutar carga de horas inmediatamente al abrir
-            cargarHorasRep(); 
-            
-            openModal('modal-reprogramar');
+/* ── AGENDAR ──────────────────────────────────────────────── */
+(() => {
+    const inputFecha = document.getElementById('ag-fecha');
+    const hoy = new Date().toISOString().split('T')[0];
+    const maxF = new Date(); maxF.setFullYear(maxF.getFullYear() + 1);
+    inputFecha.min = hoy;
+    inputFecha.max = maxF.toISOString().split('T')[0];
+})();
+
+document.getElementById('ag-especialidad').addEventListener('change', async e => {
+    const esp = e.target.value;
+    const selectMed = document.getElementById('ag-medico');
+    selectMed.innerHTML = '<option value="">Cargando...</option>';
+    if (!esp) { selectMed.disabled = true; return; }
+    const data = await (await fetch(`/api/medicos-por-especialidad/?especialidad=${esp}`)).json();
+    selectMed.innerHTML = '<option value="">— Selecciona un médico —</option>';
+    data.medicos.forEach(m => {
+        selectMed.innerHTML += `<option value="${m.id_medico}">Dr. ${m.nombre} ${m.apellido}</option>`;
+    });
+    selectMed.disabled = false;
+});
+
+const cargarHoras = async () => {
+    const medicoId = document.getElementById('ag-medico').value;
+    const fecha    = document.getElementById('ag-fecha').value;
+    const sel      = document.getElementById('ag-hora');
+    if (!medicoId || !fecha) return;
+    sel.innerHTML = '<option value="">Cargando horas...</option>';
+    const data = await (await fetch(`/api/disponibilidad-medico/?medico_id=${medicoId}&fecha=${fecha}`)).json();
+    sel.innerHTML = '<option value="">— Selecciona una hora —</option>';
+    data.horarios.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.hora;
+        opt.textContent = h.hora + (h.disponible ? '' : ' (Ocupado)');
+        opt.disabled = !h.disponible;
+        if (!h.disponible) opt.style.color = 'red';
+        sel.appendChild(opt);
+    });
+    sel.disabled = false;
+};
+
+document.getElementById('ag-medico').addEventListener('change', cargarHoras);
+document.getElementById('ag-fecha').addEventListener('change', cargarHoras);
+
+document.getElementById('btn-confirmar-agendar').addEventListener('click', async () => {
+    const msg = document.getElementById('msg-agendar');
+    const p = {
+        cita:      document.getElementById('ag-especialidad').value,
+        id_medico: document.getElementById('ag-medico').value,
+        fecha:     document.getElementById('ag-fecha').value,
+        hora:      document.getElementById('ag-hora').value,
+    };
+    if (!p.cita || !p.id_medico || !p.fecha || !p.hora) {
+        msg.innerHTML = '<div class="edit-msg edit-msg-error">Completa todos los campos.</div>'; return;
+    }
+    try {
+        const d = await (await fetch(URLS.agendarCita, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(p)
+        })).json();
+        if (d.ok) {
+            msg.innerHTML = '<div class="edit-msg edit-msg-success"><i class="fa-solid fa-check"></i> ¡Cita agendada!</div>';
+            setTimeout(() => { document.getElementById('modal-agendar').classList.remove('show'); location.reload(); }, 1500);
+        } else {
+            msg.innerHTML = `<div class="edit-msg edit-msg-error">${d.error || 'Error.'}</div>`;
         }
-        
-        document.getElementById('btn-confirmar-reprogramar').addEventListener('click', async () => {
-            const msg = document.getElementById('msg-reprogramar');
-            const id  = document.getElementById('rep-id').value;
-            const p = {
-                fecha: document.getElementById('rep-fecha').value,
-                hora:  document.getElementById('rep-hora').value
-            };
-            
-            if (!p.fecha || !p.hora) {
-                msg.innerHTML = '<div class="edit-msg edit-msg-error">Selecciona fecha y hora.</div>';
-                return;
-            }
-            
-            try {
-                const d = await (await fetch(URLS.reprogramarBase + id + '/', {
-                    method:'POST', 
-                    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, 
-                    body:JSON.stringify(p)
-                })).json();
-                
-                if (d.ok) {
-                    msg.innerHTML = '<div class="edit-msg edit-msg-success">¡Cita movida con éxito!</div>';
-                    setTimeout(() => { location.reload(); }, 1200);
-                } else {
-                    msg.innerHTML = `<div class="edit-msg edit-msg-error">${d.error}</div>`;
-                }
-            } catch {
-                msg.innerHTML = '<div class="edit-msg edit-msg-error">Error de red.</div>';
-            }
-        });
-        
-        // ── CANCELAR ──────────────────────────────────
-        function abrirCancelar(id, nombre) {
-            document.getElementById('cancel-id').value = id;
-            document.getElementById('cancel-desc-text').textContent =
-            `Tú cita de "${nombre}" será eliminada de tu agenda. Esta acción no se puede deshacer.`;
-            openModal('modal-cancelar');
+    } catch {
+        msg.innerHTML = '<div class="edit-msg edit-msg-error">Error de conexión.</div>';
+    }
+});
+
+/* ── REPROGRAMAR ──────────────────────────────────────────── */
+(() => {
+    const inputFechaRep = document.getElementById('rep-fecha');
+    const hoyRep = new Date().toISOString().split('T')[0];
+    const maxFR  = new Date(); maxFR.setFullYear(maxFR.getFullYear() + 1);
+    inputFechaRep.min = hoyRep;
+    inputFechaRep.max = maxFR.toISOString().split('T')[0];
+})();
+
+const cargarHorasRep = async () => {
+    const medicoId = document.getElementById('rep-medico-id').value;
+    const fecha    = document.getElementById('rep-fecha').value;
+    const sel      = document.getElementById('rep-hora');
+    if (!medicoId || !fecha) return;
+    sel.innerHTML = '<option value="">Cargando...</option>';
+    const data = await (await fetch(`/api/disponibilidad-medico/?medico_id=${medicoId}&fecha=${fecha}`)).json();
+    sel.innerHTML = '<option value="">— Selecciona hora —</option>';
+    data.horarios.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.hora;
+        opt.textContent = h.hora + (h.disponible ? '' : ' (Ocupado)');
+        opt.disabled = !h.disponible;
+        sel.appendChild(opt);
+    });
+    sel.disabled = false;
+};
+
+document.getElementById('rep-fecha').addEventListener('change', cargarHorasRep);
+
+function abrirReprogramar(id, cita, fecha, hora, medicoId) {
+    document.getElementById('rep-id').value       = id;
+    document.getElementById('rep-medico-id').value = medicoId;
+    document.getElementById('rep-fecha').value    = fecha;
+    document.getElementById('msg-reprogramar').innerHTML = '';
+    cargarHorasRep();
+    openModal('modal-reprogramar');
+}
+
+document.getElementById('btn-confirmar-reprogramar').addEventListener('click', async () => {
+    const msg = document.getElementById('msg-reprogramar');
+    const id  = document.getElementById('rep-id').value;
+    const p   = {
+        fecha: document.getElementById('rep-fecha').value,
+        hora:  document.getElementById('rep-hora').value
+    };
+    if (!p.fecha || !p.hora) {
+        msg.innerHTML = '<div class="edit-msg edit-msg-error">Selecciona fecha y hora.</div>'; return;
+    }
+    try {
+        const d = await (await fetch(URLS.reprogramarBase + id + '/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(p)
+        })).json();
+        if (d.ok) {
+            msg.innerHTML = '<div class="edit-msg edit-msg-success">¡Cita movida con éxito!</div>';
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            msg.innerHTML = `<div class="edit-msg edit-msg-error">${d.error}</div>`;
         }
-        
-        document.getElementById('btn-confirmar-cancelar').addEventListener('click', async () => {
-            const id = document.getElementById('cancel-id').value;
-            try {
-                const d = await (await fetch(URLS.cancelarBase + id + '/', {
-                    method:'POST', headers:{'X-CSRFToken':CSRF}
-                })).json();
-                if (d.ok) { document.getElementById('modal-cancelar').classList.remove('show'); location.reload(); }
-            } catch {}
-        });
-        
-        // ── HISTORIAL ─────────────────────────────────
-        async function loadHistorial() {
-            const body = document.getElementById('body-historial');
-            body.innerHTML = '<div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>';
-            try {
-                const data = await (await fetch(URLS.historialJson)).json();
-                if (!data.historiales?.length) {
-                    body.innerHTML = '<div class="pac-empty"><i class="fa-solid fa-file-circle-xmark"></i><p>No hay historiales.</p></div>'; return;
-                }
-                body.innerHTML = data.historiales.map(h => `
-            <div class="pac-row">
-                <div class="pac-hist-icon"><i class="fa-solid fa-notes-medical"></i></div>
-                <div class="pac-info">
-                    <div class="pac-nombre">Registro del ${h.fecha_creacion}</div>
-                    <div class="pac-sub"><i class="fa-solid fa-user-doctor"></i> Dr. ${h.medico_nombre} · ${h.especialidad}</div>
-                    <div class="pac-preview">${h.antecedentes.substring(0,100)}${h.antecedentes.length>100?'…':''}</div>
-                </div>
-                <button class="pac-btn-ver" onclick="verHistorial('${h.fecha_creacion}','${h.medico_nombre}',\`${h.antecedentes.replace(/`/g,'\\`')}\`)">
-                    <i class="fa-solid fa-eye"></i> Ver
-                </button>
-            </div>`).join('');
-            } catch { body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar.</div>'; }
+    } catch {
+        msg.innerHTML = '<div class="edit-msg edit-msg-error">Error de red.</div>';
+    }
+});
+
+/* ── CANCELAR ─────────────────────────────────────────────── */
+function abrirCancelar(id, nombre) {
+    document.getElementById('cancel-id').value = id;
+    document.getElementById('cancel-desc-text').textContent =
+        `Tu cita de "${nombre}" será eliminada de tu agenda. Esta acción no se puede deshacer.`;
+    openModal('modal-cancelar');
+}
+
+document.getElementById('btn-confirmar-cancelar').addEventListener('click', async () => {
+    const id = document.getElementById('cancel-id').value;
+    try {
+        const d = await (await fetch(URLS.cancelarBase + id + '/', {
+            method: 'POST', headers: { 'X-CSRFToken': CSRF }
+        })).json();
+        if (d.ok) { document.getElementById('modal-cancelar').classList.remove('show'); location.reload(); }
+    } catch {}
+});
+
+/* ── HISTORIAL ────────────────────────────────────────────── */
+async function loadHistorial() {
+    const body = document.getElementById('body-historial');
+    body.innerHTML = '<div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>';
+    try {
+        const data = await (await fetch(URLS.historialJson)).json();
+        if (!data.historiales?.length) {
+            body.innerHTML = '<div class="pac-empty"><i class="fa-solid fa-file-circle-xmark"></i><p>No hay historiales.</p></div>'; return;
         }
-        
-        function verHistorial(fecha, medico, antecedentes) {
-            document.getElementById('hd-fecha').textContent        = fecha;
-            document.getElementById('hd-medico').textContent       = 'Dr. ' + medico;
-            document.getElementById('hd-antecedentes').textContent = antecedentes;
-            openModal('modal-historial-detalle');
-        }
-        
-        // ── PERFIL ────────────────────────────────────
-        async function loadPerfil() {
-            const body = document.getElementById('body-perfil-view');
-            body.innerHTML = '<div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>';
-            try {
-                const d = await (await fetch(URLS.perfilJson)).json();
-                body.innerHTML = `
-            <div class="perfil-avatar"><i class="fa-solid fa-user"></i></div>
-            <div class="perfil-nombre">${d.nombre} ${d.apellido}</div>
-            <span class="perfil-badge"><i class="fa-solid fa-heart-pulse"></i> Paciente</span>
-            <div class="perfil-grid">
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-id-card"></i> Documento</span><span class="pf-value">${d.tipo_doc} ${d.numero_doc}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-venus-mars"></i> Género</span><span class="pf-value">${d.genero}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-cake-candles"></i> Nacimiento</span><span class="pf-value">${d.fecha_nacimiento}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-droplet"></i> Sangre</span><span class="pf-value">${d.tipo_sangre}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-phone"></i> Teléfono</span><span class="pf-value">${d.telefono}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-envelope"></i> Correo</span><span class="pf-value">${d.correo}</span></div>
-                <div class="perfil-field" style="grid-column:1/-1"><span class="pf-label"><i class="fa-solid fa-location-dot"></i> Dirección</span><span class="pf-value">${d.direccion}</span></div>
-                <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-circle-check"></i> Estado</span><span class="pf-value"><span class="${d.estado?'badge-on':'badge-off'}">${d.estado?'Activo':'Inactivo'}</span></span></div>
-            </div>`;
-                document.getElementById('ep-nombre').value    = d.nombre;
-                document.getElementById('ep-apellido').value  = d.apellido;
-                document.getElementById('ep-telefono').value  = d.telefono;
-                document.getElementById('ep-correo').value    = d.correo;
-                document.getElementById('ep-direccion').value = d.direccion;
-            } catch { body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar el perfil.</div>'; }
-        }
-        
-        document.getElementById('btn-guardar-perfil').addEventListener('click', async (e) => {
+        body.innerHTML = data.historiales.map(h => `
+        <div class="pac-row">
+            <div class="pac-hist-icon"><i class="fa-solid fa-notes-medical"></i></div>
+            <div class="pac-info">
+                <div class="pac-nombre">Registro del ${h.fecha_creacion}</div>
+                <div class="pac-sub"><i class="fa-solid fa-user-doctor"></i> Dr. ${h.medico_nombre} · ${h.especialidad}</div>
+                <div class="pac-preview">${h.antecedentes.substring(0,100)}${h.antecedentes.length > 100 ? '…' : ''}</div>
+            </div>
+            <button class="pac-btn-ver" onclick="verHistorial('${h.fecha_creacion}','${h.medico_nombre}',\`${h.antecedentes.replace(/`/g,'\\`')}\`)">
+                <i class="fa-solid fa-eye"></i> Ver
+            </button>
+        </div>`).join('');
+    } catch {
+        body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar.</div>';
+    }
+}
+
+function verHistorial(fecha, medico, antecedentes) {
+    document.getElementById('hd-fecha').textContent        = fecha;
+    document.getElementById('hd-medico').textContent       = 'Dr. ' + medico;
+    document.getElementById('hd-antecedentes').textContent = antecedentes;
+    openModal('modal-historial-detalle');
+}
+
+/* ── PERFIL ───────────────────────────────────────────────── */
+async function loadPerfil() {
+    const body = document.getElementById('body-perfil-view');
+    body.innerHTML = '<div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>';
+    try {
+        const d = await (await fetch(URLS.perfilJson)).json();
+        body.innerHTML = `
+        <div class="perfil-avatar"><i class="fa-solid fa-user"></i></div>
+        <div class="perfil-nombre">${d.nombre} ${d.apellido}</div>
+        <span class="perfil-badge"><i class="fa-solid fa-heart-pulse"></i> Paciente</span>
+        <div class="perfil-grid">
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-id-card"></i> Documento</span><span class="pf-value">${d.tipo_doc} ${d.numero_doc}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-venus-mars"></i> Género</span><span class="pf-value">${d.genero}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-cake-candles"></i> Nacimiento</span><span class="pf-value">${d.fecha_nacimiento}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-droplet"></i> Sangre</span><span class="pf-value">${d.tipo_sangre}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-phone"></i> Teléfono</span><span class="pf-value">${d.telefono}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-envelope"></i> Correo</span><span class="pf-value">${d.correo}</span></div>
+            <div class="perfil-field" style="grid-column:1/-1"><span class="pf-label"><i class="fa-solid fa-location-dot"></i> Dirección</span><span class="pf-value">${d.direccion}</span></div>
+            <div class="perfil-field"><span class="pf-label"><i class="fa-solid fa-circle-check"></i> Estado</span><span class="pf-value"><span class="${d.estado ? 'badge-on' : 'badge-off'}">${d.estado ? 'Activo' : 'Inactivo'}</span></span></div>
+        </div>`;
+        document.getElementById('ep-nombre').value    = d.nombre;
+        document.getElementById('ep-apellido').value  = d.apellido;
+        document.getElementById('ep-telefono').value  = d.telefono;
+        document.getElementById('ep-correo').value    = d.correo;
+        document.getElementById('ep-direccion').value = d.direccion;
+    } catch {
+        body.innerHTML = '<div class="edit-msg edit-msg-error">Error al cargar el perfil.</div>';
+    }
+}
+
+document.getElementById('btn-guardar-perfil').addEventListener('click', async e => {
     e.preventDefault();
     const msg = document.getElementById('msg-editar-perfil');
-    msg.innerHTML = ''; // Limpiar mensajes previos
+    msg.innerHTML = '';
 
-    // 1. Captura de datos
     const d = {
         nombre:     document.getElementById('ep-nombre').value.trim(),
         apellido:   document.getElementById('ep-apellido').value.trim(),
@@ -776,67 +764,86 @@ JS
         contrasena: document.getElementById('ep-contrasena').value.trim()
     };
 
-    // --- FUNCIONES DE VALIDACIÓN ---
-    const mostrarError = (txt) => {
-        msg.innerHTML = `<div style="background:#ffeeee; color:red; padding:10px; border-radius:5px; border:1px solid red; margin-bottom:10px;"> ${txt}</div>`;
+    const error = txt => {
+        msg.innerHTML = `<div class="edit-msg edit-msg-error">${txt}</div>`;
     };
 
-    // 2. Lógica de validaciones solicitadas
-    if (d.nombre.length < 3) return mostrarError("El nombre debe tener mínimo 3 letras.");
-    if (d.apellido.length < 3) return mostrarError("El apellido debe tener mínimo 3 letras.");
-    
-    // Validación de Correo (Mín 5 caracteres + dominios específicos)
-    // --- VALIDACIÓN DE CORREO MEJORADA ---
-    const dominiosValidos = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com'];
+    if (d.nombre.length < 3)   return error("El nombre debe tener mínimo 3 letras.");
+    if (d.apellido.length < 3) return error("El apellido debe tener mínimo 3 letras.");
 
-    // Esta regex revisa que haya algo antes del @, luego el @, y luego letras y un punto
-    const regexCorreoBasico = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const dominiosValidos = ['gmail.com','hotmail.com','outlook.com','yahoo.com','icloud.com'];
+    const partes = d.correo.split('@');
+    if (partes.length !== 2 || !partes[0] || !dominiosValidos.includes(partes[1]) || d.correo.length < 5)
+        return error("Correo inválido. Usa un dominio válido (gmail, hotmail, outlook, yahoo, icloud).");
 
-    const correoPartes = d.correo.split('@');
-    const tieneNombreUsuario = correoPartes[0].length > 0; // Revisa que no esté vacío antes del @
-    const dominioOk = correoPartes.length === 2 && dominiosValidos.includes(correoPartes[1]);
+    if (d.telefono.length !== 10 || isNaN(d.telefono))
+        return error("El teléfono debe tener exactamente 10 dígitos.");
 
-    if (!regexCorreoBasico.test(d.correo) || d.correo.length < 5 || !dominioOk || !tieneNombreUsuario) {
-        return mostrarError("Correo inválido. Asegúrate de poner uno real.");
-    }
+    if (d.direccion.length < 5)
+        return error("La dirección es muy corta (mínimo 5 caracteres).");
 
-    // Validación Teléfono (Exactamente 10 números)
-    if (d.telefono.length !== 10 || isNaN(d.telefono)) {
-        return mostrarError("El teléfono debe tener exactamente 10 números.");
-    }
-
-    // Validación Dirección (Mínimo 5 caracteres)
-    if (d.direccion.length < 5) {
-        return mostrarError("La dirección es muy corta (mínimo 5 caracteres).");
-    }
-
-    // Validación Contraseña (Solo si el usuario escribió algo para cambiarla)
     if (d.contrasena.length > 0) {
         const regexPass = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{10,}$/;
-        if (!regexPass.test(d.contrasena)) {
-            return mostrarError("La contraseña debe tener 10 caracteres, 1 mayúscula, 1 minúscula y 1 carácter especial.");
-        }
+        if (!regexPass.test(d.contrasena))
+            return error("La contraseña debe tener mínimo 10 caracteres, 1 mayúscula, 1 minúscula y 1 carácter especial.");
     }
 
-    // 3. Si todo pasó, enviamos al backend de Django
     try {
-        const response = await fetch(URLS.editarPerfil, {
+        const res = await (await fetch(URLS.editarPerfil, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify(d)
-        });
+        })).json();
 
-        const res = await response.json();
         if (res.ok) {
-            msg.innerHTML = `<div style="background:#eeffee; color:green; padding:10px; border-radius:5px; border:1px solid green;">Perfil actualizado correctamente.</div>`;
+            msg.innerHTML = '<div class="edit-msg edit-msg-success"><i class="fa-solid fa-check"></i> Perfil actualizado correctamente.</div>';
             setTimeout(() => location.reload(), 1500);
         } else {
-            mostrarError(res.error || "Error al actualizar.");
+            error(res.error || "Error al actualizar.");
         }
-    } catch (error) {
-        mostrarError("Error de conexión con el servidor.");
+    } catch {
+        error("Error de conexión con el servidor.");
     }
 });
-    </script>
+
+// ── AUTO-REFRESH cuando vence la próxima cita ─────────────
+
+// IGNORAR ERROR ############################################################################
+
+(function() {
+    const proximasCitas = [
+        {% for cita in proximas_citas %}
+        {
+            fecha: "{{ cita.fecha|date:'Y-m-d' }}",
+            hora:  "{{ cita.hora|time:'H:i' }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (!proximasCitas.length) return;
+
+    const ahora = Date.now();
+
+    // Calcula ms restantes para cada cita y quédate con el menor positivo
+    const tiempos = proximasCitas
+        .map(c => {
+            const [y, m, d] = c.fecha.split('-');
+            const [h, mi]   = c.hora.split(':');
+            return new Date(y, m - 1, d, h, mi, 0).getTime() - ahora;
+        })
+        .filter(ms => ms > 0);   // solo las que aún no pasaron
+
+    if (!tiempos.length) return;
+
+    const msHastaVencimiento = Math.min(...tiempos);
+
+    console.log(`⏱ Auto-refresh en ${Math.round(msHastaVencimiento / 1000)}s`);
+
+    // Recarga justo cuando vence la cita más próxima
+    setTimeout(() => location.reload(), msHastaVencimiento);
+})();
+
+</script>
+
 </body>
 </html>
