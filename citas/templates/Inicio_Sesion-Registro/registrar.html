@@ -1,379 +1,172 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cita Ya - Registro</title>
-    <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
+
+    <link rel="icon" href="{% static 'assets/img/logoti.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'assets/css/registro.css' %}">
 </head>
 
-<body class="body">
+<body>
 
-    <div class="container_login">
+<div class="card">
 
-        <div class="apartado_1">
-            <div class="container_login-form">
-
-                <div class="logo-name">
-                    <img src="{% static 'assets/img/nom.png' %}">
-                </div>
-
-                <!-- Formulario de registro -->
-                <form class="container_formulario-login" method="POST" action="{% url 'registro' %}">
-                    {% csrf_token %}
-
-                    <!-- Mensaje de error -->
-                    {% if form.errors or messages %}
-                    <div class="full-width" style="background:#ffe6e6; color:#900; padding:8px; border-radius:6px; margin-bottom:10px; font-size: 0.85rem;">
-                        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
-                        {% if form.errors %}<p>Por favor corrige los errores abajo.</p>{% endif %}
-                    </div>
-                    {% endif %}
-
-                    <div class="form-grid">
-                        
-                        <!-- Tipo de documento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Tipo de documento</label>
-                            </div>
-                            <div class="input">
-                                <select name="tipo_doc" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="CC">CC</option>
-                                    <option value="TI">TI</option>
-                                    <option value="CE">CE</option>
-                                    <option value="PP">Pasaporte</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Número de documento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Número de documento</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" name="numero_doc" value="{{ form.numero_doc.value|default_if_none:'' }}" 
-                                    placeholder="Ej: 1023456789" oninput="validarNumeroDoc(this)" required>
-                            </div>
-                        </div>
-
-                        <!-- Nombre -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Nombre</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" id="nombre" name="nombre" value="{{ form.nombre.value|default_if_none:'' }}" 
-                                    placeholder="Juan Carlos" oninput="validarNombre(this)" maxlength="50" required>
-                            </div>
-                        </div>
-
-                        <!-- Apellido -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Apellido</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" id="apellido" name="apellido" value="{{ form.apellido.value|default_if_none:'' }}" 
-                                    placeholder="Pérez González" oninput="validarApellido(this)" maxlength="50" required>
-                            </div>
-                        </div>
-
-                        <!-- Género -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Género</label>
-                            </div>
-                            <div class="input">
-                                <select name="genero" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Fecha de nacimiento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Fecha de nacimiento</label>
-                            </div>
-                            <div class="input">
-                                <input type="date" id="fechaNacimiento" name="fecha_nacimiento" 
-                                    value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}" required>
-                            </div>
-                        </div>
-
-                        <!-- Tipo de sangre -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Tipo de sangre</label>
-                            </div>
-                            <div class="input">
-                                <select name="tipo_sangre" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="A+">A+</option>
-                                    <option value="A-">A-</option>
-                                    <option value="B+">B+</option>
-                                    <option value="B-">B-</option>
-                                    <option value="AB+">AB+</option>
-                                    <option value="AB-">AB-</option>
-                                    <option value="O+">O+</option>
-                                    <option value="O-">O-</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Teléfono -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Teléfono</label>
-                            </div>
-                            <div class="input">
-                                <input type="tel" name="telefono" value="{{ form.telefono.value|default_if_none:'' }}"
-                                    oninput="validarTelefono(this)" placeholder="Ej: 3124567890" required>
-                            </div>
-                        </div>
-
-                        <!-- Correo - ancho completo -->
-                        <div class="full-width">
-                            <div class="label">
-                                <label class="text">Correo electrónico</label>
-                            </div>
-                            <div class="input">
-                                <input type="email" id="correo" name="correo" value="{{ form.correo.value|default_if_none:'' }}" 
-                                    placeholder="correo@ejemplo.com" oninput="validarCorreo(this)" maxlength="100" required>
-                            </div>
-                        </div>
-
-                        <!-- Dirección - ancho completo -->
-                        <div class="full-width">
-                            <div class="label">
-                                <label class="text">Dirección</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" name="direccion" value="{{ form.direccion.value|default_if_none:'' }}" 
-                                    placeholder="Calle 123 #45-67" maxlength="100" required>
-                            </div>
-                        </div>
-
-                        <!-- Contraseña -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Contraseña</label>
-                            </div>
-                            <div class="input">
-                                <input type="password" id="contrasena" name="contrasena" minlength="8"
-                                    placeholder="Mínimo 8 caracteres" pattern="(?=.*[A-Z])(?=.*[!@#$%^&*])\S{8,}"
-                                    title="8 caracteres, 1 mayúscula y 1 especial" required>
-                            </div>
-                        </div>
-
-                        <!-- Confirmar Contraseña -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Confirmar contraseña</label>
-                            </div>
-                            <div class="input">
-                                <input type="password" id="confirmarContrasena" name="confirmar_contrasena" minlength="8"
-                                    placeholder="Repite tu contraseña" required>
-                            </div>
-                        </div>
-
-                        <!-- Botón -->
-                        <button type="submit" class="login_button full-width">Registrarse</button>
-
-                        <!-- Link a login -->
-                        <div class="full-width" style="text-align: center; margin-top: 1rem;">
-                            <p>¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a></p>
-                        </div>
-
-                    </div>
-                </form>
-
-            </div>
+    <!-- HEADER -->
+    <div class="card-header">
+        <div class="header-img-wrap">
+            <img src="{% static 'assets/img/registrarnut.png' %}" width="70">
         </div>
 
-        <!-- Parte decorativa -->
-        <div class="apartado_2">
-            <div class="emoji-icon">
-                <img src="{% static 'assets/img/logoti.png' %}">
-            </div>
+        <div class="brand">Cita <span>Ya</span></div>
+        <div class="step-label" id="stepLabel">Paso 1 de 3</div>
 
-            <div class="h1-info">
-                <h1>¡Únete a nosotros!</h1>
-            </div>
-
-            <div class="P-info">
-                <p>Crea tu cuenta y comienza a gestionar tu salud</p>
-            </div>
-
-            <div class="p-info">
-                <p>✓ Registro rápido y seguro</p>
-                <p>✓ Acceso a tu historial médico</p>
-                <p>✓ Agenda tus citas en minutos</p>
-            </div>
+        <div class="progress-wrap">
+            <div class="step-dot active" id="dot1"><div class="dot-circle">1</div></div>
+            <div class="step-dot" id="dot2"><div class="dot-circle">2</div></div>
+            <div class="step-dot" id="dot3"><div class="dot-circle">3</div></div>
         </div>
-
     </div>
 
-    <script>
-        // Restricción de fecha: máximo 1 mes anterior y mínimo 90 años atrás
-        window.addEventListener('DOMContentLoaded', function() {
-            const fechaInput = document.getElementById('fechaNacimiento');
-            
-            // Fecha máxima: hace 1 mes
-            const maxFecha = new Date();
-            maxFecha.setMonth(maxFecha.getMonth() - 1);
-            
-            // Fecha mínima: hace 90 años
-            const minFecha = new Date();
-            minFecha.setFullYear(minFecha.getFullYear() - 90);
-            
-            // Formatear fechas a YYYY-MM-DD
-            fechaInput.max = maxFecha.toISOString().split('T')[0];
-            fechaInput.min = minFecha.toISOString().split('T')[0];
-        });
+    <!-- 🔥 FORM REAL -->
+    <form method="POST" action="{% url 'registro' %}">
+        {% csrf_token %}
 
-        // Validar número de documento: debe empezar con 40 o 10, mínimo 5 dígitos
-        function validarNumeroDoc(input) {
-            let cleanValue = input.value.replace(/\D/g, '').substring(0, 10);
-            input.value = cleanValue;
-            
-            if (cleanValue.length >= 2) {
-                const prefijo = cleanValue.substring(0, 2);
-                if (prefijo !== '40' && prefijo !== '10') {
-                    input.setCustomValidity("El documento debe empezar con 40 o 10");
-                    return;
-                }
-            }
-            
-            if (cleanValue.length > 0 && cleanValue.length < 5) {
-                input.setCustomValidity("El documento debe tener al menos 5 dígitos");
-            } else {
-                input.setCustomValidity("");
-            }
+        <div class="card-body">
+
+            <!-- ERRORES DJANGO -->
+            {% if form.errors or messages %}
+            <div class="error-box" style="display:block;">
+                {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+                {% if form.errors %}<p>Corrige los errores</p>{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- STEP 1 -->
+            <div class="step-panel active" id="panel1">
+                <div class="fields two-col">
+
+                    <select name="tipo_doc" id="tipo_doc" required>
+                        <option value="">Tipo documento</option>
+                        <option value="CC">CC</option>
+                        <option value="TI">TI</option>
+                        <option value="CE">CE</option>
+                        <option value="PP">Pasaporte</option>
+                    </select>
+
+                    <input type="text" name="numero_doc" id="numero_doc" placeholder="Documento" required>
+
+                    <input type="text" name="nombre" id="nombre" placeholder="Nombre" required>
+
+                    <input type="text" name="apellido" id="apellido" placeholder="Apellido" required>
+
+                    <select name="genero" id="genero" required>
+                        <option value="">Género</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                    </select>
+
+                    <input type="date" name="fecha_nacimiento" id="fechaNacimiento" required>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="step-panel" id="panel2">
+                <div class="fields two-col">
+
+                    <select name="tipo_sangre" id="tipo_sangre" required>
+                        <option value="">Tipo sangre</option>
+                        <option value="A+">A+</option>
+                        <option value="O+">O+</option>
+                    </select>
+
+                    <input type="tel" name="telefono" id="telefono" placeholder="Teléfono" required>
+
+                    <input type="email" name="correo" id="correo" placeholder="Correo" required>
+
+                    <input type="text" name="direccion" id="direccion" placeholder="Dirección" required>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step-panel" id="panel3">
+                <div class="fields">
+                    <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" required>
+                    <input type="password" name="confirmar_contrasena" id="confirmarContrasena" placeholder="Confirmar" required>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="card-footer">
+            <button type="button" onclick="goBack()">←</button>
+            <button type="button" onclick="goNext()">→</button>
+            <button type="submit" id="btnSubmit" style="display:none;">Registrar</button>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+let step = 1;
+
+function goNext() {
+    if (!validar(step)) return;
+
+    document.getElementById('panel' + step).classList.remove('active');
+    step++;
+    document.getElementById('panel' + step).classList.add('active');
+
+    if (step === 3) {
+        document.getElementById('btnSubmit').style.display = 'inline';
+    }
+}
+
+function goBack() {
+    if (step === 1) return;
+
+    document.getElementById('panel' + step).classList.remove('active');
+    step--;
+    document.getElementById('panel' + step).classList.add('active');
+
+    document.getElementById('btnSubmit').style.display = 'none';
+}
+
+function validar(s) {
+    if (s === 1) {
+        let doc = document.getElementById('numero_doc').value;
+        if (doc.length < 5) {
+            alert("Documento inválido");
+            return false;
         }
+    }
 
-        // Validar nombre: solo letras, mínimo 5 caracteres
-        function validarNombre(input) {
-            // Primero limpia: solo letras, espacios y tildes
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            
-            // Luego valida longitud (sin contar espacios)
-            const sinEspacios = input.value.replace(/\s/g, '');
-            if (sinEspacios.length > 0 && sinEspacios.length < 5) {
-                input.setCustomValidity("El nombre debe tener al menos 5 caracteres (sin contar espacios)");
-            } else {
-                input.setCustomValidity("");
-            }
+    if (s === 2) {
+        let tel = document.getElementById('telefono').value;
+        if (tel.length !== 10) {
+            alert("Teléfono inválido");
+            return false;
         }
+    }
 
-        // Validar apellido: solo letras, mínimo 5 caracteres
-        function validarApellido(input) {
-            // Primero limpia: solo letras, espacios y tildes
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            
-            // Luego valida longitud (sin contar espacios)
-            const sinEspacios = input.value.replace(/\s/g, '');
-            if (sinEspacios.length > 0 && sinEspacios.length < 5) {
-                input.setCustomValidity("El apellido debe tener al menos 5 caracteres (sin contar espacios)");
-            } else {
-                input.setCustomValidity("");
-            }
+    if (s === 3) {
+        let p1 = document.getElementById('contrasena').value;
+        let p2 = document.getElementById('confirmarContrasena').value;
+
+        if (p1 !== p2) {
+            alert("Contraseñas no coinciden");
+            return false;
         }
+    }
 
-        // Validar teléfono: debe empezar con 3, exactamente 10 dígitos
-        function validarTelefono(input) {
-            let cleanValue = input.value.replace(/\D/g, '').substring(0, 10);
-            input.value = cleanValue;
-            
-            if (cleanValue.length >= 1) {
-                const prefijo = cleanValue.substring(0, 1);
-                if (prefijo !== '3') {
-                    input.setCustomValidity("El teléfono debe empezar con 3");
-                    return;
-                }
-            }
-            
-            if (cleanValue.length > 0 && cleanValue.length < 10) {
-                input.setCustomValidity("El teléfono debe tener exactamente 10 dígitos");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
+    return true;
+}
+</script>
 
-        // Validar correo: mínimo 5 caracteres antes del @
-        function validarCorreo(input) {
-            const valor = input.value;
-            const atIndex = valor.indexOf('@');
-            
-            if (atIndex > 0) {
-                const parteLocal = valor.substring(0, atIndex);
-                if (parteLocal.length < 5) {
-                    input.setCustomValidity("El correo debe tener al menos 5 caracteres antes del @");
-                } else {
-                    input.setCustomValidity("");
-                }
-            } else if (atIndex === 0) {
-                input.setCustomValidity("El correo debe tener al menos 5 caracteres antes del @");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
-
-        // Validar formulario al enviar
-        document.querySelector('form').addEventListener('submit', function(e) {
-            // Validar contraseñas coincidan
-            const password = document.getElementById('contrasena').value;
-            const confirmPassword = document.getElementById('confirmarContrasena').value;
-            
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert('❌ Las contraseñas no coinciden. Por favor verifica.');
-                document.getElementById('confirmarContrasena').focus();
-                return false;
-            }
-
-            // Validar nombre
-            const nombre = document.getElementById('nombre').value.replace(/\s/g, '');
-            if (nombre.length < 5) {
-                e.preventDefault();
-                alert('❌ El nombre debe tener al menos 5 caracteres');
-                document.getElementById('nombre').focus();
-                return false;
-            }
-
-            // Validar apellido
-            const apellido = document.getElementById('apellido').value.replace(/\s/g, '');
-            if (apellido.length < 5) {
-                e.preventDefault();
-                alert('❌ El apellido debe tener al menos 5 caracteres');
-                document.getElementById('apellido').focus();
-                return false;
-            }
-
-            // Validar correo
-            const correo = document.getElementById('correo').value;
-            const atIndex = correo.indexOf('@');
-            if (atIndex > 0) {
-                const parteLocal = correo.substring(0, atIndex);
-                if (parteLocal.length < 5) {
-                    e.preventDefault();
-                    alert('❌ El correo debe tener al menos 5 caracteres antes del @');
-                    document.getElementById('correo').focus();
-                    return false;
-                }
-            }
-        });
-    </script>
-    
 </body>
-
 </html>
