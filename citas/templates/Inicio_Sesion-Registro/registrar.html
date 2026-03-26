@@ -5,375 +5,513 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cita Ya - Registro</title>
+    <title>Cita Ya — Registro</title>
     <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
+
+    <!-- Tipografías -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,wght@0,600;1,300&display=swap" rel="stylesheet">
+
+    <!-- Estilos -->
     <link rel="stylesheet" href="{% static 'assets/css/registro.css' %}">
 </head>
 
-<body class="body">
+<body>
 
-    <div class="container_login">
+    <div class="card">
 
-        <div class="apartado_1">
-            <div class="container_login-form">
+        <!-- ── ENCABEZADO ── -->
+        <header class="card-header">
 
-                <div class="logo-name">
-                    <img src="{% static 'assets/img/nom.png' %}">
-                </div>
+            <!-- Logo circular -->
+            <div class="header-img-wrap">
+                <img src="{% static 'assets/img/registrarnut.png' %}" alt="Logo Cita Ya">
+            </div>
 
-                <!-- Formulario de registro -->
-                <form class="container_formulario-login" method="POST" action="{% url 'registro' %}">
-                    {% csrf_token %}
+            <!-- Nombre de la app -->
+            <p class="brand">Cita <span>Ya</span></p>
+            <p class="step-label">Crear cuenta</p>
 
-                    <!-- Mensaje de error -->
-                    {% if form.errors or messages %}
-                    <div class="full-width" style="background:#ffe6e6; color:#900; padding:8px; border-radius:6px; margin-bottom:10px; font-size: 0.85rem;">
-                        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
-                        {% if form.errors %}<p>Por favor corrige los errores abajo.</p>{% endif %}
+
+
+        </header>
+
+        <!-- ── CUERPO ── -->
+        <main class="card-body">
+
+            <!-- Mensajes de error del servidor -->
+            {% if form.errors or messages %}
+            <div class="server-error-box" role="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+                {% if form.errors %}
+                    <p>Por favor corrige los errores indicados.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Formulario de registro -->
+            <form id="registro-form" method="POST" action="{% url 'registro' %}" novalidate>
+                {% csrf_token %}
+
+                <div class="fields two-col">
+
+                    <!-- Tipo de documento -->
+                    <div class="field">
+                        <label for="tipo_doc">Tipo de documento</label>
+                        <select id="tipo_doc" name="tipo_doc" required>
+                            <option value="">Seleccione…</option>
+                            <option value="CC">CC</option>
+                            <option value="TI">TI</option>
+                            <option value="CE">CE</option>
+                            <option value="PP">Pasaporte</option>
+                        </select>
                     </div>
-                    {% endif %}
 
-                    <div class="form-grid">
-                        
-                        <!-- Tipo de documento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Tipo de documento</label>
-                            </div>
-                            <div class="input">
-                                <select name="tipo_doc" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="CC">CC</option>
-                                    <option value="TI">TI</option>
-                                    <option value="CE">CE</option>
-                                    <option value="PP">Pasaporte</option>
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Número de documento -->
+<div class="field">
+    <label for="numero_doc">Número de documento</label>
+    <input
+        type="text"
+        id="numero_doc"
+        name="numero_doc"
+        placeholder="Ej: 1023456789"
+        required>
+</div>
 
-                        <!-- Número de documento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Número de documento</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" name="numero_doc" value="{{ form.numero_doc.value|default_if_none:'' }}" 
-                                    placeholder="Ej: 1023456789" oninput="validarNumeroDoc(this)" required>
-                            </div>
-                        </div>
+<!--VALIDACION DE DOCUMENTO SCRIP-->
+<script>
+// seleccionamos elementos
+const tipoDoc = document.getElementById("tipo_doc");
+const numeroDoc = document.getElementById("numero_doc");
+const error = document.getElementById("error");
 
-                        <!-- Nombre -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Nombre</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" id="nombre" name="nombre" value="{{ form.nombre.value|default_if_none:'' }}" 
-                                    placeholder="Juan Carlos" oninput="validarNombre(this)" maxlength="50" required>
-                            </div>
-                        </div>
+// cuando cambia el tipo
+tipoDoc.addEventListener("change", () => {
+    numeroDoc.value = "";
+    error.textContent = "";
 
-                        <!-- Apellido -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Apellido</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" id="apellido" name="apellido" value="{{ form.apellido.value|default_if_none:'' }}" 
-                                    placeholder="Pérez González" oninput="validarApellido(this)" maxlength="50" required>
-                            </div>
-                        </div>
+    if (tipoDoc.value === "cc") {
+        numeroDoc.maxLength = 10;
+        numeroDoc.placeholder = "6 a 10 números";
+    }
 
-                        <!-- Género -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Género</label>
-                            </div>
-                            <div class="input">
-                                <select name="genero" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                            </div>
-                        </div>
+    else if (tipoDoc.value === "ti") {
+        numeroDoc.maxLength = 10;
+        numeroDoc.placeholder = "10 números exactos";
+    }
 
-                        <!-- Fecha de nacimiento -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Fecha de nacimiento</label>
-                            </div>
-                            <div class="input">
-                                <input type="date" id="fechaNacimiento" name="fecha_nacimiento" 
-                                    value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}" required>
-                            </div>
-                        </div>
+    else if (tipoDoc.value === "ce") {
+        numeroDoc.maxLength = 12;
+        numeroDoc.placeholder = "6 a 12 números";
+    }
 
-                        <!-- Tipo de sangre -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Tipo de sangre</label>
-                            </div>
-                            <div class="input">
-                                <select name="tipo_sangre" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="A+">A+</option>
-                                    <option value="A-">A-</option>
-                                    <option value="B+">B+</option>
-                                    <option value="B-">B-</option>
-                                    <option value="AB+">AB+</option>
-                                    <option value="AB-">AB-</option>
-                                    <option value="O+">O+</option>
-                                    <option value="O-">O-</option>
-                                </select>
-                            </div>
-                        </div>
+    else if (tipoDoc.value === "pasaporte") {
+        numeroDoc.maxLength = 15;
+        numeroDoc.placeholder = "Alfanumérico";
+    }
+});
 
-                        <!-- Teléfono -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Teléfono</label>
-                            </div>
-                            <div class="input">
-                                <input type="tel" name="telefono" value="{{ form.telefono.value|default_if_none:'' }}"
-                                    oninput="validarTelefono(this)" placeholder="Ej: 3124567890" required>
-                            </div>
-                        </div>
+// validar mientras escribe 🔥
+numeroDoc.addEventListener("input", () => {
+    const tipo = tipoDoc.value;
+    const valor = numeroDoc.value;
 
-                        <!-- Correo - ancho completo -->
-                        <div class="full-width">
-                            <div class="label">
-                                <label class="text">Correo electrónico</label>
-                            </div>
-                            <div class="input">
-                                <input type="email" id="correo" name="correo" value="{{ form.correo.value|default_if_none:'' }}" 
-                                    placeholder="correo@ejemplo.com" oninput="validarCorreo(this)" maxlength="100" required>
-                            </div>
-                        </div>
+    error.textContent = ""; // limpiar error
 
-                        <!-- Dirección - ancho completo -->
-                        <div class="full-width">
-                            <div class="label">
-                                <label class="text">Dirección</label>
-                            </div>
-                            <div class="input">
-                                <input type="text" name="direccion" value="{{ form.direccion.value|default_if_none:'' }}" 
-                                    placeholder="Calle 123 #45-67" maxlength="100" required>
-                            </div>
-                        </div>
+    if (!tipo) {
+        error.textContent = "Primero selecciona el tipo de documento";
+        return;
+    }
 
-                        <!-- Contraseña -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Contraseña</label>
-                            </div>
-                            <div class="input">
-                                <input type="password" id="contrasena" name="contrasena" minlength="8"
-                                    placeholder="Mínimo 8 caracteres" pattern="(?=.*[A-Z])(?=.*[!@#$%^&*])\S{8,}"
-                                    title="8 caracteres, 1 mayúscula y 1 especial" required>
-                            </div>
-                        </div>
+    if (tipo === "cc") {
+        if (!/^[0-9]*$/.test(valor)) {
+            error.textContent = "Solo números";
+        } else if (valor.length < 6) {
+            error.textContent = "Mínimo 6 dígitos";
+        }
+    }
 
-                        <!-- Confirmar Contraseña -->
-                        <div>
-                            <div class="label">
-                                <label class="text">Confirmar contraseña</label>
-                            </div>
-                            <div class="input">
-                                <input type="password" id="confirmarContrasena" name="confirmar_contrasena" minlength="8"
-                                    placeholder="Repite tu contraseña" required>
-                            </div>
-                        </div>
+    else if (tipo === "ti") {
+        if (!/^[0-9]*$/.test(valor)) {
+            error.textContent = "Solo números";
+        } else if (valor.length !== 10) {
+            error.textContent = "Debe tener 10 dígitos";
+        }
+    }
 
-                        <!-- Botón -->
-                        <button type="submit" class="login_button full-width">Registrarse</button>
+    else if (tipo === "ce") {
+        if (!/^[0-9]*$/.test(valor)) {
+            error.textContent = "Solo números";
+        } else if (valor.length < 6) {
+            error.textContent = "Mínimo 6 dígitos";
+        }
+    }
 
-                        <!-- Link a login -->
-                        <div class="full-width" style="text-align: center; margin-top: 1rem;">
-                            <p>¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a></p>
-                        </div>
+    else if (tipo === "pasaporte") {
+        if (!/^[a-zA-Z0-9]*$/.test(valor)) {
+            error.textContent = "Solo letras y números";
+        }
+    }
+});
+</script>
+<!--VALIDACION DE DOCUMENTO SCRIP-->
 
+
+                    <!-- Nombre -->
+                    <div class="field">
+                        <label for="nombre">Nombre</label>
+                        <input
+                            type="text"
+                            id="nombre"
+                            name="nombre"
+                            value="{{ form.nombre.value|default_if_none:'' }}"
+                            placeholder="Juan Carlos"
+                            maxlength="50"
+                            required>
                     </div>
-                </form>
 
-            </div>
-        </div>
+                    <!-- Apellido -->
+                    <div class="field">
+                        <label for="apellido">Apellido</label>
+                        <input
+                            type="text"
+                            id="apellido"
+                            name="apellido"
+                            value="{{ form.apellido.value|default_if_none:'' }}"
+                            placeholder="Pérez González"
+                            maxlength="50"
+                            required>
+                    </div>
 
-        <!-- Parte decorativa -->
-        <div class="apartado_2">
-            <div class="emoji-icon">
-                <img src="{% static 'assets/img/logoti.png' %}">
-            </div>
+                    <!-- Género -->
+                    <div class="field">
+                        <label for="genero">Género</label>
+                        <select id="genero" name="genero" required>
+                            <option value="">Seleccione…</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
 
-            <div class="h1-info">
-                <h1>¡Únete a nosotros!</h1>
-            </div>
+                    <!-- Fecha de nacimiento -->
+                    <div class="field">
+                        <label for="fechaNacimiento">Fecha de nacimiento</label>
+                        <input
+                            type="date"
+                            id="fechaNacimiento"
+                            name="fecha_nacimiento"
+                            value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}"
+                            required>
+                    </div>
 
-            <div class="P-info">
-                <p>Crea tu cuenta y comienza a gestionar tu salud</p>
-            </div>
+                    <!-- Tipo de sangre -->
+                    <div class="field">
+                        <label for="tipo_sangre">Tipo de sangre</label>
+                        <select id="tipo_sangre" name="tipo_sangre" required>
+                            <option value="">Seleccione…</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
 
-            <div class="p-info">
-                <p>✓ Registro rápido y seguro</p>
-                <p>✓ Acceso a tu historial médico</p>
-                <p>✓ Agenda tus citas en minutos</p>
-            </div>
-        </div>
+                    <!-- Teléfono -->
+                    <div class="field">
+                        <label for="telefono">Teléfono</label>
+                        <input
+                            type="tel"
+                            id="telefono"
+                            name="telefono"
+                            value="{{ form.telefono.value|default_if_none:'' }}"
+                            placeholder="Ej: 3124567890"
+                            inputmode="numeric"
+                            required>
+                    </div>
 
-    </div>
+                    <!-- Correo electrónico -->
+                    <div class="field full">
+                        <label for="correo">Correo electrónico</label>
+                        <input
+                            type="email"
+                            id="correo"
+                            name="correo"
+                            value="{{ form.correo.value|default_if_none:'' }}"
+                            placeholder="correo@ejemplo.com"
+                            maxlength="100"
+                            required>
+                    </div>
 
+                    <!-- Dirección -->
+                    <div class="field full">
+                        <label for="direccion">Dirección</label>
+                        <input
+                            type="text"
+                            id="direccion"
+                            name="direccion"
+                            value="{{ form.direccion.value|default_if_none:'' }}"
+                            placeholder="Calle 123 #45-67"
+                            maxlength="100"
+                            required>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="field full">
+                        <label for="contrasena">Contraseña</label>
+                        <div class="input-eye-wrap">
+                            <input
+                                type="password"
+                                id="contrasena"
+                                name="contrasena"
+                                placeholder="Mínimo 8 caracteres"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required>
+                            <button type="button" class="eye-btn" data-target="contrasena" aria-label="Mostrar contraseña" tabindex="-1">
+                                <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            </button>
+                        </div>
+                        <!-- Indicadores de requisitos -->
+                        <ul class="pass-rules" id="pass-rules">
+                            <li class="rule" id="rule-len">   <span class="rule-dot"></span> Mínimo 8 caracteres</li>
+                            <li class="rule" id="rule-upper"> <span class="rule-dot"></span> Al menos 1 mayúscula</li>
+                            <li class="rule" id="rule-special"><span class="rule-dot"></span> Al menos 1 carácter especial (!@#$%^&*)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Confirmar contraseña -->
+                    <div class="field full">
+                        <label for="confirmarContrasena">Confirmar contraseña</label>
+                        <div class="input-eye-wrap">
+                            <input
+                                type="password"
+                                id="confirmarContrasena"
+                                name="confirmar_contrasena"
+                                placeholder="Repite tu contraseña"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required>
+                            <button type="button" class="eye-btn" data-target="confirmarContrasena" aria-label="Mostrar contraseña" tabindex="-1">
+                                <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            </button>
+                        </div>
+                        <span class="match-hint" id="match-hint"></span>
+                    </div>
+
+                </div><!-- /.fields -->
+
+            </form><!-- /#registro-form -->
+
+        </main>
+
+        <!-- ── PIE ── -->
+        <footer class="card-footer">
+            <button type="submit" form="registro-form" class="btn btn-submit">
+                Registrarse ›
+            </button>
+        </footer>
+
+        <!-- Enlace a login -->
+        <p class="login-link">
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
+        </p>
+
+    </div><!-- /.card -->
+
+
+    <!-- ── SCRIPTS DE VALIDACIÓN ── -->
     <script>
-        // Restricción de fecha: máximo 1 mes anterior y mínimo 90 años atrás
-        window.addEventListener('DOMContentLoaded', function() {
-            const fechaInput = document.getElementById('fechaNacimiento');
-            
-            // Fecha máxima: hace 1 mes
-            const maxFecha = new Date();
-            maxFecha.setMonth(maxFecha.getMonth() - 1);
-            
-            // Fecha mínima: hace 90 años
-            const minFecha = new Date();
-            minFecha.setFullYear(minFecha.getFullYear() - 90);
-            
-            // Formatear fechas a YYYY-MM-DD
-            fechaInput.max = maxFecha.toISOString().split('T')[0];
-            fechaInput.min = minFecha.toISOString().split('T')[0];
+        /* ── FECHA DE NACIMIENTO ── */
+        (function () {
+            const f   = document.getElementById('fechaNacimiento');
+            const hoy = new Date();
+            const max = new Date(hoy); max.setMonth(max.getMonth() - 1);
+            const min = new Date(hoy); min.setFullYear(min.getFullYear() - 90);
+            f.max = max.toISOString().split('T')[0];
+            f.min = min.toISOString().split('T')[0];
+        })();
+
+        /* ── HELPERS ── */
+        function markValid(el) {
+            el.classList.remove('field-error');
+            el.classList.add('field-ok');
+        }
+        function markError(el) {
+            el.classList.remove('field-ok');
+            el.classList.add('field-error');
+        }
+        function clearMark(el) {
+            el.classList.remove('field-ok', 'field-error');
+        }
+
+        /* ── NÚMERO DE DOCUMENTO ── */
+document.getElementById('numero_doc').addEventListener('input', function () {
+    const v = this.value.replace(/\D/g, '').slice(0, 10);
+    this.value = v;
+
+    if (v.length === 0) {
+        clearMark(this);
+        this.setCustomValidity('');
+        return;
+    }
+
+    if (v.length < 6) {
+        this.setCustomValidity('Mínimo 6 dígitos');
+        markError(this);
+    } else {
+        this.setCustomValidity('');
+        markValid(this);
+    }
+});
+
+        /* ── NOMBRE ── */
+        document.getElementById('nombre').addEventListener('input', function () {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            const s = this.value.replace(/\s/g, '');
+            if (s.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
+            if (s.length < 3) { this.setCustomValidity('Mínimo 3 caracteres'); markError(this); }
+            else              { this.setCustomValidity(''); markValid(this); }
         });
 
-        // Validar número de documento: debe empezar con 40 o 10, mínimo 5 dígitos
-        function validarNumeroDoc(input) {
-            let cleanValue = input.value.replace(/\D/g, '').substring(0, 10);
-            input.value = cleanValue;
-            
-            if (cleanValue.length >= 2) {
-                const prefijo = cleanValue.substring(0, 2);
-                if (prefijo !== '40' && prefijo !== '10') {
-                    input.setCustomValidity("El documento debe empezar con 40 o 10");
-                    return;
-                }
-            }
-            
-            if (cleanValue.length > 0 && cleanValue.length < 5) {
-                input.setCustomValidity("El documento debe tener al menos 5 dígitos");
+        /* ── APELLIDO ── */
+        document.getElementById('apellido').addEventListener('input', function () {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            const s = this.value.replace(/\s/g, '');
+            if (s.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
+            if (s.length < 3) { this.setCustomValidity('Mínimo 3 caracteres'); markError(this); }
+            else              { this.setCustomValidity(''); markValid(this); }
+        });
+
+        /* ── TELÉFONO ── */
+        document.getElementById('telefono').addEventListener('input', function () {
+            const v = this.value.replace(/\D/g, '').slice(0, 10);
+            this.value = v;
+            if (v.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
+            if (v[0] !== '3') { this.setCustomValidity('Debe empezar con 3'); markError(this); }
+            else if (v.length < 10) { this.setCustomValidity('Exactamente 10 dígitos'); markError(this); }
+            else { this.setCustomValidity(''); markValid(this); }
+        });
+
+        /* ── CORREO ── */
+        document.getElementById('correo').addEventListener('input', function () {
+            const at    = this.value.indexOf('@');
+            const local = at > 0 ? this.value.slice(0, at) : '';
+            if (this.value.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
+            if (at <= 0 || local.length < 5) {
+                this.setCustomValidity('Mínimo 5 caracteres antes del @'); markError(this);
             } else {
-                input.setCustomValidity("");
+                this.setCustomValidity(''); markValid(this);
+            }
+        });
+
+        /* ── OJO (mostrar/ocultar contraseña) ── */
+        document.querySelectorAll('.eye-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const input  = document.getElementById(this.dataset.target);
+                const isPass = input.type === 'password';
+                input.type   = isPass ? 'text' : 'password';
+                this.querySelector('.eye-open').style.display  = isPass ? 'none'  : '';
+                this.querySelector('.eye-closed').style.display = isPass ? ''     : 'none';
+                this.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            });
+        });
+
+        /* ── REQUISITOS DE CONTRASEÑA ── */
+        const passInput = document.getElementById('contrasena');
+        const ruleLen     = document.getElementById('rule-len');
+        const ruleUpper   = document.getElementById('rule-upper');
+        const ruleSpecial = document.getElementById('rule-special');
+        const rulesBox    = document.getElementById('pass-rules');
+
+        function checkRule(li, ok) {
+            li.classList.toggle('rule-ok', ok);
+            li.classList.toggle('rule-fail', !ok);
+        }
+
+        passInput.addEventListener('focus', () => rulesBox.classList.add('visible'));
+
+        passInput.addEventListener('input', function () {
+            const v = this.value;
+            const lenOk     = v.length >= 8;
+            const upperOk   = /[A-Z]/.test(v);
+            const specialOk = /[!@#$%^&*]/.test(v);
+
+            checkRule(ruleLen, lenOk);
+            checkRule(ruleUpper, upperOk);
+            checkRule(ruleSpecial, specialOk);
+
+            if (lenOk && upperOk && specialOk) {
+                this.setCustomValidity(''); markValid(this);
+            } else if (v.length > 0) {
+                this.setCustomValidity('La contraseña no cumple los requisitos'); markError(this);
+            } else {
+                this.setCustomValidity(''); clearMark(this);
+            }
+
+            // actualizar coincidencia en tiempo real
+            checkMatch();
+        });
+
+        /* ── COINCIDENCIA DE CONTRASEÑAS ── */
+        const confirmInput = document.getElementById('confirmarContrasena');
+        const matchHint    = document.getElementById('match-hint');
+
+        function checkMatch() {
+            const pass    = passInput.value;
+            const confirm = confirmInput.value;
+            if (confirm.length === 0) {
+                matchHint.textContent = '';
+                matchHint.className   = 'match-hint';
+                clearMark(confirmInput);
+                confirmInput.setCustomValidity('');
+                return;
+            }
+            if (pass === confirm) {
+                matchHint.textContent = '✓ Las contraseñas coinciden';
+                matchHint.className   = 'match-hint match-ok';
+                confirmInput.setCustomValidity(''); markValid(confirmInput);
+            } else {
+                matchHint.textContent = '✗ No coinciden';
+                matchHint.className   = 'match-hint match-err';
+                confirmInput.setCustomValidity('No coinciden'); markError(confirmInput);
             }
         }
 
-        // Validar nombre: solo letras, mínimo 5 caracteres
-        function validarNombre(input) {
-            // Primero limpia: solo letras, espacios y tildes
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            
-            // Luego valida longitud (sin contar espacios)
-            const sinEspacios = input.value.replace(/\s/g, '');
-            if (sinEspacios.length > 0 && sinEspacios.length < 5) {
-                input.setCustomValidity("El nombre debe tener al menos 5 caracteres (sin contar espacios)");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
+        confirmInput.addEventListener('input', checkMatch);
 
-        // Validar apellido: solo letras, mínimo 5 caracteres
-        function validarApellido(input) {
-            // Primero limpia: solo letras, espacios y tildes
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            
-            // Luego valida longitud (sin contar espacios)
-            const sinEspacios = input.value.replace(/\s/g, '');
-            if (sinEspacios.length > 0 && sinEspacios.length < 5) {
-                input.setCustomValidity("El apellido debe tener al menos 5 caracteres (sin contar espacios)");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
+        /* ── VALIDACIÓN AL ENVIAR ── */
+        document.getElementById('registro-form').addEventListener('submit', function (e) {
+            const pass    = passInput.value;
+            const confirm = confirmInput.value;
 
-        // Validar teléfono: debe empezar con 3, exactamente 10 dígitos
-        function validarTelefono(input) {
-            let cleanValue = input.value.replace(/\D/g, '').substring(0, 10);
-            input.value = cleanValue;
-            
-            if (cleanValue.length >= 1) {
-                const prefijo = cleanValue.substring(0, 1);
-                if (prefijo !== '3') {
-                    input.setCustomValidity("El teléfono debe empezar con 3");
-                    return;
-                }
-            }
-            
-            if (cleanValue.length > 0 && cleanValue.length < 10) {
-                input.setCustomValidity("El teléfono debe tener exactamente 10 dígitos");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
-
-        // Validar correo: mínimo 5 caracteres antes del @
-        function validarCorreo(input) {
-            const valor = input.value;
-            const atIndex = valor.indexOf('@');
-            
-            if (atIndex > 0) {
-                const parteLocal = valor.substring(0, atIndex);
-                if (parteLocal.length < 5) {
-                    input.setCustomValidity("El correo debe tener al menos 5 caracteres antes del @");
-                } else {
-                    input.setCustomValidity("");
-                }
-            } else if (atIndex === 0) {
-                input.setCustomValidity("El correo debe tener al menos 5 caracteres antes del @");
-            } else {
-                input.setCustomValidity("");
-            }
-        }
-
-        // Validar formulario al enviar
-        document.querySelector('form').addEventListener('submit', function(e) {
-            // Validar contraseñas coincidan
-            const password = document.getElementById('contrasena').value;
-            const confirmPassword = document.getElementById('confirmarContrasena').value;
-            
-            if (password !== confirmPassword) {
+            if (pass !== confirm) {
                 e.preventDefault();
-                alert('❌ Las contraseñas no coinciden. Por favor verifica.');
-                document.getElementById('confirmarContrasena').focus();
-                return false;
+                confirmInput.focus();
+                checkMatch();
+                return;
             }
 
-            // Validar nombre
-            const nombre = document.getElementById('nombre').value.replace(/\s/g, '');
-            if (nombre.length < 5) {
-                e.preventDefault();
-                alert('❌ El nombre debe tener al menos 5 caracteres');
-                document.getElementById('nombre').focus();
-                return false;
-            }
-
-            // Validar apellido
+            const nombre   = document.getElementById('nombre').value.replace(/\s/g, '');
             const apellido = document.getElementById('apellido').value.replace(/\s/g, '');
-            if (apellido.length < 5) {
+            if (nombre.length < 3 || apellido.length < 3) {
                 e.preventDefault();
-                alert('❌ El apellido debe tener al menos 5 caracteres');
-                document.getElementById('apellido').focus();
-                return false;
-            }
-
-            // Validar correo
-            const correo = document.getElementById('correo').value;
-            const atIndex = correo.indexOf('@');
-            if (atIndex > 0) {
-                const parteLocal = correo.substring(0, atIndex);
-                if (parteLocal.length < 5) {
-                    e.preventDefault();
-                    alert('❌ El correo debe tener al menos 5 caracteres antes del @');
-                    document.getElementById('correo').focus();
-                    return false;
-                }
+                return;
             }
         });
     </script>
-    
-</body>
 
+
+
+
+</body>
 </html>

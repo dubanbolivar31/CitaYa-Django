@@ -248,3 +248,69 @@ button:hover {
 		transform: translateX(0);
 	}
 }
+
+
+/* ================================================================
+   AÑADIDOS – validaciones y mensajes (no tocan el diseño original)
+================================================================ */
+
+/* Mensajes de Django */
+.msg {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .7rem 1rem;
+	border-radius: .6rem;
+	font-size: .95rem;
+	margin-top: 1rem;
+}
+
+.msg--error {
+	background: #ffe6e6;
+	color: #900;
+	border-left: 4px solid #c0392b;
+}
+
+.msg--success {
+	background: #e6ffe6;
+	color: #090;
+	border-left: 4px solid #27ae60;
+}
+
+/* Error de campo */
+.field-error {
+	display: none;
+	color: #c0392b;
+	font-size: .82rem;
+	margin-top: .45rem;
+}
+
+/* Input en estado de error */
+.input--error {
+	border-color: #c0392b !important;
+	background-color: #fff5f5 !important;
+}
+
+/* Barra de fortaleza */
+.strength-bar {
+	height: 4px;
+	background: #ddd;
+	border-radius: 4px;
+	margin-top: .5rem;
+	overflow: hidden;
+}
+
+.strength-bar__fill {
+	height: 100%;
+	width: 0%;
+	border-radius: 4px;
+	transition: width .3s ease, background .3s ease;
+}
+
+.strength-label {
+	display: block;
+	font-size: .78rem;
+	margin-top: .3rem;
+	min-height: 1rem;
+	font-weight: 600;
+}

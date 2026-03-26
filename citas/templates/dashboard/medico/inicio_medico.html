@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Médico</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{% static 'assets/css/dashboard_medico.css' %}">
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <span class="header-label">Panel Médico</span>
+            <h1 class="header-title">Bienvenido, Dr. {{ nombre }}</h1>
+            <p class="header-subtitle">Gestión de citas y pacientes</p>
+        </div>
+        <div class="header-actions">
+            <span class="badge-date">
+                {% now "l, d N Y" %}
+            </span>
+        </div>
+    </div>
+
+    <!-- CARDS -->
+    <div class="cards">
+        <div class="card">
+            <div class="card-icon">📋</div>
+            <h3>Total citas</h3>
+            <p>{{ total_citas }}</p>
+            <div class="card-trend">Acumulado general</div>
+        </div>
+        <div class="card accent">
+            <div class="card-icon">📅</div>
+            <h3>Citas hoy</h3>
+            <p>{{ citas_hoy }}</p>
+            <div class="card-trend">Programadas para hoy</div>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-section">
+        <div class="tabla-header">
+            <div class="tabla-title">
+                <div class="tabla-title-icon">🗓</div>
+                <h3>Próximas citas</h3>
+            </div>
+            <span class="tabla-count">{{ proximas|length }} cita{{ proximas|length|pluralize }}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in proximas %}
+                <tr>
+                    <td>
+                        <div class="td-paciente">
+                            <div class="avatar">{{ c.id_paciente.nombre|slice:":2" }}</div>
+                            {{ c.id_paciente.nombre }}
+                        </div>
+                    </td>
+                    <td class="td-fecha">{{ c.fecha }}</td>
+                    <td class="td-hora">{{ c.hora }}</td>
+                </tr>
+                {% empty %}
+                <tr class="empty-row">
+                    <td colspan="3">No hay citas programadas próximamente</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</body>
+</html>

@@ -8,13 +8,17 @@
     <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
     <title>Cita Ya - Sistema de Gestión de Citas Médicas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'assets/css/index.css' %}">
 </head>
 
 <body>
-    <header>
+    <!-- ======================== HEADER ======================== -->
+    <header id="mainHeader">
         <div class="container_header">
-            <img class="logo" src="{% static 'assets/img/logo.png' %}" alt="Cita Ya Logo">
+            <img class="logo" src="{% static 'assets/img/nutria_logo.png' %}" alt="Cita Ya Logo">
             <div class="menu-toggle" onclick="toggleMenu()">
                 <span></span>
                 <span></span>
@@ -31,14 +35,17 @@
         </div>
     </header>
 
+    <!-- ======================== CARRUSEL ======================== -->
     <section id="Inicio">
         <div class="carousel-container">
             <div class="carousel-slide active" style="background-image: url('{% static 'assets/img/crsl1.jpg' %}');">
                 <div class="carousel-overlay"></div>
                 <div class="carousel-content">
                     <h1>Bienvenido a Cita Ya</h1>
-                    <p>Tu salud es nuestra prioridad. Agenda tu cita médica de forma rápida y sencilla con los mejores
-                        especialistas.</p>
+                    <p>Tu salud es nuestra prioridad. Agenda tu cita médica de forma rápida y sencilla con los mejores especialistas.</p>
+                    <a href="{% url 'login' %}" class="carousel-cta">
+                        <i class="fas fa-calendar-check"></i>&nbsp; Agendar Cita
+                    </a>
                 </div>
             </div>
 
@@ -46,8 +53,10 @@
                 <div class="carousel-overlay"></div>
                 <div class="carousel-content">
                     <h1>Atención Médica de Calidad</h1>
-                    <p>Conectamos pacientes con profesionales de la salud altamente calificados en todas las
-                        especialidades.</p>
+                    <p>Conectamos pacientes con profesionales de la salud altamente calificados en todas las especialidades.</p>
+                    <a href="{% url 'login' %}" class="carousel-cta">
+                        <i class="fas fa-user-md"></i>&nbsp; Ver Especialistas
+                    </a>
                 </div>
             </div>
 
@@ -55,8 +64,10 @@
                 <div class="carousel-overlay"></div>
                 <div class="carousel-content">
                     <h1>Gestión Inteligente de Salud</h1>
-                    <p>Plataforma completa para la gestión de citas, historiales clínicos y seguimiento médico
-                        personalizado.</p>
+                    <p>Plataforma completa para la gestión de citas, historiales clínicos y seguimiento médico personalizado.</p>
+                    <a href="{% url 'login' %}" class="carousel-cta">
+                        <i class="fas fa-heartbeat"></i>&nbsp; Comenzar Ahora
+                    </a>
                 </div>
             </div>
 
@@ -65,6 +76,9 @@
                 <div class="carousel-content">
                     <h1>Profesionales Certificados</h1>
                     <p>Nuestro equipo médico cuenta con la más alta capacitación y experiencia en cada especialidad.</p>
+                    <a href="{% url 'login' %}" class="carousel-cta">
+                        <i class="fas fa-award"></i>&nbsp; Conocer el Equipo
+                    </a>
                 </div>
             </div>
 
@@ -72,8 +86,10 @@
                 <div class="carousel-overlay"></div>
                 <div class="carousel-content">
                     <h1>Tecnología al Servicio de tu Salud</h1>
-                    <p>Sistema moderno y seguro para el manejo de tu información médica y seguimiento de tratamientos.
-                    </p>
+                    <p>Sistema moderno y seguro para el manejo de tu información médica y seguimiento de tratamientos.</p>
+                    <a href="{% url 'login' %}" class="carousel-cta">
+                        <i class="fas fa-shield-alt"></i>&nbsp; Explorar Sistema
+                    </a>
                 </div>
             </div>
 
@@ -94,107 +110,129 @@
         </div>
     </section>
 
+    <!-- ======================== CONTADORES ======================== -->
+    <section id="contadores">
+        <div class="container_contadores">
+            <div class="contador-item reveal reveal-delay-1">
+                <span class="contador-icono"><i class="fas fa-user-injured"></i></span>
+                <span class="contador-numero" data-target="1200">0</span>
+                <span class="contador-label">Pacientes Atendidos</span>
+            </div>
+            <div class="contador-item reveal reveal-delay-2">
+                <span class="contador-icono"><i class="fas fa-user-md"></i></span>
+                <span class="contador-numero" data-target="45">0</span>
+                <span class="contador-label">Médicos Especialistas</span>
+            </div>
+            <div class="contador-item reveal reveal-delay-3">
+                <span class="contador-icono"><i class="fas fa-calendar-check"></i></span>
+                <span class="contador-numero" data-target="8500">0</span>
+                <span class="contador-label">Citas Programadas</span>
+            </div>
+            <div class="contador-item reveal reveal-delay-4">
+                <span class="contador-icono"><i class="fas fa-star"></i></span>
+                <span class="contador-numero" data-target="98">0</span>
+                <span class="contador-label">% Satisfacción</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== SERVICIOS ======================== -->
     <section id="servicios">
         <div class="container_servicios">
-            <h1 class="h1_servicios">Nuestros Servicios</h1>
+            <h1 class="h1_servicios reveal">Nuestros Servicios</h1>
+            <p class="subtitulo-seccion reveal">Atención integral con los mejores especialistas de la salud</p>
             <div class="container_box">
-                <div class="box">
+                <div class="box reveal reveal-delay-1">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/gnrl1.jpg' %}" alt="Consulta General">
                     </div>
-                    <h3 class="h3-servicios">Consulta General</h3>
-                    <p class="p-servicios">Evaluación médica completa para diagnóstico y tratamiento de enfermedades
-                        comunes, chequeos preventivos y orientación en salud.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Consulta General</h3>
+                        <p class="p-servicios">Evaluación médica completa para diagnóstico y tratamiento de enfermedades comunes, chequeos preventivos y orientación en salud.</p>
+                    </div>
                 </div>
-                <div class="box">
+                <div class="box reveal reveal-delay-2">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/ortp.jpg' %}" alt="Ortopedia">
                     </div>
-                    <h3 class="h3-servicios">Ortopedia</h3>
-                    <p class="p-servicios">Tratamiento especializado de lesiones y enfermedades del sistema
-                        musculoesquelético, incluyendo huesos, articulaciones y músculos.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Ortopedia</h3>
+                        <p class="p-servicios">Tratamiento especializado de lesiones y enfermedades del sistema musculoesquelético, incluyendo huesos, articulaciones y músculos.</p>
+                    </div>
                 </div>
-                <div class="box">
+                <div class="box reveal reveal-delay-3">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/ps.jpg' %}" alt="Psicología">
                     </div>
-                    <h3 class="h3-servicios">Psicología</h3>
-                    <p class="p-servicios">Atención profesional en salud mental con terapias personalizadas para mejorar
-                        tu bienestar emocional y calidad de vida.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Psicología</h3>
+                        <p class="p-servicios">Atención profesional en salud mental con terapias personalizadas para mejorar tu bienestar emocional y calidad de vida.</p>
+                    </div>
                 </div>
-                <div class="box">
+                <div class="box reveal reveal-delay-4">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/crd.jpg' %}" alt="Cardiología">
                     </div>
-                    <h3 class="h3-servicios">Cardiología</h3>
-                    <p class="p-servicios">Prevención, diagnóstico y tratamiento de enfermedades cardiovasculares con
-                        tecnología de punta y especialistas certificados.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Cardiología</h3>
+                        <p class="p-servicios">Prevención, diagnóstico y tratamiento de enfermedades cardiovasculares con tecnología de punta y especialistas certificados.</p>
+                    </div>
                 </div>
-                <div class="box">
+                <div class="box reveal reveal-delay-5">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/pdtr.jpg' %}" alt="Pediatría">
                     </div>
-                    <h3 class="h3-servicios">Pediatría</h3>
-                    <p class="p-servicios">Cuidado integral de la salud infantil desde el nacimiento hasta la
-                        adolescencia, con enfoque en prevención y desarrollo.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Pediatría</h3>
+                        <p class="p-servicios">Cuidado integral de la salud infantil desde el nacimiento hasta la adolescencia, con enfoque en prevención y desarrollo.</p>
+                    </div>
                 </div>
-                <div class="box">
+                <div class="box reveal reveal-delay-6">
                     <div class="imagen-servicio">
                         <img src="{% static 'assets/img/derm.jpg' %}" alt="Dermatología">
                     </div>
-                    <h3 class="h3-servicios">Dermatología</h3>
-                    <p class="p-servicios">Diagnóstico y tratamiento de enfermedades de la piel, cabello y uñas, con
-                        procedimientos estéticos y terapéuticos.</p>
+                    <div class="box-content">
+                        <h3 class="h3-servicios">Dermatología</h3>
+                        <p class="p-servicios">Diagnóstico y tratamiento de enfermedades de la piel, cabello y uñas, con procedimientos estéticos y terapéuticos.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- ======================== NOSOTROS ======================== -->
     <section id="nosotros">
         <div class="container_nosotros">
-            <div class="box_nosotros-h1-p">
+            <div class="box_nosotros-h1-p reveal-left">
                 <h1 class="h1-nosotros">Sobre Nosotros</h1>
-                <p class="p-nosotros"><em>Cita Ya</em> Cita Ya es un sistema creado para mejorar y simplificar la
-                    gestión dentro de clínicas, hospitales y centros médicos. Nuestra plataforma integra en un solo
-                    lugar la administración de citas, el control de historiales clínicos, la gestión del personal, el
-                    registro de pacientes y la organización de las agendas de los médicos.
-
-                    El objetivo principal es ofrecer una herramienta confiable y fácil de usar que permita a las
-                    instituciones de salud optimizar sus procesos diarios. Cita Ya ayuda a reducir tiempos, mejorar la
-                    atención al paciente y brindar al personal médico y administrativo una experiencia más ordenada y
-                    eficiente.
-
-                    Gracias a su diseño adaptable, el sistema se ajusta a las necesidades de cada centro médico,
-                    garantizando un flujo de trabajo más claro y una gestión clínica mucho más efectiva.</p>
+                <p class="p-nosotros">
+                    <em>Cita Ya</em> es un sistema creado para mejorar y simplificar la gestión dentro de clínicas, hospitales y centros médicos. Nuestra plataforma integra en un solo lugar la administración de citas, el control de historiales clínicos, la gestión del personal, el registro de pacientes y la organización de las agendas de los médicos.
+                    <br><br>
+                    El objetivo principal es ofrecer una herramienta confiable y fácil de usar que permita a las instituciones de salud optimizar sus procesos diarios. Cita Ya ayuda a reducir tiempos, mejorar la atención al paciente y brindar al personal médico y administrativo una experiencia más ordenada y eficiente.
+                    <br><br>
+                    Gracias a su diseño adaptable, el sistema se ajusta a las necesidades de cada centro médico, garantizando un flujo de trabajo más claro y una gestión clínica mucho más efectiva.
+                </p>
             </div>
-            <div class="box_nosotros-img">
+            <div class="box_nosotros-img reveal-right">
                 <img class="img-nosotros" src="{% static 'assets/img/medicos.jpg' %}" alt="Sobre Nosotros">
             </div>
         </div>
     </section>
 
-    <br>
-    <hr><br>
-
+    <!-- ======================== FOOTER ======================== -->
     <footer>
         <div class="contenido">
             <div>
                 <div class="nom">Cita Ya</div>
                 <p class="descripcion">Sistema de Gestión de Citas Médicas</p>
                 <div class="redes">
-                    <a href="#" aria-label="Facebook">
-                        <i class="fab fa-facebook"></i>
-                    </a>
-                    <a href="#" aria-label="Twitter">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="#" aria-label="Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                 </div>
             </div>
             <div>
-                <h3 class="enla">Enlaces rápidos</h3>
+                <h3 class="enla">Enlaces</h3>
                 <ul class="links">
                     <li><a href="#Inicio">Inicio</a></li>
                     <li><a href="#servicios">Servicios</a></li>
@@ -205,36 +243,38 @@
                 <h3 class="enla">Servicios</h3>
                 <ul class="links">
                     <li>Agendamiento de Citas</li>
+                    <li>Historial Clínico</li>
+                    <li>Gestión de Médicos</li>
                 </ul>
             </div>
             <div>
                 <h3 class="enla">Contacto</h3>
                 <ul class="links">
-                    <li>Email: servicioalcliente@citaya.com</li>
-                    <li>Teléfono: +57 314 686 75 13</li>
-                    <li>Dirección: Calle 70 Sur #13 B-27 Este.</li>
-                    <li>Ciudad: Usme, Bogotá D.C.</li>
+                    <li><i class="fas fa-envelope" style="margin-right:6px;opacity:0.6"></i>servicioalcliente@citaya.com</li>
+                    <li><i class="fas fa-phone" style="margin-right:6px;opacity:0.6"></i>+57 314 686 75 13</li>
+                    <li><i class="fas fa-map-marker-alt" style="margin-right:6px;opacity:0.6"></i>Calle 70 Sur #13 B-27 Este</li>
+                    <li><i class="fas fa-city" style="margin-right:6px;opacity:0.6"></i>Usme, Bogotá D.C.</li>
                 </ul>
             </div>
         </div>
         <div class="dr">
-            <p>Cita Ya&copy; 2025 Derechos reservados</p>
+            <p>Cita Ya &copy; 2025 — Todos los derechos reservados</p>
         </div>
     </footer>
 
+    <!-- ======================== SCRIPTS ======================== -->
     <script>
+        // ── CARRUSEL ──────────────────────────────────────────
         let currentSlide = 0;
         const slides = document.querySelectorAll('.carousel-slide');
         const indicators = document.querySelectorAll('.indicator');
         let autoSlideInterval;
 
         function showSlide(index) {
-            slides.forEach(slide => slide.classList.remove('active'));
-            indicators.forEach(indicator => indicator.classList.remove('active'));
-
+            slides.forEach(s => s.classList.remove('active'));
+            indicators.forEach(i => i.classList.remove('active'));
             if (index >= slides.length) currentSlide = 0;
             if (index < 0) currentSlide = slides.length - 1;
-
             slides[currentSlide].classList.add('active');
             indicators[currentSlide].classList.add('active');
         }
@@ -252,8 +292,7 @@
         }
 
         function autoSlide() {
-            currentSlide++;
-            if (currentSlide >= slides.length) currentSlide = 0;
+            currentSlide = (currentSlide + 1) % slides.length;
             showSlide(currentSlide);
         }
 
@@ -262,21 +301,75 @@
             autoSlideInterval = setInterval(autoSlide, 5000);
         }
 
+        autoSlideInterval = setInterval(autoSlide, 5000);
+
+        // ── HEADER TRANSPARENTE → SÓLIDO AL SCROLL ────────────
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 60) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // ── MENÚ MÓVIL ────────────────────────────────────────
         function toggleMenu() {
-            const navMenu = document.getElementById('navMenu');
-            navMenu.classList.toggle('active');
+            document.getElementById('navMenu').classList.toggle('active');
         }
 
-        // Cerrar menú al hacer clic en un enlace
         document.querySelectorAll('.nav_li-a, .button_login').forEach(link => {
             link.addEventListener('click', () => {
                 document.getElementById('navMenu').classList.remove('active');
             });
         });
 
-        // Iniciar carrusel automático
-        autoSlideInterval = setInterval(autoSlide, 5000);
+        // ── SCROLL ANIMATIONS (Intersection Observer) ─────────
+        const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+
+        revealEls.forEach(el => revealObserver.observe(el));
+
+        // ── CONTADORES ANIMADOS ───────────────────────────────
+        const counters = document.querySelectorAll('.contador-numero');
+        let countersStarted = false;
+
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !countersStarted) {
+                    countersStarted = true;
+                    counters.forEach(counter => animateCounter(counter));
+                }
+            });
+        }, { threshold: 0.4 });
+
+        const contadoresSection = document.getElementById('contadores');
+        if (contadoresSection) counterObserver.observe(contadoresSection);
+
+        function animateCounter(el) {
+            const target = parseInt(el.getAttribute('data-target'));
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                // Formato con separador de miles
+                el.textContent = Math.floor(current).toLocaleString('es-CO');
+            }, 16);
+        }
     </script>
 </body>
-
 </html>

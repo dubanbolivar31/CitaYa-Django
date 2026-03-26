@@ -30,6 +30,7 @@ class AdminRequiredMixin(AccessMixin):
 def index(request):
     return render(request, 'index.html')
 
+
 def logout_admin(request):
     request.session.flush()  # Borra TODA la sesión
     return redirect('login')
@@ -53,7 +54,7 @@ def login(request):
             request.session['usuario_id'] = user_medico.id_medico
             request.session['rol'] = 'medico'
             request.session['nombre'] = f"{user_medico.nombre} {user_medico.apellido}"
-            return redirect('index')
+            return redirect('dashboard_medico')
 
         # 3. Buscar en Pacientes
         user_paciente = Paciente.objects.filter(numero_doc=numero_doc, contrasena=password).first()
@@ -61,7 +62,9 @@ def login(request):
             request.session['usuario_id'] = user_paciente.id_paciente
             request.session['rol'] = 'paciente'
             request.session['nombre'] = f"{user_paciente.nombre} {user_paciente.apellido}"
-            return redirect('dashboard_paciente')  # <-- Redirigir al nuevo dashboard
+            return redirect('dashboard_paciente')
+        
+          # <-- Redirigir al nuevo dashboard
 
         messages.error(request, 'Documento o contraseña incorrectos.')
     
@@ -131,6 +134,58 @@ def dashboard_admin(request):
     }
     return render(request, 'dashboard/administrador/inicio_admin.html', context)
 
+# ── DASHBOARD MEDICO ───────────────────────────
+from django.shortcuts import render, redirect
+from django.views.decorators.cache import never_cache
+from datetime import date
+
+@never_cache
+def dashboard_medico(request):
+    if request.session.get('rol') != 'medico':
+        return redirect('login')
+
+    medico_id = request.session.get('usuario_id')
+    hoy = date.today()
+
+    # 📅 Todas las citas del médico
+    todas_citas = Agendamiento.objects.filter(
+        id_medico=medico_id
+    ).select_related('id_paciente')
+
+    # ⏳ Próximas citas
+    proximas_citas = todas_citas.filter(
+        fecha__gte=hoy
+    ).order_by('fecha', 'hora')[:5]
+
+    # 📋 Historial clínico (de pacientes del médico)
+    historiales = Historial_Clinico.objects.filter(
+        id_medico=medico_id
+    ).select_related('id_paciente').order_by('-fecha_creacion')[:5]
+
+    # 👥 Pacientes únicos
+    pacientes_ids = todas_citas.values_list('id_paciente', flat=True).distinct()
+
+    # 👤 Lista de pacientes
+    pacientes = Paciente.objects.filter(
+        id_paciente__in=pacientes_ids
+    )
+
+    context = {
+        'nombre': request.session.get('nombre'),
+
+        # 📊 métricas
+        'total_citas': todas_citas.count(),
+        'citas_proximas': proximas_citas.count(),
+        'total_historiales': Historial_Clinico.objects.filter(id_medico=medico_id).count(),
+        'total_pacientes': len(set(pacientes_ids)),
+
+        # 📋 datos
+        'proximas_citas': proximas_citas,
+        'historiales': historiales,
+        'pacientes': pacientes,
+    }
+
+    return render(request, 'dashboard/medico/inicio_medico.html', context)
 # ── DASHBOARD PACIENTE ───────────────────────────
 @never_cache
 def dashboard_paciente(request):

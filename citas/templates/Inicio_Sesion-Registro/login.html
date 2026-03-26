@@ -5,10 +5,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
     <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
-
     <title>Cita Ya - Iniciar Sesión</title>
 </head>
 
@@ -21,26 +19,26 @@
             <div class="container_login-form">
 
                 <div class="logo-name">
-                    <img src="{% static 'assets/img/nom.png' %}">
+                    <img src="{% static 'assets/img/nutria_letras.png' %}">
                 </div>
 
                 <!-- Formulario -->
-                <form class="container_formulario-login" method="POST" action="{% url 'login' %}">
+                <form class="container_formulario-login" method="POST" action="{% url 'login' %}" novalidate>
                     {% csrf_token %}
 
-                    <!-- Mensaje de error -->
+                    <!-- Mensaje de error Django -->
                     {% if messages %}
                         {% for message in messages %}
-                        <div style="background:#ffe6e6; color:#900; padding:10px; border-radius:6px; margin-top:12px;">
-                            <p>{{ message }}</p>
+                        <div class="msg msg--error">
+                            <span>{{ message }}</span>
                         </div>
                         {% endfor %}
                     {% endif %}
 
                     <!-- Mensaje de éxito -->
                     {% if 'registro' in request.GET %}
-                    <div style="background:#e6ffe6; color:#090; padding:10px; border-radius:6px; margin-top:12px;">
-                        <p>¡Registro exitoso! Ahora puedes iniciar sesión.</p>
+                    <div class="msg msg--success">
+                        <span>¡Registro exitoso! Ahora puedes iniciar sesión.</span>
                     </div>
                     {% endif %}
 
@@ -48,33 +46,59 @@
                     <div class="label">
                         <label class="text" for="numero">Número de documento</label>
                     </div>
-
                     <div class="input">
-                        <input type="text" id="numero" name="numerodoc" minlength="6" maxlength="10"
-                            placeholder="Ej: 1234567890" oninput="soloNumeros(this)" required>
-                        <small id="errorDocumento" style="color:#900; margin-top: 7px; font-size:12px; display:none;">
-                            El documento debe tener entre 6 y 10 dígitos
-                        </small>
+                        <input
+                            type="text"
+                            id="numero"
+                            name="numerodoc"
+                            inputmode="numeric"
+                            minlength="6"
+                            maxlength="10"
+                            placeholder="Ej: 1234567890"
+                            autocomplete="username"
+                            aria-describedby="errorDocumento"
+                            required>
+                        <small id="errorDocumento" class="field-error" aria-live="polite"></small>
                     </div>
 
                     <!-- Contraseña -->
                     <div class="label">
                         <label class="text" for="clave">Contraseña</label>
                     </div>
-
                     <div class="input">
-                        <input type="password" id="clave" name="contrasena" minlength="8" placeholder="••••••••"
-                            title="Debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial"
-                            required>
-                        <small id="errorContrasena" style="color:#900; margin-top: 7px; font-size:12px; display:none;">
-                            Debe tener mínimo 8 caracteres: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial
-                        </small>
+                        <div class="input-password-container">
+                            <input
+                                type="password"
+                                id="clave"
+                                name="contrasena"
+                                minlength="8"
+                                placeholder="••••••••"
+                                autocomplete="current-password"
+                                aria-describedby="errorContrasena"
+                                required>
+                            <span class="toggle-password" id="toggleEye" aria-label="Mostrar contraseña" role="button" tabindex="0">
+                                <!-- Ojo abierto por defecto -->
+                                <svg id="eyeIcon" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </span>
+                        </div>
+
+                        <!-- Barra de fortaleza -->
+                        <div class="strength-bar" id="strengthBar" aria-hidden="true">
+                            <div class="strength-bar__fill" id="strengthFill"></div>
+                        </div>
+                        <small id="strengthLabel" class="strength-label"></small>
+
+                        <small id="errorContrasena" class="field-error" aria-live="polite"></small>
                     </div>
 
-                    <!-- boton -->
+                    <!-- Botón -->
                     <button type="submit" class="login_button">Iniciar Sesión</button>
 
-                    <!-- links -->
+                    <!-- Links -->
                     <div class="cuenta">
                         <a href="#">¿Olvidaste tu contraseña?</a>
                     </div>
@@ -92,17 +116,14 @@
         <!-- Parte de texto -->
         <div class="apartado_2">
             <div class="emoji-icon">
-                <img src="{% static 'assets/img/logoti.png' %}">
+                <img src="{% static 'assets/img/bienvenida.png' %}">
             </div>
-
             <div class="h1-info">
                 <h1>¡Bienvenido!</h1>
             </div>
-
             <div class="P-info">
                 <p>Accede a tu portal médico y gestiona tus citas de forma fácil y segura</p>
             </div>
-
             <div class="p-info">
                 <p>✓ Agenda citas 24/7</p>
                 <p>✓ Consulta tu historial médico</p>
@@ -113,87 +134,161 @@
     </div>
 
     <script>
-        // Función para permitir solo números en el documento
-        function soloNumeros(input) {
-            input.value = input.value.replace(/\D/g, '');
+    /* ================================================================
+       Cita Ya – Login Validations
+    ================================================================ */
 
-            const errorDocumento = document.getElementById('errorDocumento');
-            if (input.value.length > 0 && (input.value.length < 6 || input.value.length > 10)) {
-                errorDocumento.style.display = 'block';
-            } else {
-                errorDocumento.style.display = 'none';
-            }
+    const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.\-_])[A-Za-z\d@$!%*?&#.\-_]{8,}$/;
+
+    const numInput   = document.getElementById('numero');
+    const claveInput = document.getElementById('clave');
+    const errDoc     = document.getElementById('errorDocumento');
+    const errPass    = document.getElementById('errorContrasena');
+    const toggleBtn  = document.getElementById('toggleEye');
+    const eyeIcon    = document.getElementById('eyeIcon');
+    const strengthFill  = document.getElementById('strengthFill');
+    const strengthLabel = document.getElementById('strengthLabel');
+    const form = document.querySelector('.container_formulario-login');
+
+    /* ── SVGs para el ojito ── */
+    const SVG_OPEN  = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    const SVG_CLOSE = `<line x1="17.94" y1="17.94" x2="6.06" y2="6.06"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <path d="M6.53 6.53A13.4 13.4 0 0 0 1 12s4 8 11 8a13.2 13.2 0 0 0 5.36-1.12"/>
+        <circle cx="12" cy="12" r="3"/>`;
+
+    /* ── Helpers de error ── */
+    function showError(el, input, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (input) input.classList.add('input--error');
+    }
+
+    function clearError(el, input) {
+        el.textContent = '';
+        el.style.display = 'none';
+        if (input) input.classList.remove('input--error');
+    }
+
+    /* ── Toggle contraseña ── */
+    function togglePassword() {
+        const isPass = claveInput.type === 'password';
+        claveInput.type = isPass ? 'text' : 'password';
+        eyeIcon.innerHTML = isPass ? SVG_CLOSE : SVG_OPEN;
+        toggleBtn.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    }
+
+    toggleBtn.addEventListener('click', togglePassword);
+    toggleBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') togglePassword(); });
+
+    /* ── Solo números en documento ── */
+    numInput.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '');
+        const len = this.value.length;
+        if (len === 0) {
+            clearError(errDoc, this);
+        } else if (len < 6) {
+            showError(errDoc, this, `Faltan ${6 - len} dígito${6 - len > 1 ? 's' : ''} (mínimo 6)`);
+        } else if (len > 10) {
+            showError(errDoc, this, 'Máximo 10 dígitos');
+        } else {
+            clearError(errDoc, this);
+        }
+    });
+
+    /* ── Fortaleza de contraseña ── */
+    function getStrength(val) {
+        let score = 0;
+        if (val.length >= 8)  score++;
+        if (val.length >= 12) score++;
+        if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score++;
+        if (/\d/.test(val))   score++;
+        if (/[@$!%*?&#.\-_]/.test(val)) score++;
+        return score; // 0–5
+    }
+
+    const STRENGTH_LEVELS = [
+        { label: '',           color: 'transparent', width: '0%'   },
+        { label: 'Muy débil',  color: '#e74c3c',     width: '20%'  },
+        { label: 'Débil',      color: '#e67e22',     width: '40%'  },
+        { label: 'Regular',    color: '#f1c40f',     width: '60%'  },
+        { label: 'Fuerte',     color: '#2ecc71',     width: '80%'  },
+        { label: 'Muy fuerte', color: '#27ae60',     width: '100%' },
+    ];
+
+    function updateStrength(val) {
+        if (val.length === 0) {
+            strengthFill.style.width = '0%';
+            strengthFill.style.background = 'transparent';
+            strengthLabel.textContent = '';
+            return;
+        }
+        const score = Math.min(getStrength(val), 5);
+        const level = STRENGTH_LEVELS[score];
+        strengthFill.style.width = level.width;
+        strengthFill.style.background = level.color;
+        strengthLabel.textContent = level.label;
+        strengthLabel.style.color = level.color;
+    }
+
+    /* ── Validación contraseña en tiempo real ── */
+    claveInput.addEventListener('input', function () {
+        const val = this.value;
+        updateStrength(val);
+
+        if (val.length === 0) {
+            clearError(errPass, this);
+        } else if (val.length < 8) {
+            showError(errPass, this, `Faltan ${8 - val.length} carácter${8 - val.length > 1 ? 'es' : ''} (mínimo 8)`);
+        } else if (!/[A-Z]/.test(val)) {
+            showError(errPass, this, 'Añade al menos una letra mayúscula');
+        } else if (!/[a-z]/.test(val)) {
+            showError(errPass, this, 'Añade al menos una letra minúscula');
+        } else if (!/\d/.test(val)) {
+            showError(errPass, this, 'Añade al menos un número');
+        } else if (!/[@$!%*?&#.\-_]/.test(val)) {
+            showError(errPass, this, 'Añade al menos un carácter especial (@$!%*?&#._-)');
+        } else {
+            clearError(errPass, this);
+        }
+    });
+
+    /* ── Validación al enviar ── */
+    form.addEventListener('submit', function (e) {
+        let hasError = false;
+
+        // Documento
+        const doc = numInput.value.trim();
+        if (!doc) {
+            showError(errDoc, numInput, 'El número de documento es requerido');
+            hasError = true;
+        } else if (doc.length < 6 || doc.length > 10) {
+            showError(errDoc, numInput, 'El documento debe tener entre 6 y 10 dígitos');
+            hasError = true;
+        } else {
+            clearError(errDoc, numInput);
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const claveInput = document.getElementById('clave');
-            const errorContrasena = document.getElementById('errorContrasena');
-            const form = document.querySelector('.container_formulario-login');
+        // Contraseña
+        const pass = claveInput.value;
+        if (!pass) {
+            showError(errPass, claveInput, 'La contraseña es requerida');
+            hasError = true;
+        } else if (!PASSWORD_REGEX.test(pass)) {
+            showError(errPass, claveInput, 'La contraseña no cumple los requisitos de seguridad');
+            hasError = true;
+        } else {
+            clearError(errPass, claveInput);
+        }
 
-            // Validar contraseña en tiempo real (sin bloquear el envío)
-            claveInput.addEventListener('input', function () {
-                const password = this.value;
-                // Regex: al menos 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial, mínimo 8 caracteres
-                const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.\-_])[A-Za-z\d@$!%*?&#.\-_]{8,}$/;
-
-                if (password.length > 0 && password.length < 8) {
-                    errorContrasena.textContent = 'La contraseña debe tener al menos 8 caracteres';
-                    errorContrasena.style.display = 'block';
-                } else if (password.length >= 8 && !regex.test(password)) {
-                    errorContrasena.textContent = 'Debe incluir: mayúscula, minúscula, número y carácter especial';
-                    errorContrasena.style.display = 'block';
-                } else {
-                    errorContrasena.style.display = 'none';
-                }
-            });
-
-            // Validación al enviar (solo advertencias, no bloquea)
-            form.addEventListener('submit', function (e) {
-                const numeroDoc = document.getElementById('numero').value;
-                const contrasena = document.getElementById('clave').value;
-                let hasError = false;
-
-                // Validar documento
-                if (!numeroDoc || numeroDoc.trim() === '') {
-                    document.getElementById('errorDocumento').textContent = 'El documento es requerido';
-                    document.getElementById('errorDocumento').style.display = 'block';
-                    hasError = true;
-                } else if (numeroDoc.length < 6 || numeroDoc.length > 10) {
-                    document.getElementById('errorDocumento').textContent = 'El documento debe tener entre 6 y 10 dígitos';
-                    document.getElementById('errorDocumento').style.display = 'block';
-                    hasError = true;
-                } else {
-                    document.getElementById('errorDocumento').style.display = 'none';
-                }
-
-                // Validar contraseña
-                if (!contrasena || contrasena.trim() === '') {
-                    document.getElementById('errorContrasena').textContent = 'La contraseña es requerida';
-                    document.getElementById('errorContrasena').style.display = 'block';
-                    hasError = true;
-                } else if (contrasena.length < 8) {
-                    document.getElementById('errorContrasena').textContent = 'La contraseña debe tener al menos 8 caracteres';
-                    document.getElementById('errorContrasena').style.display = 'block';
-                    hasError = true;
-                } else {
-                    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.\-_])[A-Za-z\d@$!%*?&#.\-_]{8,}$/;
-                    if (!regex.test(contrasena)) {
-                        document.getElementById('errorContrasena').textContent = 'Debe incluir: mayúscula, minúscula, número y carácter especial';
-                        document.getElementById('errorContrasena').style.display = 'block';
-                        hasError = true;
-                    } else {
-                        document.getElementById('errorContrasena').style.display = 'none';
-                    }
-                }
-
-                if (hasError) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        });
+        if (hasError) {
+            e.preventDefault();
+            // Enfocar el primer campo con error
+            const firstError = form.querySelector('.input--error');
+            if (firstError) firstError.focus();
+        }
+    });
     </script>
 
 </body>
-
 </html>

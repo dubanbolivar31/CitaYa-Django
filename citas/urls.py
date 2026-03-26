@@ -17,6 +17,7 @@ urlpatterns = [
     # =========================================================================
     path('dashboard/admin/', views.dashboard_admin, name='dashboard_admin'),
     path('dashboard/paciente/', views.dashboard_paciente, name='dashboard_paciente'),
+    path('dashboard/medico/', views.dashboard_medico, name='dashboard_medico'),
 
     # =========================================================================
     #  GESTIÓN DE PERFILES (APIs para Modales)
