@@ -171,9 +171,6 @@ def dashboard_admin(request):
     return render(request, 'dashboard/administrador/inicio_admin.html', context)
 
 # ── DASHBOARD MEDICO ───────────────────────────
-from django.shortcuts import render, redirect
-from django.views.decorators.cache import never_cache
-from datetime import date
 
 @never_cache
 def dashboard_medico(request):
@@ -222,6 +219,7 @@ def dashboard_medico(request):
     }
 
     return render(request, 'dashboard/medico/inicio_medico.html', context)
+
 # ── DASHBOARD PACIENTE ───────────────────────────
 @never_cache
 def dashboard_paciente(request):
@@ -585,8 +583,254 @@ def editar_perfil_paciente(request):
     except Exception:
         return JsonResponse({'error': 'Error al procesar datos'}, status=400)
 
+# ── API: AGENDA DEL DÍA ──────────────────────────────────────────────
+def agenda_medico_json(request):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    # 1. Obtenemos el ID que guardaste al iniciar sesión
+    session_id = request.session.get('usuario_id')
+    fecha_str = request.GET.get('fecha', str(date.today()))
+ 
+    try:
+        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        
+        # 2. BUSCAMOS AL OBJETO MÉDICO REAL
+        # Esto asegura que usemos la instancia correcta de la tabla Medico
+        medico_instancia = get_object_or_404(Medico, id_medico=session_id)
+        
+    except ValueError:
+        return JsonResponse({'error': 'Fecha inválida'}, status=400)
+    except Exception:
+        return JsonResponse({'error': 'Médico no encontrado en la base de datos'}, status=404)
+ 
+    # 3. FILTRAMOS USANDO LA INSTANCIA DEL MÉDICO
+    citas = (
+        Agendamiento.objects
+        .filter(id_medico=medico_instancia, fecha=fecha_obj) # <--- CAMBIO CLAVE
+        .select_related('id_paciente')
+        .order_by('hora')
+    )
+ 
+    # 4. Filtramos los historiales usando la misma instancia
+    historiales_hoy = set(
+        Historial_Clinico.objects
+        .filter(id_medico=medico_instancia, fecha_creacion=fecha_obj)
+        .values_list('id_paciente_id', flat=True)
+    )
+ 
+    data = []
+    for c in citas:
+        data.append({
+            'id_agendamiento': c.id_agendamiento,
+            'hora':            c.hora.strftime('%H:%M'),
+            'tipo_cita':       c.cita,
+            'id_paciente':     c.id_paciente.id_paciente,
+            'paciente_nombre': f"{c.id_paciente.nombre} {c.id_paciente.apellido}",
+            'paciente_doc':    c.id_paciente.numero_doc,
+            'cumplida':        (c.id_paciente.id_paciente in historiales_hoy),
+        })
+ 
+    return JsonResponse({'citas': data})
+ 
+ 
+# ── API: INFO BÁSICA DE UN PACIENTE ──────────────────────────────────
+# ── API: AGENDA DEL DÍA ──────────────────────────────────────────────
+def agenda_medico_json(request):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    session_id = request.session.get('usuario_id')
+    fecha_str  = request.GET.get('fecha', str(date.today()))
+ 
+    try:
+        fecha_obj        = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        medico_instancia = get_object_or_404(Medico, id_medico=session_id)
+    except ValueError:
+        return JsonResponse({'error': 'Fecha inválida'}, status=400)
+ 
+    citas = (
+        Agendamiento.objects
+        .filter(id_medico=medico_instancia, fecha=fecha_obj)
+        .select_related('id_paciente')
+        .order_by('hora')
+    )
+ 
+    # Pacientes para los que el MISMO médico ya creó historial HOY
+    # → la cita se considera "cumplida" y bloquea el botón de consulta
+    historiales_hoy = set(
+        Historial_Clinico.objects
+        .filter(id_medico=medico_instancia, fecha_creacion=fecha_obj)
+        .values_list('id_paciente_id', flat=True)
+    )
+ 
+    data = []
+    for c in citas:
+        data.append({
+            'id_agendamiento': c.id_agendamiento,
+            'hora':            c.hora.strftime('%H:%M'),
+            'tipo_cita':       c.cita,
+            'id_paciente':     c.id_paciente.id_paciente,
+            'paciente_nombre': f"{c.id_paciente.nombre} {c.id_paciente.apellido}",
+            'paciente_doc':    c.id_paciente.numero_doc,
+            # CORRECCIÓN: True si este médico ya registró historial para este paciente hoy
+            'cumplida': (c.id_paciente.id_paciente in historiales_hoy),
+        })
+ 
+    return JsonResponse({'citas': data})
+ 
+ 
+# ── API: INFO BÁSICA DE UN PACIENTE ──────────────────────────────────
+def paciente_medico_json(request, pk):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    paciente = get_object_or_404(Paciente, pk=pk)
+    return JsonResponse({
+        'nombre':           paciente.nombre,
+        'apellido':         paciente.apellido,
+        'tipo_doc':         paciente.tipo_doc,
+        'numero_doc':       paciente.numero_doc,
+        'genero':           paciente.genero,
+        'fecha_nacimiento': str(paciente.fecha_nacimiento),
+        'tipo_sangre':      paciente.tipo_sangre,
+        'telefono':         paciente.telefono,
+        'correo':           paciente.correo,
+        'direccion':        paciente.direccion,
+        'estado':           paciente.estado,
+    })
+ 
+ 
+# ── API: HISTORIAL CLÍNICO DE UN PACIENTE (solo lectura) ─────────────
+def historial_paciente_medico_json(request, pk):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    medico_id = request.session.get('usuario_id')
+    paciente  = get_object_or_404(Paciente, pk=pk)
+ 
+    historiales = (
+        Historial_Clinico.objects
+        .filter(id_paciente=paciente)
+        .select_related('id_medico')
+        .order_by('-fecha_creacion')
+    )
+ 
+    data = [{
+        'id_historial':    h.id_historial,
+        'fecha_creacion':  h.fecha_creacion.strftime('%d/%m/%Y'),
+        'antecedentes':    h.antecedentes,
+        'medico_nombre':   f"{h.id_medico.nombre} {h.id_medico.apellido}",
+        'especialidad':    h.id_medico.especialidad,
+        'paciente_nombre': f"{paciente.nombre} {paciente.apellido}",
+        'es_propio':       (h.id_medico.id_medico == medico_id),
+    } for h in historiales]
+ 
+    return JsonResponse({'historiales': data})
+ 
+ 
+# ── API: GUARDAR NUEVO HISTORIAL (solo desde consulta activa) ─────────
+@require_POST
+def guardar_historial_medico(request):
+    """
+    Crea un nuevo historial clínico.
+    Body JSON: { antecedentes: str, id_paciente: int }
+ 
+    CORRECCIÓN: verifica que no exista ya un historial del mismo médico
+    para ese paciente en el mismo día → evita duplicados por doble clic
+    o reenvío de formulario.
+    """
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    medico_id = request.session.get('usuario_id')
+ 
+    try:
+        data         = json.loads(request.body)
+        antecedentes = data.get('antecedentes', '').strip()
+        paciente_id  = data.get('id_paciente')
+ 
+        if not antecedentes:
+            return JsonResponse({'error': 'Las notas no pueden estar vacías.'}, status=400)
+        if not paciente_id:
+            return JsonResponse({'error': 'Paciente no especificado.'}, status=400)
+ 
+        paciente = get_object_or_404(Paciente, pk=paciente_id)
+        medico   = get_object_or_404(Medico, pk=medico_id)
+ 
+        # CORRECCIÓN: bloquear duplicado del mismo médico+paciente en el mismo día
+        hoy = date.today()
+        if Historial_Clinico.objects.filter(
+            id_medico=medico,
+            id_paciente=paciente,
+            fecha_creacion=hoy
+        ).exists():
+            return JsonResponse(
+                {'error': 'Ya registraste un historial para este paciente hoy.'},
+                status=400
+            )
+ 
+        historial = Historial_Clinico.objects.create(
+            antecedentes=antecedentes,
+            id_paciente=paciente,
+            id_medico=medico,
+        )
+ 
+        return JsonResponse({
+            'ok':              True,
+            'paciente_nombre': f"{paciente.nombre} {paciente.apellido}",
+            'id_historial':    historial.id_historial,
+        })
+ 
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+ 
+ 
+# ── API: PERFIL MÉDICO ────────────────────────────────────────────────
+def perfil_medico_json(request):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    medico = get_object_or_404(Medico, pk=request.session['usuario_id'])
+    return JsonResponse({
+        'nombre':       medico.nombre,
+        'apellido':     medico.apellido,
+        'tipo_doc':     medico.tipo_doc,
+        'numero_doc':   medico.numero_doc,
+        'genero':       medico.genero,
+        'especialidad': medico.especialidad,
+        'telefono':     medico.telefono,
+        'correo':       medico.correo,
+        'estado':       medico.estado,
+    })
+ 
+ 
+# ── API: EDITAR PERFIL MÉDICO ─────────────────────────────────────────
+@require_POST
+def editar_perfil_medico(request):
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+ 
+    medico = get_object_or_404(Medico, pk=request.session['usuario_id'])
+    try:
+        data = json.loads(request.body)
+        medico.nombre   = data.get('nombre',   medico.nombre)
+        medico.apellido = data.get('apellido', medico.apellido)
+        medico.telefono = data.get('telefono', medico.telefono)
+        medico.correo   = data.get('correo',   medico.correo)
+ 
+        pw = data.get('contrasena', '').strip()
+        if pw:
+            medico.contrasena = pw
+ 
+        medico.save()
+        request.session['nombre'] = f"{medico.nombre} {medico.apellido}"
+        return JsonResponse({'ok': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
 # =========================================================================
-# ⚙️ CRUDS PROTEGIDOS (SOLO ADMIN)
+# CRUDS PROTEGIDOS (SOLO ADMIN)
 # =========================================================================
 
 # --- ADMINISTRADORES ---
