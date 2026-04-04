@@ -19,6 +19,16 @@ urlpatterns = [
     path('dashboard/paciente/', views.dashboard_paciente, name='dashboard_paciente'),
     path('dashboard/medico/', views.dashboard_medico, name='dashboard_medico'),
 
+    # ── API MÉDICO ─────────────────────────────────────────────────────
+    path('api/medico/agenda/',             views.agenda_medico_json,             name='agenda_medico_json'),
+    path('api/medico/paciente/<int:pk>/',  views.paciente_medico_json,           name='paciente_medico_json'),
+    path('api/medico/historial/<int:pk>/', views.historial_paciente_medico_json, name='historial_paciente_medico_json'),
+    path('api/medico/historial/guardar/',  views.guardar_historial_medico,       name='guardar_historial_medico'),
+    
+    # ── PERFIL MÉDICO ──────────────────────────────────────────────────
+    path('perfil/medico/json/',   views.perfil_medico_json,   name='perfil_medico_json'),
+    path('perfil/medico/editar/', views.editar_perfil_medico, name='editar_perfil_medico'),
+
     # =========================================================================
     #  GESTIÓN DE PERFILES (APIs para Modales)
     # =========================================================================

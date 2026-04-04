@@ -4,83 +4,839 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Médico</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>CitaYa — Panel Médico</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'assets/css/dashboard_medico.css' %}">
 </head>
 <body>
-<div class="container">
+<div class="dashboard-wrapper">
 
-    <!-- HEADER -->
-    <div class="header">
-        <div class="header-left">
-            <span class="header-label">Panel Médico</span>
-            <h1 class="header-title">Bienvenido, Dr. {{ nombre }}</h1>
-            <p class="header-subtitle">Gestión de citas y pacientes</p>
-        </div>
-        <div class="header-actions">
-            <span class="badge-date">
-                {% now "l, d N Y" %}
-            </span>
-        </div>
-    </div>
-
-    <!-- CARDS -->
-    <div class="cards">
-        <div class="card">
-            <div class="card-icon">📋</div>
-            <h3>Total citas</h3>
-            <p>{{ total_citas }}</p>
-            <div class="card-trend">Acumulado general</div>
-        </div>
-        <div class="card accent">
-            <div class="card-icon">📅</div>
-            <h3>Citas hoy</h3>
-            <p>{{ citas_hoy }}</p>
-            <div class="card-trend">Programadas para hoy</div>
-        </div>
-    </div>
-
-    <!-- TABLA -->
-    <div class="tabla-section">
-        <div class="tabla-header">
-            <div class="tabla-title">
-                <div class="tabla-title-icon">🗓</div>
-                <h3>Próximas citas</h3>
+    <!-- ── TOP BAR ─────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <img src="{% static 'assets/img/bienvenida.png' %}" alt="CitaYa">
+            <div>
+                <div class="topbar-title">Dr. <span class="topbar-name">{{ nombre }}</span></div>
+                <div class="topbar-sub">Panel Médico</div>
             </div>
-            <span class="tabla-count">{{ proximas|length }} cita{{ proximas|length|pluralize }}</span>
         </div>
+        <div class="topbar-right">
+            <div class="live-clock">
+                <i class="fa-regular fa-clock"></i>
+                <span id="clockTime">--:--:--</span>
+            </div>
+            <div class="topbar-date" id="topbarDate"></div>
+            <button class="avatar-btn" id="avatarBtn">
+                <i class="fa-solid fa-user-doctor"></i>
+            </button>
+            <div class="avatar-dropdown" id="avatarDropdown">
+                <button class="btn-drop" id="btn-open-perfil">
+                    <i class="fa-solid fa-user-pen"></i> Mi Perfil
+                </button>
+                <div class="drop-divider"></div>
+                <a href="{% url 'logout_admin' %}" class="btn-drop drop-danger">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </header>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Paciente</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in proximas %}
-                <tr>
-                    <td>
-                        <div class="td-paciente">
-                            <div class="avatar">{{ c.id_paciente.nombre|slice:":2" }}</div>
-                            {{ c.id_paciente.nombre }}
-                        </div>
-                    </td>
-                    <td class="td-fecha">{{ c.fecha }}</td>
-                    <td class="td-hora">{{ c.hora }}</td>
-                </tr>
-                {% empty %}
-                <tr class="empty-row">
-                    <td colspan="3">No hay citas programadas próximamente</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- ── STATS ──────────────────────────────────────────── -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--c:#0F4C75">
+            <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_citas }}</span>
+                <span class="stat-label">Total citas</span>
+            </div>
+            <i class="fa-solid fa-calendar-check stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#1a8a5a">
+            <div class="stat-icon" style="background:rgba(26,138,90,.12);color:#1a8a5a">
+                <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-num">{{ citas_proximas }}</span>
+                <span class="stat-label">Citas hoy</span>
+            </div>
+            <i class="fa-solid fa-calendar-day stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#d97706">
+            <div class="stat-icon" style="background:rgba(217,119,6,.12);color:#d97706">
+                <i class="fa-solid fa-file-waveform"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_historiales }}</span>
+                <span class="stat-label">Historiales creados</span>
+            </div>
+            <i class="fa-solid fa-file-waveform stat-bg-icon"></i>
+        </div>
+        <div class="stat-card" style="--c:#6366f1">
+            <div class="stat-icon" style="background:rgba(99,102,241,.12);color:#6366f1">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_pacientes }}</span>
+                <span class="stat-label">Pacientes atendidos</span>
+            </div>
+            <i class="fa-solid fa-users stat-bg-icon"></i>
+        </div>
     </div>
 
+    <!-- ── AGENDA LAYOUT ──────────────────────────────────── -->
+    <div class="agenda-layout">
+
+        <!-- Sidebar: selector de días -->
+        <aside class="agenda-sidebar">
+            <p class="sec-label">Agenda</p>
+            <div class="day-picker" id="dayPicker"></div>
+        </aside>
+
+        <!-- Main: timeline -->
+        <section class="agenda-main">
+            <div class="agenda-head">
+                <div>
+                    <h2 class="agenda-day-title" id="agendaDayTitle">Hoy</h2>
+                    <p class="agenda-day-sub" id="agendaDaySub"></p>
+                </div>
+                <div class="agenda-count-pill" id="agendaCountPill">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span id="agendaCount">0</span> citas
+                </div>
+            </div>
+            <div class="timeline" id="timeline">
+                <div class="tl-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Cargando agenda…
+                </div>
+            </div>
+        </section>
+    </div>
+
+</div><!-- /dashboard-wrapper -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     MODALES
+════════════════════════════════════════════════════════ -->
+
+<!-- ① FICHA DEL PACIENTE -->
+<div class="modal-overlay" id="modal-paciente">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-injured"></i> Información del Paciente</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-paciente">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer" id="footer-paciente">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
 </div>
+
+<!-- ② ANTECEDENTES — solo lectura -->
+<div class="modal-overlay" id="modal-antecedentes">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-notes-medical"></i> Historial Clínico</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-antecedentes">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ③ DETALLE HISTORIAL — solo lectura -->
+<div class="modal-overlay" id="modal-hist-detalle">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-file-waveform"></i> Detalle del Historial</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="info-grid">
+                <div class="info-field">
+                    <span class="if-label"><i class="fa-solid fa-calendar"></i> Fecha</span>
+                    <span class="if-value" id="hd-fecha"></span>
+                </div>
+                <div class="info-field">
+                    <span class="if-label"><i class="fa-solid fa-user-doctor"></i> Médico</span>
+                    <span class="if-value" id="hd-medico"></span>
+                </div>
+            </div>
+            <div style="margin-top:16px">
+                <label class="fb-label">Antecedentes / Notas Clínicas</label>
+                <div class="text-box" id="hd-antecedentes"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ④ INICIAR CONSULTA — escritura -->
+<div class="modal-overlay" id="modal-consulta">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-stethoscope"></i> Agregar a historial</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="msg-consulta"></div>
+            <input type="hidden" id="c-paciente-id">
+            <div class="consulta-banner" id="c-banner"></div>
+            <div class="field-block">
+                <label class="fb-label">Antecedentes y Notas Clínicas</label>
+                <textarea id="c-antecedentes" rows="11"
+                    placeholder="Describe síntomas, diagnóstico, tratamiento, medicación, observaciones…"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cancelar</button>
+            <button class="btn btn-primary" id="btn-guardar-consulta">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar historial
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑤ CONSULTA GUARDADA — solo lectura + Terminar cita -->
+<div class="modal-overlay" id="modal-consulta-guardada">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-circle-check" style="color:var(--green-500)"></i> Consulta Registrada</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="success-banner">
+                <i class="fa-solid fa-circle-check"></i>
+                <div>
+                    <strong>Historial guardado correctamente</strong>
+                    <span>Revisa el registro antes de terminar la cita.</span>
+                </div>
+            </div>
+            <div class="info-grid" style="margin-top:18px">
+                <div class="info-field">
+                    <span class="if-label"><i class="fa-solid fa-user-injured"></i> Paciente</span>
+                    <span class="if-value" id="cg-paciente"></span>
+                </div>
+                <div class="info-field">
+                    <span class="if-label"><i class="fa-solid fa-calendar"></i> Fecha</span>
+                    <span class="if-value" id="cg-fecha"></span>
+                </div>
+            </div>
+            <div style="margin-top:14px">
+                <label class="fb-label">Notas registradas (solo lectura)</label>
+                <div class="text-box" id="cg-notas"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-success" id="btn-terminar-cita">
+                <i class="fa-solid fa-flag-checkered"></i> Terminar cita
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑥ PERFIL -->
+<div class="modal-overlay" id="modal-perfil">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-doctor"></i> Mi Perfil</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-perfil">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+            <button class="btn btn-primary" id="btn-editar-perfil">
+                <i class="fa-solid fa-pen"></i> Editar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑦ EDITAR PERFIL -->
+<div class="modal-overlay" id="modal-editar-perfil">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Editar Perfil</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="msg-perfil"></div>
+            <div class="form-grid">
+                <div class="fg"><label>Nombre</label><input type="text" id="ep-nombre"></div>
+                <div class="fg"><label>Apellido</label><input type="text" id="ep-apellido"></div>
+                <div class="fg"><label>Teléfono</label><input type="tel" id="ep-telefono"></div>
+                <div class="fg"><label>Correo</label><input type="email" id="ep-correo"></div>
+                <div class="fg full">
+                    <label>Nueva contraseña
+                        <span class="label-hint">(dejar en blanco para mantener la actual)</span>
+                    </label>
+                    <input type="password" id="ep-contrasena" placeholder="••••••••">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cancelar</button>
+            <button class="btn btn-primary" id="btn-guardar-perfil">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+/* ── URLs ─────────────────────────────────────────────────── */
+const URLS = {
+    agenda:       "{% url 'agenda_medico_json' %}",
+    paciente:     "{% url 'paciente_medico_json' 0 %}".replace('/0/','/'),
+    historial:    "{% url 'historial_paciente_medico_json' 0 %}".replace('/0/','/'),
+    guardar:      "{% url 'guardar_historial_medico' %}",
+    perfilJson:   "{% url 'perfil_medico_json' %}",
+    editarPerfil: "{% url 'editar_perfil_medico' %}",
+};
+const CSRF = "{{ csrf_token }}";
+
+/* ── Helpers de fecha/hora ────────────────────────────────── */
+const DIAS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio',
+               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+const pad = n => String(n).padStart(2,'0');
+
+function toISO(d) {
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function humanDate(d) {
+    return `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+}
+// Escapa texto para usarlo en atributos HTML onclick
+function escAttr(str) {
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '\\n');
+}
+
+/* ── Reloj en vivo ────────────────────────────────────────── */
+(function tickClock() {
+    const n = new Date();
+    document.getElementById('clockTime').textContent =
+        `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+    setTimeout(tickClock, 1000);
+})();
+
+document.getElementById('topbarDate').textContent = humanDate(new Date());
+
+/* ── Estado global ────────────────────────────────────────── */
+let fechaSel   = toISO(new Date());
+let citaActiva = null;   // { paciente_id, hora, fecha }
+let timersList = [];     // setTimeout IDs para auto-refresh
+
+/* ══════════════════════════════════════════════════════════
+   AUTO-REFRESH POR HORA DE CITA
+   Programa refreshes en los momentos clave de cada cita:
+   - 30 min antes  → cambia de "pendiente" a "activa" (botón aparece)
+   - 30 min después → cambia a "cumplida" (botón desaparece)
+══════════════════════════════════════════════════════════ */
+function programarRefrescos(citas, fecha) {
+    timersList.forEach(t => clearTimeout(t));
+    timersList = [];
+    const ahora = Date.now();
+    citas.forEach(c => {
+        const [h, m]     = c.hora.split(':');
+        const [y, mo, d] = fecha.split('-');
+        const tCita      = new Date(y, mo-1, d, h, m, 0).getTime();
+
+        const msInicio  = tCita - ahora;
+        const msDespues = (tCita + 30 * 60 * 1000) - ahora;
+
+        [msInicio, msDespues].forEach(ms => {
+            if (ms > 500 && ms < 48 * 60 * 60 * 1000) {
+                timersList.push(setTimeout(() => loadAgenda(fechaSel), ms + 800));
+            }
+        });
+    });
+}
+
+/* ══════════════════════════════════════════════════════════
+   DAY PICKER
+══════════════════════════════════════════════════════════ */
+function buildDayPicker() {
+    const wrap = document.getElementById('dayPicker');
+    wrap.innerHTML = '';
+    const hoy = new Date();
+
+    for (let i = 0; i < 7; i++) {
+        const d   = new Date(hoy);
+        d.setDate(hoy.getDate() + i);
+        const iso  = toISO(d);
+        const esHoy = i === 0;
+
+        const btn = document.createElement('button');
+        btn.className = 'day-btn' + (i === 0 ? ' active' : '');
+        btn.dataset.fecha = iso;
+
+        btn.innerHTML = `
+            <span class="day-name">${DIAS[d.getDay()].substring(0,3)}</span>
+            <span class="day-num">${d.getDate()}</span>
+            ${esHoy ? '<span class="day-hoy-pill">Hoy</span>' : ''}`;
+
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            fechaSel = iso;
+            updateHeader(d, esHoy);
+            loadAgenda(iso);
+        });
+        wrap.appendChild(btn);
+    }
+
+    updateHeader(hoy, true);
+}
+
+function updateHeader(d, esHoy) {
+    document.getElementById('agendaDayTitle').textContent = esHoy ? 'Hoy' : DIAS[d.getDay()];
+    document.getElementById('agendaDaySub').textContent   = humanDate(d);
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOAD AGENDA
+══════════════════════════════════════════════════════════ */
+async function loadAgenda(fecha) {
+    const tl = document.getElementById('timeline');
+    tl.innerHTML = '<div class="tl-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando agenda…</div>';
+
+    try {
+        const data  = await (await fetch(`${URLS.agenda}?fecha=${fecha}`)).json();
+        const citas = data.citas || [];
+
+        document.getElementById('agendaCount').textContent = citas.length;
+
+        if (!citas.length) {
+            tl.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <p>Sin citas para este día.</p>
+            </div>`;
+            return;
+        }
+
+        tl.innerHTML = citas.map(c => renderCitaRow(c, fecha)).join('');
+        programarRefrescos(citas, fecha);
+
+    } catch (e) {
+        console.error(e);
+        tl.innerHTML = '<div class="msg-error">Error al cargar la agenda.</div>';
+    }
+}
+
+/* ── Render fila de cita en timeline ─────────────────────── */
+function renderCitaRow(c, fecha) {
+    const ahora   = new Date();
+    const [h, m]  = c.hora.split(':');
+    const [y, mo, d] = fecha.split('-');
+    const tCita   = new Date(y, mo-1, d, h, m, 0);
+    const diffMin = (tCita - ahora) / 60000;
+
+    /*
+     * ESTADOS CORREGIDOS:
+     *  pendiente → faltan más de 30 min para la cita  (diffMin > 30)
+     *  activa    → entre -30 min antes y +30 min después  (-30 ≤ diffMin ≤ 30)
+     *  cumplida  → pasaron más de 30 min  (diffMin < -30)  O backend la marcó cumplida
+     *
+     * Esto hace que a las 6:00 AM con cita a las 6:30 AM:
+     *  diffMin = +30 → estado "activa" → botón "Iniciar Consulta" visible
+     */
+    let estado;
+    if (c.cumplida) {
+        estado = 'cumplida';
+    } else if (diffMin <= 0 && diffMin >= -30) {
+        estado = 'activa';       // llegó la hora, faltan ≤ 30 min para cerrar
+    } else if (diffMin < -30) {
+        estado = 'cumplida';
+    } else {
+        estado = 'pendiente';    // diffMin > 0 → aún no llega
+    }
+
+    const badges = {
+        pendiente: `<span class="badge badge-pendiente"><i class="fa-solid fa-clock"></i> Pendiente</span>`,
+        activa:    `<span class="badge badge-activa"><i class="fa-solid fa-circle-dot fa-beat"></i> Disponible ahora</span>`,
+        cumplida:  `<span class="badge badge-cumplida"><i class="fa-solid fa-circle-check"></i> Cumplida</span>`,
+    };
+
+    return `
+    <div class="tl-item tl-${estado}" onclick="abrirPaciente(${c.id_paciente},'${c.hora}','${fecha}',${c.cumplida})">
+        <div class="tl-hora-col">
+            <span class="tl-hora-txt">${c.hora}</span>
+            <div class="tl-dot dot-${estado}"></div>
+        </div>
+        <div class="tl-card tl-card-${estado}">
+            <div class="tl-card-row">
+                <span class="tl-pac-nombre">${c.paciente_nombre}</span>
+                ${badges[estado]}
+            </div>
+            <div class="tl-card-sub">
+                <i class="fa-solid fa-briefcase-medical"></i> ${c.tipo_cita}
+                &nbsp;·&nbsp;
+                <i class="fa-solid fa-id-card"></i> ${c.paciente_doc}
+            </div>
+            ${estado === 'activa' ? `
+            <div class="tl-hint">
+                <i class="fa-solid fa-stethoscope"></i> Toca para iniciar la consulta
+            </div>` : ''}
+        </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MODAL PACIENTE
+   CORRECCIÓN: recibe `cumplida` del backend para bloquear
+   el botón si ya se registró historial hoy.
+══════════════════════════════════════════════════════════ */
+async function abrirPaciente(pacienteId, hora, fecha, yaCumplida) {
+    citaActiva = (hora && fecha) ? { paciente_id: pacienteId, hora, fecha } : null;
+
+    openModal('modal-paciente');
+    const body   = document.getElementById('body-paciente');
+    const footer = document.getElementById('footer-paciente');
+    body.innerHTML   = '<div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>';
+    footer.innerHTML = '<button class="btn btn-ghost" data-close>Cerrar</button>';
+
+    try {
+        const d = await (await fetch(URLS.paciente + pacienteId + '/')).json();
+
+        // Calcular edad
+        const nac  = new Date(d.fecha_nacimiento);
+        const hoyN = new Date();
+        const edad = hoyN.getFullYear() - nac.getFullYear()
+            - (hoyN < new Date(hoyN.getFullYear(), nac.getMonth(), nac.getDate()) ? 1 : 0);
+
+        body.innerHTML = `
+        <div class="pac-hero">
+            <div class="pac-hero-avatar">${d.nombre[0]}${d.apellido[0]}</div>
+            <div>
+                <div class="pac-hero-nombre">${d.nombre} ${d.apellido}</div>
+                <span class="pac-hero-badge"><i class="fa-solid fa-heart-pulse"></i> Paciente · ${edad} años</span>
+            </div>
+        </div>
+        <div class="info-grid" style="margin-top:18px">
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-id-card"></i> Documento</span>
+                <span class="if-value">${d.tipo_doc} ${d.numero_doc}</span>
+            </div>
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-venus-mars"></i> Género</span>
+                <span class="if-value">${d.genero}</span>
+            </div>
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-cake-candles"></i> Fecha de nacimiento</span>
+                <span class="if-value">${d.fecha_nacimiento}</span>
+            </div>
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-droplet"></i> Tipo de sangre</span>
+                <span class="if-value">${d.tipo_sangre}</span>
+            </div>
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-phone"></i> Teléfono</span>
+                <span class="if-value">${d.telefono}</span>
+            </div>
+            <div class="info-field">
+                <span class="if-label"><i class="fa-solid fa-envelope"></i> Correo</span>
+                <span class="if-value">${d.correo}</span>
+            </div>
+            <div class="info-field" style="grid-column:1/-1">
+                <span class="if-label"><i class="fa-solid fa-location-dot"></i> Dirección</span>
+                <span class="if-value">${d.direccion}</span>
+            </div>
+        </div>`;
+
+        /*
+         * LÓGICA DEL FOOTER — CORRECCIÓN PRINCIPAL:
+         *
+         * "Iniciar Consulta" aparece SOLO si:
+         *   1. La cita está en ventana activa: entre -30 y +30 min respecto a la hora de cita
+         *   2. El backend NO marcó la cita como cumplida (yaCumplida === false)
+         *
+         * Esto previene que el botón reaparezca tras guardar el historial.
+         */
+        let puedeConsultar = false;
+
+        if (citaActiva && !yaCumplida) {
+            const [hh, mm]       = citaActiva.hora.split(':');
+            const [yy, moC, ddC] = citaActiva.fecha.split('-');
+            const tCita   = new Date(yy, moC-1, ddC, hh, mm, 0);
+            const diffMin = (tCita - new Date()) / 60000;
+            puedeConsultar = (diffMin <= 0 && diffMin >= -30);
+        }
+
+        // Usamos escAttr para evitar que comillas en nombre/apellido rompan el onclick
+        const nomSafe = escAttr(d.nombre);
+        const apeSafe = escAttr(d.apellido);
+        const docSafe = escAttr(d.numero_doc);
+
+        footer.innerHTML = `
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+            <button class="btn btn-teal" onclick="abrirAntecedentes(${pacienteId})">
+                <i class="fa-solid fa-file-medical"></i> Ver Antecedentes
+            </button>
+            ${puedeConsultar ? `
+            <button class="btn btn-primary" onclick="abrirConsulta(${pacienteId},'${nomSafe}','${apeSafe}','${docSafe}')">
+                <i class="fa-solid fa-stethoscope"></i> Iniciar Consulta
+            </button>` : ''}
+            ${yaCumplida ? `
+            <span class="badge badge-cumplida" style="padding:8px 14px;">
+                <i class="fa-solid fa-circle-check"></i> Consulta ya registrada
+            </span>` : ''}`;
+
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = '<div class="msg-error">Error al cargar datos del paciente.</div>';
+    }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ANTECEDENTES — SOLO LECTURA
+══════════════════════════════════════════════════════════ */
+async function abrirAntecedentes(pacienteId) {
+    openModal('modal-antecedentes');
+    const body = document.getElementById('body-antecedentes');
+    body.innerHTML = '<div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>';
+
+    try {
+        const data = await (await fetch(URLS.historial + pacienteId + '/')).json();
+
+        if (!data.historiales?.length) {
+            body.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-file-circle-xmark"></i>
+                <p>Este paciente no tiene historiales clínicos aún.</p>
+            </div>`;
+            return;
+        }
+
+        // CORRECCIÓN: usamos dataset en lugar de onclick inline para evitar XSS con textos largos
+        body.innerHTML = data.historiales.map((h, idx) => `
+            <div class="hist-row" data-idx="${idx}">
+                <div class="hist-icon ${h.es_propio ? 'hist-icon-propio' : ''}">
+                    <i class="fa-solid fa-notes-medical"></i>
+                </div>
+                <div class="hist-info">
+                    <div class="hist-titulo">Registro del ${h.fecha_creacion}</div>
+                    <div class="hist-sub">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        Dr. ${h.medico_nombre} · ${h.especialidad}
+                    </div>
+                    <div class="hist-preview">${(h.antecedentes||'').substring(0,110)}${(h.antecedentes||'').length > 110 ? '…' : ''}</div>
+                </div>
+                <button class="btn-solo-ver" data-idx="${idx}">
+                    <i class="fa-solid fa-eye"></i> Ver
+                </button>
+            </div>`).join('');
+
+        // Guardamos historiales en memoria para acceso seguro desde los botones
+        body._historiales = data.historiales;
+
+        body.querySelectorAll('[data-idx]').forEach(el => {
+            el.addEventListener('click', () => {
+                const h = body._historiales[el.dataset.idx];
+                verDetalleHistorial(h.fecha_creacion, h.medico_nombre, h.antecedentes || '');
+            });
+        });
+
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = '<div class="msg-error">Error al cargar historiales.</div>';
+    }
+}
+
+function verDetalleHistorial(fecha, medico, antecedentes) {
+    document.getElementById('hd-fecha').textContent        = fecha;
+    document.getElementById('hd-medico').textContent       = 'Dr. ' + medico;
+    document.getElementById('hd-antecedentes').textContent = antecedentes;
+    openModal('modal-hist-detalle');
+}
+
+/* ══════════════════════════════════════════════════════════
+   INICIAR CONSULTA
+══════════════════════════════════════════════════════════ */
+function abrirConsulta(pacienteId, nombre, apellido, doc) {
+    document.getElementById('c-paciente-id').value    = pacienteId;
+    document.getElementById('c-antecedentes').value   = '';
+    document.getElementById('msg-consulta').innerHTML = '';
+    document.getElementById('c-banner').innerHTML = `
+        <i class="fa-solid fa-user-injured"></i>
+        <div>
+            <strong>${nombre} ${apellido}</strong>
+            <span>Documento: ${doc}</span>
+        </div>`;
+    openModal('modal-consulta');
+}
+
+document.getElementById('btn-guardar-consulta').addEventListener('click', async () => {
+    const msg          = document.getElementById('msg-consulta');
+    const btn          = document.getElementById('btn-guardar-consulta');
+    const pacienteId   = document.getElementById('c-paciente-id').value;
+    const antecedentes = document.getElementById('c-antecedentes').value.trim();
+
+    if (!antecedentes) {
+        msg.innerHTML = '<div class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> Las notas no pueden estar vacías.</div>';
+        return;
+    }
+
+    // Deshabilitar botón para evitar doble envío
+    btn.disabled = true;
+    msg.innerHTML = '<div class="msg-ok"><i class="fa-solid fa-spinner fa-spin"></i> Guardando…</div>';
+
+    try {
+        const res = await (await fetch(URLS.guardar, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ antecedentes, id_paciente: pacienteId })
+        })).json();
+
+        if (res.ok) {
+            document.getElementById('cg-notas').textContent    = antecedentes;
+            document.getElementById('cg-paciente').textContent = res.paciente_nombre || '—';
+            document.getElementById('cg-fecha').textContent    =
+                new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' });
+
+            openModal('modal-consulta-guardada');
+        } else {
+            msg.innerHTML = `<div class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> ${res.error || 'Error al guardar.'}</div>`;
+            btn.disabled = false;
+        }
+    } catch (e) {
+        console.error(e);
+        msg.innerHTML = '<div class="msg-error"><i class="fa-solid fa-wifi"></i> Error de conexión.</div>';
+        btn.disabled = false;
+    }
+});
+
+/* Terminar cita: cierra modal y recarga agenda (mostrará estado cumplida) */
+document.getElementById('btn-terminar-cita').addEventListener('click', () => {
+    document.getElementById('modal-consulta-guardada').classList.remove('show');
+    document.getElementById('modal-paciente').classList.remove('show');
+    // Re-habilitar botón para próxima consulta
+    document.getElementById('btn-guardar-consulta').disabled = false;
+    loadAgenda(fechaSel);
+});
+
+/* ══════════════════════════════════════════════════════════
+   PERFIL MÉDICO
+══════════════════════════════════════════════════════════ */
+document.getElementById('btn-open-perfil').addEventListener('click', () => {
+    openModal('modal-perfil');
+    loadPerfil();
+});
+
+document.getElementById('btn-editar-perfil').addEventListener('click', () => {
+    document.querySelector('.modal-overlay.show')?.classList.remove('show');
+    openModal('modal-editar-perfil');
+});
+
+async function loadPerfil() {
+    const body = document.getElementById('body-perfil');
+    body.innerHTML = '<div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>';
+    try {
+        const d = await (await fetch(URLS.perfilJson)).json();
+        body.innerHTML = `
+        <div class="perfil-hero">
+            <div class="ph-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+            <div class="ph-nombre">${d.nombre} ${d.apellido}</div>
+            <span class="ph-badge"><i class="fa-solid fa-stethoscope"></i> ${d.especialidad}</span>
+        </div>
+        <div class="info-grid">
+            <div class="info-field"><span class="if-label"><i class="fa-solid fa-id-card"></i> Documento</span><span class="if-value">${d.tipo_doc} ${d.numero_doc}</span></div>
+            <div class="info-field"><span class="if-label"><i class="fa-solid fa-venus-mars"></i> Género</span><span class="if-value">${d.genero}</span></div>
+            <div class="info-field"><span class="if-label"><i class="fa-solid fa-phone"></i> Teléfono</span><span class="if-value">${d.telefono}</span></div>
+            <div class="info-field"><span class="if-label"><i class="fa-solid fa-envelope"></i> Correo</span><span class="if-value">${d.correo}</span></div>
+        </div>`;
+        document.getElementById('ep-nombre').value   = d.nombre;
+        document.getElementById('ep-apellido').value = d.apellido;
+        document.getElementById('ep-telefono').value = d.telefono;
+        document.getElementById('ep-correo').value   = d.correo;
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = '<div class="msg-error">Error al cargar el perfil.</div>';
+    }
+}
+
+document.getElementById('btn-guardar-perfil').addEventListener('click', async () => {
+    const msg = document.getElementById('msg-perfil');
+    const btn = document.getElementById('btn-guardar-perfil');
+    const d = {
+        nombre:     document.getElementById('ep-nombre').value.trim(),
+        apellido:   document.getElementById('ep-apellido').value.trim(),
+        telefono:   document.getElementById('ep-telefono').value.trim(),
+        correo:     document.getElementById('ep-correo').value.trim().toLowerCase(),
+        contrasena: document.getElementById('ep-contrasena').value.trim(),
+    };
+    if (d.nombre.length < 2 || d.apellido.length < 2) {
+        msg.innerHTML = '<div class="msg-error">Nombre y apellido son requeridos.</div>';
+        return;
+    }
+    btn.disabled = true;
+    try {
+        const res = await (await fetch(URLS.editarPerfil, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(d)
+        })).json();
+        if (res.ok) {
+            msg.innerHTML = '<div class="msg-ok"><i class="fa-solid fa-check"></i> Perfil actualizado.</div>';
+            setTimeout(() => location.reload(), 1400);
+        } else {
+            msg.innerHTML = `<div class="msg-error">${res.error || 'Error.'}</div>`;
+            btn.disabled = false;
+        }
+    } catch (e) {
+        console.error(e);
+        msg.innerHTML = '<div class="msg-error">Error de conexión.</div>';
+        btn.disabled = false;
+    }
+});
+
+/* ══════════════════════════════════════════════════════════
+   MOTOR DE MODALES
+══════════════════════════════════════════════════════════ */
+function openModal(id) {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    document.getElementById(id)?.classList.add('show');
+}
+
+document.querySelectorAll('[data-close]').forEach(btn =>
+    btn.addEventListener('click', () => btn.closest('.modal-overlay').classList.remove('show'))
+);
+document.querySelectorAll('.modal-overlay').forEach(ov =>
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); })
+);
+
+document.getElementById('avatarBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('avatarDropdown').classList.toggle('show');
+});
+document.addEventListener('click', () =>
+    document.getElementById('avatarDropdown').classList.remove('show')
+);
+
+/* ── INIT ─────────────────────────────────────────────── */
+buildDayPicker();
+loadAgenda(fechaSel);
+</script>
 </body>
 </html>
