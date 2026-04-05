@@ -4,8 +4,52 @@
 
 <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-hospital-user"></i> Pacientes</h1>
-    <a href="{% url 'crear_pacientes' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Paciente</a>
+    <a href="{% url 'crear_pacientes' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Nuevo Paciente
+    </a>
 </div>
+
+{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
+<div class="toolbar-reportes">
+
+    <form method="GET" action="{% url 'ver_pacientes' %}" class="search-form">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+                type="text"
+                name="q"
+                value="{{ q }}"
+                placeholder="Buscar por nombre, documento, correo, sangre…"
+                class="search-input"
+                autocomplete="off"
+            >
+            {% if q %}
+                <a href="{% url 'ver_pacientes' %}" class="search-clear" title="Limpiar">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-search">Buscar</button>
+    </form>
+
+    <div class="reporte-btns">
+        <a href="{% url 'reporte_pacientes' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
+           target="_blank" class="btn btn-reporte btn-pdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </a>
+        <a href="{% url 'reporte_pacientes' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
+           class="btn btn-reporte btn-excel">
+            <i class="fa-solid fa-file-excel"></i> Excel
+        </a>
+    </div>
+</div>
+
+{% if q %}
+<p class="search-info">
+    Resultados para <strong>"{{ q }}"</strong> — {{ pacientes|length }} registro(s).
+    <a href="{% url 'ver_pacientes' %}">Ver todos</a>
+</p>
+{% endif %}
 
 <div class="card">
     <div class="table-wrapper">
@@ -34,24 +78,52 @@
                     <td>{{ p.nombre }} {{ p.apellido }}</td>
                     <td>{{ p.genero }}</td>
                     <td>{{ p.fecha_nacimiento }}</td>
-                    <td><span class="badge" style="background:rgba(210,153,34,0.12);color:#d29922;border:1px solid rgba(210,153,34,0.25)">{{ p.tipo_sangre }}</span></td>
+                    <td>
+                        <span class="badge" style="background:rgba(210,153,34,0.12);color:#d29922;border:1px solid rgba(210,153,34,0.25)">
+                            {{ p.tipo_sangre }}
+                        </span>
+                    </td>
                     <td>{{ p.telefono }}</td>
                     <td style="color:var(--text-muted)">{{ p.correo }}</td>
-                    <td>{% if p.estado %}<span class="badge badge-on">Activo</span>{% else %}<span class="badge badge-off">Inactivo</span>{% endif %}</td>
+                    <td>
+                        {% if p.estado %}
+                            <span class="badge badge-on">Activo</span>
+                        {% else %}
+                            <span class="badge badge-off">Inactivo</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="td-actions">
-                            <a href="{% url 'editar_pacientes' p.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
-                            <a href="{% url 'eliminar_pacientes' p.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
+                            <a href="{% url 'editar_pacientes' p.pk %}" class="btn btn-sm btn-edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'eliminar_pacientes' p.pk %}" class="btn btn-sm btn-del">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="11">
-                    <div class="empty-state"><div class="ei">👤</div><p>No hay pacientes registrados.<br><a href="{% url 'crear_pacientes' %}" style="color:var(--accent)">Registrar paciente</a></p></div>
-                </td></tr>
+                <tr>
+                    <td colspan="11">
+                        <div class="empty-state">
+                            <div class="ei">👤</div>
+                            <p>
+                                {% if q %}
+                                    No se encontraron pacientes con "<strong>{{ q }}</strong>".<br>
+                                    <a href="{% url 'ver_pacientes' %}" style="color:var(--accent)">Ver todos</a>
+                                {% else %}
+                                    No hay pacientes registrados.<br>
+                                    <a href="{% url 'crear_pacientes' %}" style="color:var(--accent)">Registrar paciente</a>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
 {% endblock %}

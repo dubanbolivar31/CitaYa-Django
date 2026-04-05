@@ -4,8 +4,55 @@
 
 <div class="page-header">
     <h1 class="page-title"><i class="fas fa-user-gear"></i> Administradores</h1>
-    <a href="{% url 'crear_administrador' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Administrador</a>
+    <a href="{% url 'crear_administrador' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Nuevo Administrador
+    </a>
 </div>
+
+{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
+<div class="toolbar-reportes">
+
+    {# Formulario de búsqueda multicriterio #}
+    <form method="GET" action="{% url 'ver_administrador' %}" class="search-form">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+                type="text"
+                name="q"
+                value="{{ q }}"
+                placeholder="Buscar por nombre, documento, correo o teléfono…"
+                class="search-input"
+                autocomplete="off"
+            >
+            {% if q %}
+                <a href="{% url 'ver_administrador' %}" class="search-clear" title="Limpiar búsqueda">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-search">Buscar</button>
+    </form>
+
+    {# Botones de reporte — pasan el mismo filtro activo #}
+    <div class="reporte-btns">
+        <a href="{% url 'reporte_administradores' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
+           target="_blank" class="btn btn-reporte btn-pdf" title="Descargar PDF">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </a>
+        <a href="{% url 'reporte_administradores' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
+           class="btn btn-reporte btn-excel" title="Descargar Excel">
+            <i class="fa-solid fa-file-excel"></i> Excel
+        </a>
+    </div>
+</div>
+
+{% if q %}
+<p class="search-info">
+    Mostrando resultados para <strong>"{{ q }}"</strong> —
+    {{ admins|length }} registro(s) encontrado(s).
+    <a href="{% url 'ver_administrador' %}">Ver todos</a>
+</p>
+{% endif %}
 
 <div class="card">
     <div class="table-wrapper">
@@ -44,8 +91,12 @@
                     </td>
                     <td>
                         <div class="td-actions">
-                            <a href="{% url 'editar_administrador' admin.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
-                            <a href="{% url 'eliminar_administrador' admin.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
+                            <a href="{% url 'editar_administrador' admin.pk %}" class="btn btn-sm btn-edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'eliminar_administrador' admin.pk %}" class="btn btn-sm btn-del">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -54,8 +105,15 @@
                     <td colspan="10">
                         <div class="empty-state">
                             <div class="ei">🛡️</div>
-                            <p>No hay administradores registrados.<br>
-                            <a href="{% url 'crear_administrador' %}" style="color:var(--accent)">Crear el primero</a></p>
+                            <p>
+                                {% if q %}
+                                    No se encontraron administradores con "<strong>{{ q }}</strong>".<br>
+                                    <a href="{% url 'ver_administrador' %}" style="color:var(--accent)">Ver todos</a>
+                                {% else %}
+                                    No hay administradores registrados.<br>
+                                    <a href="{% url 'crear_administrador' %}" style="color:var(--accent)">Crear el primero</a>
+                                {% endif %}
+                            </p>
                         </div>
                     </td>
                 </tr>
@@ -64,4 +122,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}
