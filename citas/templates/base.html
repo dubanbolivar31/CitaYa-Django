@@ -1,57 +1,422 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CitaYa{% endblock %}</title>
     <script src="https://kit.fontawesome.com/606c3ce39f.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="{% static 'assets/css/base.css?v=2.1' %}">
-    <link rel="stylesheet" href="{% static 'assets/css/dashboard_admin.css?v=2.1' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/base.css' %}">
     {% block extra_styles %}{% endblock %}
 </head>
 
 <body>
-    <aside class="sidebar">
-        <div class="sidebar-logo"><img src="{% static 'assets/img/nutria_letras.png' %}" class="logo" alt="CitaYa"></div>
-        <nav class="sidebar-nav">
-            <div class="nav-label">Principal</div>
-            <a href="{% url 'dashboard_admin' %}"
-                class="nav-link {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <div class="nav-label">Gestión</div>
-            <a href="{% url 'ver_administrador' %}"
-                class="nav-link {% if 'administrador' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-user-gear"></i> Administradores
-            </a>
-            <a href="{% url 'ver_medicos' %}"
-                class="nav-link {% if 'medico' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-user-doctor"></i> Médicos
-            </a>
-            <a href="{% url 'ver_pacientes' %}"
-                class="nav-link {% if 'paciente' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-hospital-user"></i> Pacientes
-            </a>
-            <a href="{% url 'ver_agendamientos' %}"
-                class="nav-link {% if 'agendamiento' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-calendar-check"></i> Agendamientos
-            </a>
-            <a href="{% url 'ver_historiales' %}"
-                class="nav-link {% if 'historial' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-clipboard-list"></i> Historiales
-            </a>
-        </nav>
-    </aside>
 
-    <main class="main">
-        {% if messages %}
-            {% for msg in messages %}
-            <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
-            {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
-    </main>
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <img src="{% static 'assets/img/nombre.png' %}" alt="Logo" class="logo-img">
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-label">Principal</div>
+        <a href="{% url 'dashboard_admin' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i> Inicio
+        </a>
+
+        <div class="nav-label">Gestión</div>
+        <a href="{% url 'ver_administrador' %}"
+           class="nav-link {% if 'administrador' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-user-gear"></i> Administradores
+        </a>
+        <a href="{% url 'ver_medicos' %}"
+           class="nav-link {% if 'medico' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fa-solid fa-user-doctor"></i> Médicos
+        </a>
+        <a href="{% url 'ver_pacientes' %}"
+           class="nav-link {% if 'paciente' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fa-solid fa-hospital-user"></i> Pacientes
+        </a>
+        <a href="{% url 'ver_agendamientos' %}"
+           class="nav-link {% if 'agendamiento' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i> Agendamientos
+        </a>
+        <a href="{% url 'ver_historiales' %}"
+           class="nav-link {% if 'historial' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fa-solid fa-clipboard-list"></i> Historiales
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <button class="logout-btn" onclick="abrirCerrarSesion()">
+            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+        </button>
+    </div>
+</aside>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════════════════════ -->
+<header class="topbar">
+    <div class="topbar-left">
+        <h1>Bienvenido, <span class="topbar-name">{{ request.session.nombre }}</span></h1>
+        <p>Panel de administración · CitaYa</p>
+    </div>
+    <div class="topbar-right">
+        <button class="avatar-btn" id="avatarBtn" title="Mi perfil">
+            <i class="fa-solid fa-user-shield"></i>
+        </button>
+        <div class="avatar-dropdown" id="avatarDropdown">
+            <button class="drop-item" onclick="abrirVerPerfil()">
+                <i class="fa-solid fa-id-card"></i> Ver perfil
+            </button>
+            <button class="drop-item" onclick="abrirEditarPerfil()">
+                <i class="fa-solid fa-pen-to-square"></i> Editar perfil
+            </button>
+            <div class="drop-divider"></div>
+            <button class="drop-item drop-danger" onclick="abrirCerrarSesion()">
+                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+            </button>
+        </div>
+    </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════ -->
+<main class="main">
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">
+            <i class="fa-solid fa-circle-info"></i> {{ msg }}
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if request.resolver_match.url_name == 'dashboard_admin' %}
+    <!-- ── Stats ──────────────────────────────────────────────── -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--c:#1a56db">
+            <div class="stat-icon"><i class="fa-solid fa-user-doctor"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_medicos|default:"0" }}</span>
+                <span class="stat-label">Médicos activos</span>
+            </div>
+            <div class="stat-bg-icon"><i class="fa-solid fa-user-doctor"></i></div>
+        </div>
+        <div class="stat-card" style="--c:#059669">
+            <div class="stat-icon"><i class="fa-solid fa-hospital-user"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_pacientes|default:"0" }}</span>
+                <span class="stat-label">Pacientes registrados</span>
+            </div>
+            <div class="stat-bg-icon"><i class="fa-solid fa-hospital-user"></i></div>
+        </div>
+        <div class="stat-card" style="--c:#7c3aed">
+            <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_citas|default:"0" }}</span>
+                <span class="stat-label">Citas agendadas</span>
+            </div>
+            <div class="stat-bg-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        </div>
+        <div class="stat-card" style="--c:#d97706">
+            <div class="stat-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+            <div class="stat-info">
+                <span class="stat-num">{{ total_historiales|default:"0" }}</span>
+                <span class="stat-label">Historiales clínicos</span>
+            </div>
+            <div class="stat-bg-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+        </div>
+    </div>
+
+    <!-- ── Accesos rápidos ────────────────────────────────────── -->
+    <div class="section-title">Accesos rápidos</div>
+    <div class="quick-grid">
+        <a href="{% url 'ver_medicos' %}" class="quick-card">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span>Gestionar Médicos</span>
+        </a>
+        <a href="{% url 'ver_pacientes' %}" class="quick-card">
+            <i class="fa-solid fa-hospital-user"></i>
+            <span>Gestionar Pacientes</span>
+        </a>
+        <a href="{% url 'crear_agendamientos' %}" class="quick-card">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <span>Nueva Cita</span>
+        </a>
+        <a href="{% url 'ver_historiales' %}" class="quick-card">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Ver Historiales</span>
+        </a>
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</main>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL: VER PERFIL
+══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalVerPerfil">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-id-card"></i> Mi Perfil</h3>
+            <button class="modal-close" onclick="cerrarModal('modalVerPerfil')">&times;</button>
+        </div>
+        <div class="modal-body" id="perfilContent">
+            <div class="perfil-avatar"><i class="fa-solid fa-user-shield"></i></div>
+            <div class="perfil-nombre" id="pNombre">—</div>
+            <div class="perfil-badge">Administrador</div>
+            <div class="perfil-grid">
+                <div class="perfil-field">
+                    <span class="pf-label"><i class="fa-solid fa-id-card"></i> Tipo Documento</span>
+                    <span class="pf-value" id="pTipoDoc">—</span>
+                </div>
+                <div class="perfil-field">
+                    <span class="pf-label"><i class="fa-solid fa-hashtag"></i> N° Documento</span>
+                    <span class="pf-value" id="pNumeroDoc">—</span>
+                </div>
+                <div class="perfil-field">
+                    <span class="pf-label"><i class="fa-solid fa-venus-mars"></i> Género</span>
+                    <span class="pf-value" id="pGenero">—</span>
+                </div>
+                <div class="perfil-field">
+                    <span class="pf-label"><i class="fa-solid fa-phone"></i> Teléfono</span>
+                    <span class="pf-value" id="pTelefono">—</span>
+                </div>
+                <div class="perfil-field pf-full">
+                    <span class="pf-label"><i class="fa-solid fa-envelope"></i> Correo</span>
+                    <span class="pf-value" id="pCorreo">—</span>
+                </div>
+                <div class="perfil-field pf-full">
+                    <span class="pf-label"><i class="fa-solid fa-circle-check"></i> Estado</span>
+                    <span class="pf-value" id="pEstado">—</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal btn-secondary" onclick="cerrarModal('modalVerPerfil')">Cerrar</button>
+            <button class="btn-modal btn-primary" onclick="cerrarModal('modalVerPerfil'); abrirEditarPerfil()">
+                <i class="fa-solid fa-pen-to-square"></i> Editar perfil
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL: EDITAR PERFIL
+══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalEditarPerfil">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Editar Perfil</h3>
+            <button class="modal-close" onclick="cerrarModal('modalEditarPerfil')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="editMsg" class="edit-msg" style="display:none"></div>
+            <div class="edit-grid">
+                <div class="form-group-m">
+                    <label>Nombre</label>
+                    <input type="text" id="eNombre" placeholder="Nombre">
+                </div>
+                <div class="form-group-m">
+                    <label>Apellido</label>
+                    <input type="text" id="eApellido" placeholder="Apellido">
+                </div>
+                <div class="form-group-m">
+                    <label>Género</label>
+                    <select id="eGenero">
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="O">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group-m">
+                    <label>Teléfono</label>
+                    <input type="tel" id="eTelefono" placeholder="3001234567">
+                </div>
+                <div class="form-group-m full">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="eCorreo" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group-m full">
+                    <label>Nueva contraseña <small class="label-hint">(dejar vacío para no cambiar)</small></label>
+                    <input type="password" id="eContrasena" placeholder="••••••••">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal btn-secondary" onclick="cerrarModal('modalEditarPerfil')">Cancelar</button>
+            <button class="btn-modal btn-primary" id="btnGuardar" onclick="guardarPerfil()">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL: CERRAR SESIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalLogout">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</h3>
+            <button class="modal-close" onclick="cerrarModal('modalLogout')">&times;</button>
+        </div>
+        <div class="modal-body logout-body">
+            <div class="logout-emoji">👋</div>
+            <p class="logout-title">¿Deseas cerrar sesión?</p>
+            <p class="logout-sub">Deberás iniciar sesión nuevamente para acceder al panel.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal btn-secondary" onclick="cerrarModal('modalLogout')">Cancelar</button>
+            <a href="{% url 'logout_admin' %}" class="btn-modal btn-danger">
+                <i class="fa-solid fa-right-from-bracket"></i> Sí, salir
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT GLOBAL
+══════════════════════════════════════════════════════════ -->
+<script>
+const CSRF = '{{ csrf_token }}';
+
+// ── Dropdown avatar ──────────────────────────────────────────
+const avatarBtn      = document.getElementById('avatarBtn');
+const avatarDropdown = document.getElementById('avatarDropdown');
+
+avatarBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    avatarDropdown.classList.toggle('show');
+});
+document.addEventListener('click', () => avatarDropdown.classList.remove('show'));
+
+// ── Modales ──────────────────────────────────────────────────
+function abrirModal(id) {
+    document.getElementById(id).classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) cerrarModal(overlay.id);
+    });
+});
+
+// ── Ver Perfil ───────────────────────────────────────────────
+async function abrirVerPerfil() {
+    avatarDropdown.classList.remove('show');
+    abrirModal('modalVerPerfil');
+    try {
+        const res  = await fetch("{% url 'perfil_admin_json' %}");
+        const data = await res.json();
+        document.getElementById('pNombre').textContent    = `${data.nombre} ${data.apellido}`;
+        document.getElementById('pTipoDoc').textContent   = data.tipo_doc;
+        document.getElementById('pNumeroDoc').textContent = data.numero_doc;
+        document.getElementById('pGenero').textContent    = data.genero === 'M' ? 'Masculino' : data.genero === 'F' ? 'Femenino' : 'Otro';
+        document.getElementById('pTelefono').textContent  = data.telefono;
+        document.getElementById('pCorreo').textContent    = data.correo;
+        document.getElementById('pEstado').innerHTML      = data.estado
+            ? '<span class="badge badge-on">✔ Activo</span>'
+            : '<span class="badge badge-off">✖ Inactivo</span>';
+    } catch {
+        document.getElementById('perfilContent').innerHTML =
+            '<p class="perfil-error">Error al cargar el perfil.</p>';
+    }
+}
+
+// ── Editar Perfil ────────────────────────────────────────────
+async function abrirEditarPerfil() {
+    avatarDropdown.classList.remove('show');
+    try {
+        const res  = await fetch("{% url 'perfil_admin_json' %}");
+        const data = await res.json();
+        document.getElementById('eNombre').value    = data.nombre;
+        document.getElementById('eApellido').value  = data.apellido;
+        document.getElementById('eGenero').value    = data.genero;
+        document.getElementById('eTelefono').value  = data.telefono;
+        document.getElementById('eCorreo').value    = data.correo;
+        document.getElementById('eContrasena').value = '';
+    } catch {}
+    const msg = document.getElementById('editMsg');
+    msg.style.display = 'none';
+    abrirModal('modalEditarPerfil');
+}
+
+async function guardarPerfil() {
+    const btn = document.getElementById('btnGuardar');
+    const msg = document.getElementById('editMsg');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+
+    const payload = {
+        nombre:     document.getElementById('eNombre').value.trim(),
+        apellido:   document.getElementById('eApellido').value.trim(),
+        genero:     document.getElementById('eGenero').value,
+        telefono:   document.getElementById('eTelefono').value.trim(),
+        correo:     document.getElementById('eCorreo').value.trim(),
+        contrasena: document.getElementById('eContrasena').value,
+    };
+
+    if (!payload.nombre || !payload.apellido || !payload.correo || !payload.telefono) {
+        mostrarMsg(msg, 'error', 'Por favor completa todos los campos obligatorios.');
+        resetBtn(btn);
+        return;
+    }
+
+    try {
+        const res  = await fetch("{% url 'editar_perfil_admin' %}", {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body:    JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.ok) {
+            mostrarMsg(msg, 'success', '✔ Perfil actualizado correctamente.');
+            document.querySelectorAll('.topbar-name').forEach(el => el.textContent = data.nombre);
+            setTimeout(() => cerrarModal('modalEditarPerfil'), 1400);
+        } else {
+            mostrarMsg(msg, 'error', data.error || 'Error al guardar.');
+        }
+    } catch {
+        mostrarMsg(msg, 'error', 'Error de conexión.');
+    }
+    resetBtn(btn);
+}
+
+function mostrarMsg(el, tipo, texto) {
+    el.textContent   = texto;
+    el.className     = 'edit-msg edit-msg-' + tipo;
+    el.style.display = 'block';
+}
+function resetBtn(btn) {
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+}
+
+// ── Cerrar Sesión ────────────────────────────────────────────
+function abrirCerrarSesion() {
+    avatarDropdown.classList.remove('show');
+    abrirModal('modalLogout');
+}
+</script>
+
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

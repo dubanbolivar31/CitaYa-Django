@@ -11,6 +11,10 @@ from django.contrib.auth.mixins import AccessMixin
 from datetime import datetime, timedelta
 from django.db.models import Q
 
+from .forms import (
+    AdministradorForm, MedicoForm, PacienteForm,
+    AgendamientoForm, HistorialForm,
+)
 from .utils import (
     enviar_confirmacion_cita,
     generar_pdf_administradores, generar_excel_administradores,
@@ -79,22 +83,34 @@ def login(request):
         numero_doc = request.POST.get('numerodoc')
         password   = request.POST.get('contrasena')
 
+        # ── ADMINISTRADOR ──────────────────────────────────────────────
         user_admin = Administrador.objects.filter(numero_doc=numero_doc, contrasena=password).first()
         if user_admin:
+            if not user_admin.estado:
+                messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
+                return render(request, 'Inicio_Sesion-Registro/login.html')
             request.session['usuario_id'] = user_admin.id_admin
             request.session['rol']        = 'admin'
             request.session['nombre']     = f"{user_admin.nombre} {user_admin.apellido}"
             return redirect('dashboard_admin')
 
+        # ── MÉDICO ─────────────────────────────────────────────────────
         user_medico = Medico.objects.filter(numero_doc=numero_doc, contrasena=password).first()
         if user_medico:
+            if not user_medico.estado:
+                messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
+                return render(request, 'Inicio_Sesion-Registro/login.html')
             request.session['usuario_id'] = user_medico.id_medico
             request.session['rol']        = 'medico'
             request.session['nombre']     = f"{user_medico.nombre} {user_medico.apellido}"
             return redirect('dashboard_medico')
 
+        # ── PACIENTE ───────────────────────────────────────────────────
         user_paciente = Paciente.objects.filter(numero_doc=numero_doc, contrasena=password).first()
         if user_paciente:
+            if not user_paciente.estado:
+                messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
+                return render(request, 'Inicio_Sesion-Registro/login.html')
             request.session['usuario_id'] = user_paciente.id_paciente
             request.session['rol']        = 'paciente'
             request.session['nombre']     = f"{user_paciente.nombre} {user_paciente.apellido}"
@@ -612,10 +628,6 @@ def editar_perfil_medico(request):
 # =========================================================================
 
 def _aplicar_filtro(queryset, q_term, *campos):
-    """
-    Filtra queryset con OR entre todos los campos dados y el término q_term.
-    Retorna (queryset_filtrado, q_term) — q_term puede ser '' si no hubo búsqueda.
-    """
     if not q_term:
         return queryset, ''
     condicion = Q()
@@ -638,10 +650,8 @@ class AdminListView(AdminRequiredMixin, ListView):
         q  = self.request.GET.get('q', '').strip()
         if q:
             qs = qs.filter(
-                Q(nombre__icontains=q) |
-                Q(apellido__icontains=q) |
-                Q(numero_doc__icontains=q) |
-                Q(correo__icontains=q) |
+                Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+                Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
                 Q(telefono__icontains=q)
             )
         return qs
@@ -655,12 +665,10 @@ class AdminListView(AdminRequiredMixin, ListView):
 def reporte_administradores(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-
-    q      = request.GET.get('q', '').strip()
-    tipo   = request.GET.get('tipo', 'pdf')  # 'pdf' o 'excel'
-    qs     = Administrador.objects.all()
-    qs, _  = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'telefono')
-
+    q     = request.GET.get('q', '').strip()
+    tipo  = request.GET.get('tipo', 'pdf')
+    qs    = Administrador.objects.all()
+    qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'telefono')
     if tipo == 'excel':
         data     = generar_excel_administradores(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -669,19 +677,18 @@ def reporte_administradores(request):
         data     = generar_pdf_administradores(qs)
         response = HttpResponse(data, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="administradores.pdf"'
-
     return response
 
 
 class AdminCreateView(AdminRequiredMixin, CreateView):
     model         = Administrador
-    fields        = '__all__'
+    form_class    = AdministradorForm
     template_name = 'administradores/crear_administrador.html'
     success_url   = reverse_lazy('ver_administrador')
 
 class AdminUpdateView(AdminRequiredMixin, UpdateView):
     model         = Administrador
-    fields        = '__all__'
+    form_class    = AdministradorForm
     template_name = 'administradores/editar_administrador.html'
     success_url   = reverse_lazy('ver_administrador')
 
@@ -705,12 +712,9 @@ class MedicoListView(AdminRequiredMixin, ListView):
         q  = self.request.GET.get('q', '').strip()
         if q:
             qs = qs.filter(
-                Q(nombre__icontains=q) |
-                Q(apellido__icontains=q) |
-                Q(numero_doc__icontains=q) |
-                Q(correo__icontains=q) |
-                Q(especialidad__icontains=q) |
-                Q(telefono__icontains=q)
+                Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+                Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
+                Q(especialidad__icontains=q) | Q(telefono__icontains=q)
             )
         return qs
 
@@ -723,12 +727,10 @@ class MedicoListView(AdminRequiredMixin, ListView):
 def reporte_medicos(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-
     q     = request.GET.get('q', '').strip()
     tipo  = request.GET.get('tipo', 'pdf')
     qs    = Medico.objects.all()
     qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'especialidad', 'telefono')
-
     if tipo == 'excel':
         data     = generar_excel_medicos(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -737,19 +739,18 @@ def reporte_medicos(request):
         data     = generar_pdf_medicos(qs)
         response = HttpResponse(data, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="medicos.pdf"'
-
     return response
 
 
 class MedicoCreateView(AdminRequiredMixin, CreateView):
     model         = Medico
-    fields        = '__all__'
+    form_class    = MedicoForm
     template_name = 'medicos/crear_medicos.html'
     success_url   = reverse_lazy('ver_medicos')
 
 class MedicoUpdateView(AdminRequiredMixin, UpdateView):
     model         = Medico
-    fields        = '__all__'
+    form_class    = MedicoForm
     template_name = 'medicos/editar_medicos.html'
     success_url   = reverse_lazy('ver_medicos')
 
@@ -773,12 +774,9 @@ class PacienteListView(AdminRequiredMixin, ListView):
         q  = self.request.GET.get('q', '').strip()
         if q:
             qs = qs.filter(
-                Q(nombre__icontains=q) |
-                Q(apellido__icontains=q) |
-                Q(numero_doc__icontains=q) |
-                Q(correo__icontains=q) |
-                Q(telefono__icontains=q) |
-                Q(tipo_sangre__icontains=q)
+                Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+                Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
+                Q(telefono__icontains=q) | Q(tipo_sangre__icontains=q)
             )
         return qs
 
@@ -791,12 +789,10 @@ class PacienteListView(AdminRequiredMixin, ListView):
 def reporte_pacientes(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-
     q     = request.GET.get('q', '').strip()
     tipo  = request.GET.get('tipo', 'pdf')
     qs    = Paciente.objects.all()
     qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'telefono', 'tipo_sangre')
-
     if tipo == 'excel':
         data     = generar_excel_pacientes(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -805,19 +801,18 @@ def reporte_pacientes(request):
         data     = generar_pdf_pacientes(qs)
         response = HttpResponse(data, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="pacientes.pdf"'
-
     return response
 
 
 class PacienteCreateView(AdminRequiredMixin, CreateView):
     model         = Paciente
-    fields        = '__all__'
+    form_class    = PacienteForm
     template_name = 'pacientes/crear_pacientes.html'
     success_url   = reverse_lazy('ver_pacientes')
 
 class PacienteUpdateView(AdminRequiredMixin, UpdateView):
     model         = Paciente
-    fields        = '__all__'
+    form_class    = PacienteForm
     template_name = 'pacientes/editar_pacientes.html'
     success_url   = reverse_lazy('ver_pacientes')
 
@@ -842,11 +837,9 @@ class AgendamientoListView(AdminRequiredMixin, ListView):
         if q:
             qs = qs.filter(
                 Q(cita__icontains=q) |
-                Q(id_paciente__nombre__icontains=q) |
-                Q(id_paciente__apellido__icontains=q) |
+                Q(id_paciente__nombre__icontains=q) | Q(id_paciente__apellido__icontains=q) |
                 Q(id_paciente__numero_doc__icontains=q) |
-                Q(id_medico__nombre__icontains=q) |
-                Q(id_medico__apellido__icontains=q) |
+                Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q) |
                 Q(id_medico__especialidad__icontains=q)
             )
         return qs
@@ -860,21 +853,16 @@ class AgendamientoListView(AdminRequiredMixin, ListView):
 def reporte_agendamientos(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-
     q    = request.GET.get('q', '').strip()
     tipo = request.GET.get('tipo', 'pdf')
     qs   = Agendamiento.objects.select_related('id_paciente', 'id_medico').all()
-
     if q:
         qs = qs.filter(
             Q(cita__icontains=q) |
-            Q(id_paciente__nombre__icontains=q) |
-            Q(id_paciente__apellido__icontains=q) |
+            Q(id_paciente__nombre__icontains=q) | Q(id_paciente__apellido__icontains=q) |
             Q(id_paciente__numero_doc__icontains=q) |
-            Q(id_medico__nombre__icontains=q) |
-            Q(id_medico__apellido__icontains=q)
+            Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q)
         )
-
     if tipo == 'excel':
         data     = generar_excel_agendamientos(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -883,19 +871,18 @@ def reporte_agendamientos(request):
         data     = generar_pdf_agendamientos(qs)
         response = HttpResponse(data, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="agendamientos.pdf"'
-
     return response
 
 
 class AgendamientoCreateView(AdminRequiredMixin, CreateView):
     model         = Agendamiento
-    fields        = '__all__'
+    form_class    = AgendamientoForm
     template_name = 'agendamientos/crear_agendamientos.html'
     success_url   = reverse_lazy('ver_agendamientos')
 
 class AgendamientoUpdateView(AdminRequiredMixin, UpdateView):
     model         = Agendamiento
-    fields        = '__all__'
+    form_class    = AgendamientoForm
     template_name = 'agendamientos/editar_agendamientos.html'
     success_url   = reverse_lazy('ver_agendamientos')
 
@@ -920,11 +907,9 @@ class HistorialListView(AdminRequiredMixin, ListView):
         if q:
             qs = qs.filter(
                 Q(antecedentes__icontains=q) |
-                Q(id_paciente__nombre__icontains=q) |
-                Q(id_paciente__apellido__icontains=q) |
+                Q(id_paciente__nombre__icontains=q) | Q(id_paciente__apellido__icontains=q) |
                 Q(id_paciente__numero_doc__icontains=q) |
-                Q(id_medico__nombre__icontains=q) |
-                Q(id_medico__apellido__icontains=q) |
+                Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q) |
                 Q(id_medico__especialidad__icontains=q)
             )
         return qs
@@ -938,21 +923,16 @@ class HistorialListView(AdminRequiredMixin, ListView):
 def reporte_historiales(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-
     q    = request.GET.get('q', '').strip()
     tipo = request.GET.get('tipo', 'pdf')
     qs   = Historial_Clinico.objects.select_related('id_paciente', 'id_medico').all()
-
     if q:
         qs = qs.filter(
             Q(antecedentes__icontains=q) |
-            Q(id_paciente__nombre__icontains=q) |
-            Q(id_paciente__apellido__icontains=q) |
+            Q(id_paciente__nombre__icontains=q) | Q(id_paciente__apellido__icontains=q) |
             Q(id_paciente__numero_doc__icontains=q) |
-            Q(id_medico__nombre__icontains=q) |
-            Q(id_medico__apellido__icontains=q)
+            Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q)
         )
-
     if tipo == 'excel':
         data     = generar_excel_historial(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -961,19 +941,18 @@ def reporte_historiales(request):
         data     = generar_pdf_historial(qs)
         response = HttpResponse(data, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="historiales.pdf"'
-
     return response
 
 
 class HistorialCreateView(AdminRequiredMixin, CreateView):
     model         = Historial_Clinico
-    fields        = '__all__'
+    form_class    = HistorialForm
     template_name = 'historial_clinico/crear_historiales.html'
     success_url   = reverse_lazy('ver_historiales')
 
 class HistorialUpdateView(AdminRequiredMixin, UpdateView):
     model         = Historial_Clinico
-    fields        = '__all__'
+    form_class    = HistorialForm
     template_name = 'historial_clinico/editar_historiales.html'
     success_url   = reverse_lazy('ver_historiales')
 

@@ -174,9 +174,9 @@ body::after {
 
 /* Etiqueta del paso actual */
 .step-label {
-    font-size: 0.73rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.62);
-    font-weight: 500;
+    font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     text-align: center;
