@@ -3,17 +3,66 @@
 {% block content %}
 
 <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-calendar-check"></i>  Agendamientos</h1>
-    <a href="{% url 'crear_agendamientos' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nueva Cita</a>
+    <h1 class="page-title"><i class="fa-solid fa-calendar-check"></i> Agendamientos</h1>
+    <a href="{% url 'crear_agendamientos' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Nueva Cita
+    </a>
 </div>
+
+{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
+<div class="toolbar-reportes">
+
+    <form method="GET" action="{% url 'ver_agendamientos' %}" class="search-form">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+                type="text"
+                name="q"
+                value="{{ q }}"
+                placeholder="Buscar por tipo de cita, paciente, médico, especialidad…"
+                class="search-input"
+                autocomplete="off"
+            >
+            {% if q %}
+                <a href="{% url 'ver_agendamientos' %}" class="search-clear" title="Limpiar">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-search">Buscar</button>
+    </form>
+
+    <div class="reporte-btns">
+        <a href="{% url 'reporte_agendamientos' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
+           target="_blank" class="btn btn-reporte btn-pdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </a>
+        <a href="{% url 'reporte_agendamientos' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
+           class="btn btn-reporte btn-excel">
+            <i class="fa-solid fa-file-excel"></i> Excel
+        </a>
+    </div>
+</div>
+
+{% if q %}
+<p class="search-info">
+    Resultados para <strong>"{{ q }}"</strong> — {{ citas|length }} registro(s).
+    <a href="{% url 'ver_agendamientos' %}">Ver todos</a>
+</p>
+{% endif %}
 
 <div class="card">
     <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th>#</th><th>Tipo de Cita</th><th>Fecha</th><th>Hora</th>
-                    <th>Paciente</th><th>Médico</th><th>Acciones</th>
+                    <th>#</th>
+                    <th>Tipo de Cita</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Paciente</th>
+                    <th>Médico</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,23 +71,45 @@
                     <td style="color:var(--text-muted)">{{ cita.id_agendamiento }}</td>
                     <td>{{ cita.cita }}</td>
                     <td>{{ cita.fecha }}</td>
-                    <td><span class="badge" style="background:rgba(0,163,200,0.1);color:#00b4d8;border:1px solid rgba(0,180,216,0.2)">{{ cita.hora }}</span></td>
+                    <td>
+                        <span class="badge" style="background:rgba(0,163,200,0.1);color:#00b4d8;border:1px solid rgba(0,180,216,0.2)">
+                            {{ cita.hora }}
+                        </span>
+                    </td>
                     <td>{{ cita.id_paciente.nombre }} {{ cita.id_paciente.apellido }}</td>
                     <td>Dr. {{ cita.id_medico.nombre }} {{ cita.id_medico.apellido }}</td>
                     <td>
                         <div class="td-actions">
-                            <a href="{% url 'editar_agendamientos' cita.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
-                            <a href="{% url 'eliminar_agendamientos' cita.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
+                            <a href="{% url 'editar_agendamientos' cita.pk %}" class="btn btn-sm btn-edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'eliminar_agendamientos' cita.pk %}" class="btn btn-sm btn-del">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7">
-                    <div class="empty-state"><div class="ei">📅</div><p>No hay citas agendadas.<br><a href="{% url 'crear_agendamientos' %}" style="color:var(--accent)">Crear primera cita</a></p></div>
-                </td></tr>
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="ei">📅</div>
+                            <p>
+                                {% if q %}
+                                    No se encontraron citas con "<strong>{{ q }}</strong>".<br>
+                                    <a href="{% url 'ver_agendamientos' %}" style="color:var(--accent)">Ver todas</a>
+                                {% else %}
+                                    No hay citas agendadas.<br>
+                                    <a href="{% url 'crear_agendamientos' %}" style="color:var(--accent)">Crear primera cita</a>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
 {% endblock %}

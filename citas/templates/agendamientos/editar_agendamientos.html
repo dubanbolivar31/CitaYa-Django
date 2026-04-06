@@ -2,63 +2,76 @@
 {% block title %}Editar Cita · CitaYa{% endblock %}
 {% block content %}
 
+<style>
+  .field-hint { font-size:11px; margin-top:4px; min-height:16px; display:block; color:transparent; transition:color 0.15s; }
+  .field-hint.error   { color:#e53e3e; }
+  .field-hint.success { color:#38a169; }
+  input.input-error, select.input-error { border-color:#e53e3e !important; }
+  input.input-ok,    select.input-ok    { border-color:#38a169 !important; }
+</style>
+
 <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-edit"></i> Editar Cita #{{ object.id_agendamiento }}</h1>
     <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">← Volver</a>
 </div>
 
 <div class="form-card">
-    <form method="post" novalidate>
+    <form method="post" novalidate id="form-agenda">
         {% csrf_token %}
         <div class="form-grid">
 
             <div class="form-group full">
                 <label>Tipo de Cita</label>
-                <select name="{{ form.cita.html_name }}">
-                    <option value="Consulta General" {% if form.cita.value == "Consulta General" %}selected{% endif %}>Consulta General</option>
+                <select name="{{ form.cita.html_name }}" id="f_cita">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Consulta General"       {% if form.cita.value == "Consulta General"       %}selected{% endif %}>Consulta General</option>
                     <option value="Consulta Especializada" {% if form.cita.value == "Consulta Especializada" %}selected{% endif %}>Consulta Especializada</option>
-                    <option value="Control" {% if form.cita.value == "Control" %}selected{% endif %}>Control</option>
-                    <option value="Urgencias" {% if form.cita.value == "Urgencias" %}selected{% endif %}>Urgencias</option>
-                    <option value="Procedimiento" {% if form.cita.value == "Procedimiento" %}selected{% endif %}>Procedimiento</option>
-                    <option value="Examen de laboratorio" {% if form.cita.value == "Examen de laboratorio" %}selected{% endif %}>Examen de laboratorio</option>
+                    <option value="Control"                {% if form.cita.value == "Control"                %}selected{% endif %}>Control</option>
+                    <option value="Urgencias"              {% if form.cita.value == "Urgencias"              %}selected{% endif %}>Urgencias</option>
+                    <option value="Procedimiento"          {% if form.cita.value == "Procedimiento"          %}selected{% endif %}>Procedimiento</option>
+                    <option value="Examen de laboratorio"  {% if form.cita.value == "Examen de laboratorio"  %}selected{% endif %}>Examen de laboratorio</option>
                 </select>
-                {{ form.cita.errors }}
+                <span class="field-hint {% if form.cita.errors %}error{% endif %}" id="h_cita">{% if form.cita.errors %}{{ form.cita.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group">
                 <label>Fecha</label>
-                <input type="date" name="{{ form.fecha.html_name }}" value="{{ form.fecha.value|default:'' }}">
-                {{ form.fecha.errors }}
+                <input type="date" name="{{ form.fecha.html_name }}" id="f_fecha"
+                       value="{{ form.fecha.value|default:'' }}">
+                <span class="field-hint {% if form.fecha.errors %}error{% endif %}" id="h_fecha">{% if form.fecha.errors %}{{ form.fecha.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group">
                 <label>Hora</label>
-                <input type="time" name="{{ form.hora.html_name }}" value="{{ form.hora.value|default:'' }}">
-                {{ form.hora.errors }}
+                <input type="time" name="{{ form.hora.html_name }}" id="f_hora"
+                       value="{{ form.hora.value|default:'' }}">
+                <span class="field-hint {% if form.hora.errors %}error{% endif %}" id="h_hora">{% if form.hora.errors %}{{ form.hora.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group">
                 <label>Paciente</label>
-                <select name="{{ form.id_paciente.html_name }}">
+                <select name="{{ form.id_paciente.html_name }}" id="f_id_paciente">
+                    <option value="">— Seleccionar —</option>
                     {% for p in form.id_paciente.field.queryset %}
                     <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
                         {{ p.nombre }} {{ p.apellido }} ({{ p.numero_doc }})
                     </option>
                     {% endfor %}
                 </select>
-                {{ form.id_paciente.errors }}
+                <span class="field-hint {% if form.id_paciente.errors %}error{% endif %}" id="h_id_paciente">{% if form.id_paciente.errors %}{{ form.id_paciente.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group">
                 <label>Médico</label>
-                <select name="{{ form.id_medico.html_name }}">
+                <select name="{{ form.id_medico.html_name }}" id="f_id_medico">
+                    <option value="">— Seleccionar —</option>
                     {% for m in form.id_medico.field.queryset %}
                     <option value="{{ m.pk }}" {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
                         Dr. {{ m.nombre }} {{ m.apellido }} — {{ m.especialidad }}
                     </option>
                     {% endfor %}
                 </select>
-                {{ form.id_medico.errors }}
+                <span class="field-hint {% if form.id_medico.errors %}error{% endif %}" id="h_id_medico">{% if form.id_medico.errors %}{{ form.id_medico.errors|join:", " }}{% endif %}</span>
             </div>
 
         </div>
@@ -68,4 +81,34 @@
         </div>
     </form>
 </div>
+
+<script>
+(function(){
+  function setHint(hId,fId,msg,isError){
+    var h=document.getElementById(hId),f=document.getElementById(fId);
+    h.textContent=msg;
+    h.className='field-hint'+(msg?(isError?' error':' success'):'');
+    if(f){f.classList.toggle('input-error',!!(msg&&isError));f.classList.toggle('input-ok',!!(msg&&!isError));if(!msg)f.classList.remove('input-error','input-ok');}
+  }
+  ['cita','id_paciente','id_medico'].forEach(function(k){
+    document.getElementById('f_'+k).addEventListener('change',function(){
+      if(!this.value) setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);
+      else setHint('h_'+k,'f_'+k,'',false);
+    });
+  });
+  ['fecha','hora'].forEach(function(k){
+    document.getElementById('f_'+k).addEventListener('change',function(){
+      if(!this.value) setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);
+      else setHint('h_'+k,'f_'+k,'',false);
+    });
+  });
+  document.getElementById('form-agenda').addEventListener('submit',function(e){
+    var ok=true;
+    ['cita','id_paciente','id_medico','fecha','hora'].forEach(function(k){
+      if(!document.getElementById('f_'+k).value){setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);ok=false;}
+    });
+    if(!ok) e.preventDefault();
+  });
+})();
+</script>
 {% endblock %}

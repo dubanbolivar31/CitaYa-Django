@@ -1,11 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}Historiales Clínicos · CitaYa{% endblock %}
-  
 {% block content %}
+
 <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-clipboard-list"></i> Historiales Clínicos</h1>
-    <a href="{% url 'crear_historiales' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Historial</a>
+    <a href="{% url 'crear_historiales' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Nuevo Historial
+    </a>
 </div>
+
+{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
+<div class="toolbar-reportes">
+
+    <form method="GET" action="{% url 'ver_historiales' %}" class="search-form">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+                type="text"
+                name="q"
+                value="{{ q }}"
+                placeholder="Buscar por paciente, médico, especialidad o antecedentes…"
+                class="search-input"
+                autocomplete="off"
+            >
+            {% if q %}
+                <a href="{% url 'ver_historiales' %}" class="search-clear" title="Limpiar">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-search">Buscar</button>
+    </form>
+
+    <div class="reporte-btns">
+        <a href="{% url 'reporte_historiales' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
+           target="_blank" class="btn btn-reporte btn-pdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </a>
+        <a href="{% url 'reporte_historiales' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
+           class="btn btn-reporte btn-excel">
+            <i class="fa-solid fa-file-excel"></i> Excel
+        </a>
+    </div>
+</div>
+
+{% if q %}
+<p class="search-info">
+    Resultados para <strong>"{{ q }}"</strong> — {{ historiales|length }} registro(s).
+    <a href="{% url 'ver_historiales' %}">Ver todos</a>
+</p>
+{% endif %}
 
 <div class="card">
     <div class="table-wrapper">
@@ -17,26 +61,21 @@
                     <th>Médico Tratante</th>
                     <th>Nombre del Paciente</th>
                     <th>Antecedentes</th>
-                    <th style="text-align: right;">Acciones</th>
+                    <th style="text-align:right;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for historial in historiales %}
                 <tr>
                     <td>{{ historial.id_historial }}</td>
-                    
                     <td>{{ historial.fecha_creacion|date:"d M, Y" }}</td>
-                    
                     <td>{{ historial.id_medico }}</td>
-                    
                     <td>{{ historial.id_paciente }}</td>
-                    
-                    <td style="color: var(--text-muted); font-style: italic;">
+                    <td style="color:var(--text-muted);font-style:italic;">
                         {{ historial.antecedentes|truncatewords:10 }}
                     </td>
-                    
                     <td>
-                        <div class="td-actions" style="justify-content: flex-end;">
+                        <div class="td-actions" style="justify-content:flex-end;">
                             <a href="{% url 'editar_historiales' historial.pk %}" class="btn btn-sm btn-edit" title="Editar">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
@@ -48,8 +87,18 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align:center; padding: 48px; color: var(--text-muted);">
-                        No hay registros en el historial clínico.
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="ei">📋</div>
+                            <p>
+                                {% if q %}
+                                    No se encontraron historiales con "<strong>{{ q }}</strong>".<br>
+                                    <a href="{% url 'ver_historiales' %}" style="color:var(--accent)">Ver todos</a>
+                                {% else %}
+                                    No hay registros en el historial clínico.
+                                {% endif %}
+                            </p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -57,4 +106,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}

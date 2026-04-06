@@ -2,51 +2,92 @@
 {% block title %}Editar Historial · CitaYa{% endblock %}
 {% block content %}
 
+<style>
+  .field-hint { font-size:11px; margin-top:4px; min-height:16px; display:block; color:transparent; transition:color 0.15s; }
+  .field-hint.error   { color:#e53e3e; }
+  .field-hint.success { color:#38a169; }
+  select.input-error, textarea.input-error { border-color:#e53e3e !important; }
+  select.input-ok,    textarea.input-ok    { border-color:#38a169 !important; }
+</style>
+
 <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-edit"></i> Editar Historial #{{ object.id_historial }}</h1>
     <a href="{% url 'ver_historiales' %}" class="btn btn-secondary">← Volver</a>
 </div>
 
 <div class="form-card">
-    <form method="post" novalidate>
+    <form method="post" novalidate id="form-historial">
         {% csrf_token %}
         <div class="form-grid">
 
             <div class="form-group">
                 <label>Médico Tratante</label>
-                <select name="{{ form.id_medico.html_name }}">
+                <select name="{{ form.id_medico.html_name }}" id="f_id_medico">
+                    <option value="">— Seleccionar —</option>
                     {% for m in form.id_medico.field.queryset %}
                     <option value="{{ m.pk }}" {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
                         Dr. {{ m.nombre }} {{ m.apellido }}
                     </option>
                     {% endfor %}
                 </select>
-                {{ form.id_medico.errors }}
+                <span class="field-hint {% if form.id_medico.errors %}error{% endif %}" id="h_id_medico">{% if form.id_medico.errors %}{{ form.id_medico.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group full">
                 <label>Paciente</label>
-                <select name="{{ form.id_paciente.html_name }}">
+                <select name="{{ form.id_paciente.html_name }}" id="f_id_paciente">
+                    <option value="">— Seleccionar —</option>
                     {% for p in form.id_paciente.field.queryset %}
                     <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
                         {{ p.nombre }} {{ p.apellido }}
                     </option>
                     {% endfor %}
                 </select>
-                {{ form.id_paciente.errors }}
+                <span class="field-hint {% if form.id_paciente.errors %}error{% endif %}" id="h_id_paciente">{% if form.id_paciente.errors %}{{ form.id_paciente.errors|join:", " }}{% endif %}</span>
             </div>
 
             <div class="form-group full">
                 <label>Antecedentes</label>
-                <textarea name="{{ form.antecedentes.html_name }}" rows="5">{{ form.antecedentes.value|default:'' }}</textarea>
-                {{ form.antecedentes.errors }}
+                <textarea name="{{ form.antecedentes.html_name }}" id="f_antecedentes" rows="5">{{ form.antecedentes.value|default:'' }}</textarea>
+                <span class="field-hint {% if form.antecedentes.errors %}error{% endif %}" id="h_antecedentes">{% if form.antecedentes.errors %}{{ form.antecedentes.errors|join:", " }}{% endif %}</span>
             </div>
 
         </div>
-        <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px;">
+        <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;">
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Actualizar Historial</button>
             <a href="{% url 'ver_historiales' %}" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </div>
+
+<script>
+(function(){
+  function setHint(hId,fId,msg,isError){
+    var h=document.getElementById(hId),f=document.getElementById(fId);
+    h.textContent=msg;
+    h.className='field-hint'+(msg?(isError?' error':' success'):'');
+    if(f){f.classList.toggle('input-error',!!(msg&&isError));f.classList.toggle('input-ok',!!(msg&&!isError));if(!msg)f.classList.remove('input-error','input-ok');}
+  }
+  ['id_medico','id_paciente'].forEach(function(k){
+    document.getElementById('f_'+k).addEventListener('change',function(){
+      if(!this.value) setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);
+      else setHint('h_'+k,'f_'+k,'',false);
+    });
+  });
+  document.getElementById('f_antecedentes').addEventListener('input',function(){
+    if(!this.value.trim()) setHint('h_antecedentes','f_antecedentes','Los antecedentes no pueden estar vacíos.',true);
+    else setHint('h_antecedentes','f_antecedentes','',false);
+  });
+  document.getElementById('form-historial').addEventListener('submit',function(e){
+    var ok=true;
+    ['id_medico','id_paciente'].forEach(function(k){
+      if(!document.getElementById('f_'+k).value){setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);ok=false;}
+    });
+    if(!document.getElementById('f_antecedentes').value.trim()){
+      setHint('h_antecedentes','f_antecedentes','Los antecedentes no pueden estar vacíos.',true);ok=false;
+    }
+    if(!ok) e.preventDefault();
+  });
+})();
+</script>
 {% endblock %}
