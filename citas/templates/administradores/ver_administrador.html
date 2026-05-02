@@ -9,46 +9,99 @@
     </a>
 </div>
 
-{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
 <div class="toolbar-reportes">
-
-    {# Formulario de búsqueda multicriterio #}
-    <form method="GET" action="{% url 'ver_administrador' %}" class="search-form">
+    <form method="GET" action="{% url 'ver_administrador' %}" class="search-form" id="mainForm">
         <div class="search-input-wrap">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-                type="text"
-                name="q"
-                value="{{ q }}"
-                placeholder="Buscar por nombre, documento, correo o teléfono…"
-                class="search-input"
-                autocomplete="off"
-            >
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre, documento, correo…"
+                   class="search-input" autocomplete="off" id="searchInput">
             {% if q %}
-                <a href="{% url 'ver_administrador' %}" class="search-clear" title="Limpiar búsqueda">
-                    <i class="fa-solid fa-xmark"></i>
-                </a>
+                <a href="{% url 'ver_administrador' %}" class="search-clear"><i class="fa-solid fa-xmark"></i></a>
             {% endif %}
         </div>
+
+        {# Campos ocultos para mantener filtros al buscar con q #}
+        <input type="hidden" name="genero"   value="{{ genero }}">
+        <input type="hidden" name="estado"   value="{{ estado }}">
+        <input type="hidden" name="tipo_doc" value="{{ tipo_doc }}">
+
         <button type="submit" class="btn btn-search">Buscar</button>
     </form>
 
-    {# Botones de reporte — pasan el mismo filtro activo #}
+    <button type="button" class="btn-filter-toggle {% if hay_filtros and not q %}active{% elif genero or estado or tipo_doc %}active{% endif %}"
+            id="filterToggleBtn" onclick="toggleFilterPanel()">
+        <i class="fa-solid fa-sliders"></i> Filtros
+        <span class="filter-count {% if genero or estado or tipo_doc %}show{% endif %}" id="filterCount">
+            {{ genero|yesno:"1,0"|add:estado|add:tipo_doc }}
+        </span>
+    </button>
+
     <div class="reporte-btns">
-        <a href="{% url 'reporte_administradores' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
-           target="_blank" class="btn btn-reporte btn-pdf" title="Descargar PDF">
-            <i class="fa-solid fa-file-pdf"></i> PDF
-        </a>
-        <a href="{% url 'reporte_administradores' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
-           class="btn btn-reporte btn-excel" title="Descargar Excel">
-            <i class="fa-solid fa-file-excel"></i> Excel
-        </a>
+        <a href="{% url 'reporte_administradores' %}?tipo=pdf&q={{ q }}&genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}"
+           target="_blank" class="btn btn-reporte btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+        <a href="{% url 'reporte_administradores' %}?tipo=excel&q={{ q }}&genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}"
+           class="btn btn-reporte btn-excel"><i class="fa-solid fa-file-excel"></i> Excel</a>
     </div>
 </div>
 
-{% if q %}
+{# ── PANEL DE FILTROS AVANZADOS ── #}
+<div class="filter-panel {% if genero or estado or tipo_doc %}open{% endif %}" id="filterPanel">
+    <div class="filter-panel-title"><i class="fa-solid fa-sliders"></i> Filtros avanzados</div>
+    <form method="GET" action="{% url 'ver_administrador' %}" id="filterForm">
+        <input type="hidden" name="q" value="{{ q }}">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Género</label>
+                <select name="genero" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="M" {% if genero == "M" %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if genero == "F" %}selected{% endif %}>Femenino</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Estado</label>
+                <select name="estado" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="1" {% if estado == "1" %}selected{% endif %}>Activo</option>
+                    <option value="0" {% if estado == "0" %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Tipo de documento</label>
+                <select name="tipo_doc" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="CC" {% if tipo_doc == "CC" %}selected{% endif %}>Cédula ciudadanía</option>
+                    <option value="TI" {% if tipo_doc == "TI" %}selected{% endif %}>Tarjeta de identidad</option>
+                    <option value="CE" {% if tipo_doc == "CE" %}selected{% endif %}>Cédula extranjería</option>
+                    <option value="PA" {% if tipo_doc == "PA" %}selected{% endif %}>Pasaporte</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <a href="{% url 'ver_administrador' %}{% if q %}?q={{ q }}{% endif %}" class="btn-reset-filters">
+                <i class="fa-solid fa-rotate-left"></i> Limpiar
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-magnifying-glass"></i> Aplicar filtros
+            </button>
+        </div>
+    </form>
+</div>
+
+{# ── BADGES DE FILTROS ACTIVOS ── #}
+{% if genero or estado or tipo_doc or q %}
+<div class="active-filters-row show">
+    <span>Filtros activos:</span>
+    {% if q %}<span class="active-badge">Búsqueda: "{{ q }}" <a href="?genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}"><button>×</button></a></span>{% endif %}
+    {% if genero %}<span class="active-badge">Género: {{ genero }} <a href="?q={{ q }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}"><button>×</button></a></span>{% endif %}
+    {% if estado %}<span class="active-badge">Estado: {% if estado == "1" %}Activo{% else %}Inactivo{% endif %} <a href="?q={{ q }}&genero={{ genero }}&tipo_doc={{ tipo_doc }}"><button>×</button></a></span>{% endif %}
+    {% if tipo_doc %}<span class="active-badge">Doc: {{ tipo_doc }} <a href="?q={{ q }}&genero={{ genero }}&estado={{ estado }}"><button>×</button></a></span>{% endif %}
+    <a href="{% url 'ver_administrador' %}" class="btn-reset-filters" style="margin-left:4px">Limpiar todo</a>
+</div>
+{% endif %}
+
+{% if hay_filtros or q %}
 <p class="search-info">
-    Mostrando resultados para <strong>"{{ q }}"</strong> —
     {{ admins|length }} registro(s) encontrado(s).
     <a href="{% url 'ver_administrador' %}">Ver todos</a>
 </p>
@@ -59,16 +112,9 @@
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Tipo Doc</th>
-                    <th>Número Doc</th>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Género</th>
-                    <th>Teléfono</th>
-                    <th>Correo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>#</th><th>Tipo Doc</th><th>Número Doc</th><th>Nombre</th>
+                    <th>Apellido</th><th>Género</th><th>Teléfono</th><th>Correo</th>
+                    <th>Estado</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,45 +128,33 @@
                     <td>{{ admin.genero }}</td>
                     <td>{{ admin.telefono }}</td>
                     <td style="color:var(--text-muted)">{{ admin.correo }}</td>
-                    <td>
-                        {% if admin.estado %}
-                            <span class="badge badge-on">Activo</span>
-                        {% else %}
-                            <span class="badge badge-off">Inactivo</span>
-                        {% endif %}
-                    </td>
+                    <td>{% if admin.estado %}<span class="badge badge-on">Activo</span>{% else %}<span class="badge badge-off">Inactivo</span>{% endif %}</td>
                     <td>
                         <div class="td-actions">
-                            <a href="{% url 'editar_administrador' admin.pk %}" class="btn btn-sm btn-edit">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
-                            <a href="{% url 'eliminar_administrador' admin.pk %}" class="btn btn-sm btn-del">
-                                <i class="fa-solid fa-trash"></i>
-                            </a>
+                            <a href="{% url 'editar_administrador' admin.pk %}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>
+                            <a href="{% url 'eliminar_administrador' admin.pk %}" class="btn btn-sm btn-del"><i class="fa-solid fa-trash"></i></a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="10">
-                        <div class="empty-state">
-                            <div class="ei">🛡️</div>
-                            <p>
-                                {% if q %}
-                                    No se encontraron administradores con "<strong>{{ q }}</strong>".<br>
-                                    <a href="{% url 'ver_administrador' %}" style="color:var(--accent)">Ver todos</a>
-                                {% else %}
-                                    No hay administradores registrados.<br>
-                                    <a href="{% url 'crear_administrador' %}" style="color:var(--accent)">Crear el primero</a>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="10"><div class="empty-state"><div class="ei">🛡️</div><p>No hay resultados. <a href="{% url 'ver_administrador' %}" style="color:var(--accent)">Ver todos</a></p></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+<script>
+function toggleFilterPanel() {
+    document.getElementById('filterPanel').classList.toggle('open');
+    document.getElementById('filterToggleBtn').classList.toggle('active');
+}
+function updateBadgeCount() {
+    var count = 0;
+    document.getElementById('filterForm').querySelectorAll('select').forEach(function(s) { if (s.value) count++; });
+    var el = document.getElementById('filterCount');
+    el.textContent = count;
+    count > 0 ? el.classList.add('show') : el.classList.remove('show');
+}
+</script>
 {% endblock %}

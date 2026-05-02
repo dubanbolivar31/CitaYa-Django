@@ -1,5 +1,6 @@
 import re
 from django import forms
+from django.contrib.auth.hashers import make_password
 from .models import Administrador, Medico, Paciente, Agendamiento, Historial_Clinico
 
 
@@ -41,7 +42,6 @@ def validar_contrasena(value):
 # ──────────────────────────────────────────────────────────────────────────────
 
 class AdministradorForm(forms.ModelForm):
-    # Contraseña opcional en edición
     contrasena = forms.CharField(
         required=False,
         widget=forms.PasswordInput(render_value=False),
@@ -84,9 +84,9 @@ class AdministradorForm(forms.ModelForm):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = pw
-        # Si no se ingresa contraseña, conserva la existente
+            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
         elif instance.pk:
+            # Sin cambio de contraseña: conserva el hash existente en la BD
             instance.contrasena = Administrador.objects.get(pk=instance.pk).contrasena
         if commit:
             instance.save()
@@ -146,7 +146,7 @@ class MedicoForm(forms.ModelForm):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = pw
+            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
         elif instance.pk:
             instance.contrasena = Medico.objects.get(pk=instance.pk).contrasena
         if commit:
@@ -210,7 +210,7 @@ class PacienteForm(forms.ModelForm):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = pw
+            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
         elif instance.pk:
             instance.contrasena = Paciente.objects.get(pk=instance.pk).contrasena
         if commit:

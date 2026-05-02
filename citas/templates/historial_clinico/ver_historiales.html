@@ -9,46 +9,105 @@
     </a>
 </div>
 
-{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
 <div class="toolbar-reportes">
-
     <form method="GET" action="{% url 'ver_historiales' %}" class="search-form">
         <div class="search-input-wrap">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-                type="text"
-                name="q"
-                value="{{ q }}"
-                placeholder="Buscar por paciente, médico, especialidad o antecedentes…"
-                class="search-input"
-                autocomplete="off"
-            >
+            <input type="text" name="q" value="{{ q }}"
+                   placeholder="Buscar por paciente, médico, antecedentes…"
+                   class="search-input" autocomplete="off">
             {% if q %}
-                <a href="{% url 'ver_historiales' %}" class="search-clear" title="Limpiar">
-                    <i class="fa-solid fa-xmark"></i>
-                </a>
+                <a href="{% url 'ver_historiales' %}" class="search-clear"><i class="fa-solid fa-xmark"></i></a>
             {% endif %}
         </div>
+        <input type="hidden" name="especialidad" value="{{ especialidad }}">
+        <input type="hidden" name="fecha_desde"  value="{{ fecha_desde }}">
+        <input type="hidden" name="fecha_hasta"  value="{{ fecha_hasta }}">
         <button type="submit" class="btn btn-search">Buscar</button>
     </form>
 
+    <button type="button" class="btn-filter-toggle {% if especialidad or fecha_desde or fecha_hasta %}active{% endif %}"
+            id="filterToggleBtn" onclick="toggleFilterPanel()">
+        <i class="fa-solid fa-sliders"></i> Filtros
+        <span class="filter-count {% if especialidad or fecha_desde or fecha_hasta %}show{% endif %}" id="filterCount"></span>
+    </button>
+
     <div class="reporte-btns">
-        <a href="{% url 'reporte_historiales' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
+        <a href="{% url 'reporte_historiales' %}?tipo=pdf&q={{ q }}&especialidad={{ especialidad }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
            target="_blank" class="btn btn-reporte btn-pdf">
             <i class="fa-solid fa-file-pdf"></i> PDF
         </a>
-        <a href="{% url 'reporte_historiales' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
+        <a href="{% url 'reporte_historiales' %}?tipo=excel&q={{ q }}&especialidad={{ especialidad }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
            class="btn btn-reporte btn-excel">
             <i class="fa-solid fa-file-excel"></i> Excel
         </a>
     </div>
 </div>
 
-{% if q %}
-<p class="search-info">
-    Resultados para <strong>"{{ q }}"</strong> — {{ historiales|length }} registro(s).
-    <a href="{% url 'ver_historiales' %}">Ver todos</a>
-</p>
+<div class="filter-panel {% if especialidad or fecha_desde or fecha_hasta %}open{% endif %}" id="filterPanel">
+    <div class="filter-panel-title"><i class="fa-solid fa-sliders"></i> Filtros avanzados</div>
+    <form method="GET" action="{% url 'ver_historiales' %}" id="filterForm">
+        <input type="hidden" name="q" value="{{ q }}">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Especialidad del médico</label>
+                <select name="especialidad" onchange="updateBadgeCount()">
+                    <option value="">Todas</option>
+                    {% for esp in especialidades %}
+                        <option value="{{ esp }}" {% if especialidad == esp %}selected{% endif %}>{{ esp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Fecha desde</label>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" onchange="updateBadgeCount()">
+            </div>
+            <div class="filter-group">
+                <label>Fecha hasta</label>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" onchange="updateBadgeCount()">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <a href="{% url 'ver_historiales' %}{% if q %}?q={{ q }}{% endif %}" class="btn-reset-filters">
+                <i class="fa-solid fa-rotate-left"></i> Limpiar filtros
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-magnifying-glass"></i> Aplicar
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if q or especialidad or fecha_desde or fecha_hasta %}
+<div class="active-filters-row show">
+    <span>Filtros activos:</span>
+    {% if q %}
+        <span class="active-badge">
+            Búsqueda: "{{ q }}"
+            <a href="?especialidad={{ especialidad }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if especialidad %}
+        <span class="active-badge">
+            Especialidad: {{ especialidad }}
+            <a href="?q={{ q }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if fecha_desde %}
+        <span class="active-badge">
+            Desde: {{ fecha_desde }}
+            <a href="?q={{ q }}&especialidad={{ especialidad }}&fecha_hasta={{ fecha_hasta }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if fecha_hasta %}
+        <span class="active-badge">
+            Hasta: {{ fecha_hasta }}
+            <a href="?q={{ q }}&especialidad={{ especialidad }}&fecha_desde={{ fecha_desde }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    <a href="{% url 'ver_historiales' %}" class="btn-reset-filters">Limpiar todo</a>
+</div>
+<p class="search-info">{{ historiales|length }} registro(s) encontrado(s).</p>
 {% endif %}
 
 <div class="card">
@@ -56,11 +115,8 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Fecha</th>
-                    <th>Médico Tratante</th>
-                    <th>Nombre del Paciente</th>
-                    <th>Antecedentes</th>
+                    <th>ID</th><th>Fecha</th><th>Médico Tratante</th>
+                    <th>Nombre del Paciente</th><th>Antecedentes</th>
                     <th style="text-align:right;">Acciones</th>
                 </tr>
             </thead>
@@ -76,10 +132,10 @@
                     </td>
                     <td>
                         <div class="td-actions" style="justify-content:flex-end;">
-                            <a href="{% url 'editar_historiales' historial.pk %}" class="btn btn-sm btn-edit" title="Editar">
+                            <a href="{% url 'editar_historiales' historial.pk %}" class="btn btn-sm btn-edit">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
-                            <a href="{% url 'eliminar_historiales' historial.pk %}" class="btn btn-sm btn-del" title="Eliminar">
+                            <a href="{% url 'eliminar_historiales' historial.pk %}" class="btn btn-sm btn-del">
                                 <i class="fa-solid fa-trash"></i>
                             </a>
                         </div>
@@ -90,13 +146,8 @@
                     <td colspan="6">
                         <div class="empty-state">
                             <div class="ei">📋</div>
-                            <p>
-                                {% if q %}
-                                    No se encontraron historiales con "<strong>{{ q }}</strong>".<br>
-                                    <a href="{% url 'ver_historiales' %}" style="color:var(--accent)">Ver todos</a>
-                                {% else %}
-                                    No hay registros en el historial clínico.
-                                {% endif %}
+                            <p>No se encontraron resultados.<br>
+                               <a href="{% url 'ver_historiales' %}" style="color:var(--accent)">Ver todos</a>
                             </p>
                         </div>
                     </td>
@@ -106,5 +157,20 @@
         </table>
     </div>
 </div>
+
+<script>
+function toggleFilterPanel() {
+    document.getElementById('filterPanel').classList.toggle('open');
+    document.getElementById('filterToggleBtn').classList.toggle('active');
+}
+function updateBadgeCount() {
+    var count = 0;
+    document.querySelectorAll('#filterForm select').forEach(function(s) { if (s.value) count++; });
+    document.querySelectorAll('#filterForm input[type="date"]').forEach(function(i) { if (i.value) count++; });
+    var el = document.getElementById('filterCount');
+    el.textContent = count;
+    count > 0 ? el.classList.add('show') : el.classList.remove('show');
+}
+</script>
 
 {% endblock %}
