@@ -34,8 +34,8 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
-    account_sid = 'AC02543e93d5cd70a21e891b250d558f65'
-    auth_token  = '5c995316dd6f6bb95ba27988df84ec12'
+    account_sid = ''
+    auth_token  = ''
     client = Client(account_sid, auth_token)
     try:
         client.calls.create(
