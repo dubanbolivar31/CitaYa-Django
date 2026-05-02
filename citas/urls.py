@@ -105,4 +105,6 @@ urlpatterns = [
     path('historiales/eliminar/<int:pk>/', HistorialDeleteView.as_view(), name='eliminar_historiales'),
     # 📊 Reporte
     path('historiales/reporte/',           views.reporte_historiales,     name='reporte_historiales'),
+
+    path('importar-medicos/', views.importar_medicos, name='importar_medicos'),
 ]

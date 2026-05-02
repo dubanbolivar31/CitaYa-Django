@@ -1,6 +1,7 @@
 import json
 from datetime import date
 from django.contrib import messages
+from django.contrib.auth.hashers import make_password
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -33,8 +34,8 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
-    account_sid = ''
-    auth_token  = ''
+    account_sid = 'AC02543e93d5cd70a21e891b250d558f65'
+    auth_token  = '5c995316dd6f6bb95ba27988df84ec12'
     client = Client(account_sid, auth_token)
     try:
         client.calls.create(
@@ -54,6 +55,17 @@ def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
         print(f"📞 Llamada enviada a {nombre}")
     except Exception as e:
         print(f"❌ Error en Twilio: {e}")
+
+
+# =========================================================================
+# HELPER INTERNO — aplica filtro de estado de forma segura
+# =========================================================================
+
+def _filtrar_estado(qs, estado_str):
+    """Aplica filtro de estado solo si el valor es '0' o '1'."""
+    if estado_str in ('0', '1'):
+        qs = qs.filter(estado=(estado_str == '1'))
+    return qs
 
 
 # =========================================================================
@@ -83,9 +95,9 @@ def login(request):
         numero_doc = request.POST.get('numerodoc')
         password   = request.POST.get('contrasena')
 
-        # ── ADMINISTRADOR ──────────────────────────────────────────────
-        user_admin = Administrador.objects.filter(numero_doc=numero_doc, contrasena=password).first()
-        if user_admin:
+        # ── Administrador ──────────────────────────────────────────────────
+        user_admin = Administrador.objects.filter(numero_doc=numero_doc).first()
+        if user_admin and user_admin.check_contrasena(password):
             if not user_admin.estado:
                 messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
                 return render(request, 'Inicio_Sesion-Registro/login.html')
@@ -94,9 +106,9 @@ def login(request):
             request.session['nombre']     = f"{user_admin.nombre} {user_admin.apellido}"
             return redirect('dashboard_admin')
 
-        # ── MÉDICO ─────────────────────────────────────────────────────
-        user_medico = Medico.objects.filter(numero_doc=numero_doc, contrasena=password).first()
-        if user_medico:
+        # ── Médico ─────────────────────────────────────────────────────────
+        user_medico = Medico.objects.filter(numero_doc=numero_doc).first()
+        if user_medico and user_medico.check_contrasena(password):
             if not user_medico.estado:
                 messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
                 return render(request, 'Inicio_Sesion-Registro/login.html')
@@ -105,9 +117,9 @@ def login(request):
             request.session['nombre']     = f"{user_medico.nombre} {user_medico.apellido}"
             return redirect('dashboard_medico')
 
-        # ── PACIENTE ───────────────────────────────────────────────────
-        user_paciente = Paciente.objects.filter(numero_doc=numero_doc, contrasena=password).first()
-        if user_paciente:
+        # ── Paciente ───────────────────────────────────────────────────────
+        user_paciente = Paciente.objects.filter(numero_doc=numero_doc).first()
+        if user_paciente and user_paciente.check_contrasena(password):
             if not user_paciente.estado:
                 messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
                 return render(request, 'Inicio_Sesion-Registro/login.html')
@@ -144,7 +156,9 @@ def registro(request):
                 tipo_doc=tipo_doc, numero_doc=numero_doc, nombre=nombre,
                 apellido=apellido, genero=genero, fecha_nacimiento=fecha_nacimiento,
                 tipo_sangre=tipo_sangre, telefono=telefono, correo=correo,
-                direccion=direccion, contrasena=contrasena, estado=True
+                direccion=direccion,
+                contrasena=make_password(contrasena),  # ✅ hashea la contraseña
+                estado=True
             )
             messages.success(request, 'Registro exitoso. Ahora puedes iniciar sesión.')
             return redirect('login')
@@ -165,11 +179,11 @@ def dashboard_admin(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
     context = {
-        'total_medicos':    Medico.objects.count(),
-        'total_pacientes':  Paciente.objects.count(),
-        'total_citas':      Agendamiento.objects.count(),
-        'total_historiales':Historial_Clinico.objects.count(),
-        'nombre':           request.session.get('nombre'),
+        'total_medicos':     Medico.objects.count(),
+        'total_pacientes':   Paciente.objects.count(),
+        'total_citas':       Agendamiento.objects.count(),
+        'total_historiales': Historial_Clinico.objects.count(),
+        'nombre':            request.session.get('nombre'),
     }
     return render(request, 'dashboard/administrador/inicio_admin.html', context)
 
@@ -179,23 +193,23 @@ def dashboard_medico(request):
     if request.session.get('rol') != 'medico':
         return redirect('login')
 
-    medico_id    = request.session.get('usuario_id')
-    hoy          = date.today()
-    todas_citas  = Agendamiento.objects.filter(id_medico=medico_id).select_related('id_paciente')
+    medico_id      = request.session.get('usuario_id')
+    hoy            = date.today()
+    todas_citas    = Agendamiento.objects.filter(id_medico=medico_id).select_related('id_paciente')
     proximas_citas = todas_citas.filter(fecha__gte=hoy).order_by('fecha', 'hora')[:5]
-    historiales  = Historial_Clinico.objects.filter(id_medico=medico_id).select_related('id_paciente').order_by('-fecha_creacion')[:5]
-    pacientes_ids = todas_citas.values_list('id_paciente', flat=True).distinct()
-    pacientes    = Paciente.objects.filter(id_paciente__in=pacientes_ids)
+    historiales    = Historial_Clinico.objects.filter(id_medico=medico_id).select_related('id_paciente').order_by('-fecha_creacion')[:5]
+    pacientes_ids  = todas_citas.values_list('id_paciente', flat=True).distinct()
+    pacientes      = Paciente.objects.filter(id_paciente__in=pacientes_ids)
 
     context = {
-        'nombre':           request.session.get('nombre'),
-        'total_citas':      todas_citas.count(),
-        'citas_proximas':   proximas_citas.count(),
-        'total_historiales':Historial_Clinico.objects.filter(id_medico=medico_id).count(),
-        'total_pacientes':  len(set(pacientes_ids)),
-        'proximas_citas':   proximas_citas,
-        'historiales':      historiales,
-        'pacientes':        pacientes,
+        'nombre':            request.session.get('nombre'),
+        'total_citas':       todas_citas.count(),
+        'citas_proximas':    proximas_citas.count(),
+        'total_historiales': Historial_Clinico.objects.filter(id_medico=medico_id).count(),
+        'total_pacientes':   len(set(pacientes_ids)),
+        'proximas_citas':    proximas_citas,
+        'historiales':       historiales,
+        'pacientes':         pacientes,
     }
     return render(request, 'dashboard/medico/inicio_medico.html', context)
 
@@ -206,8 +220,8 @@ def dashboard_paciente(request):
         return redirect('login')
 
     paciente_id = request.session.get('usuario_id')
-    hoy  = date.today()
-    ahora = datetime.now()
+    hoy         = date.today()
+    ahora       = datetime.now()
     todas_citas = Agendamiento.objects.filter(id_paciente=paciente_id).select_related('id_medico')
 
     proximas_citas = todas_citas.filter(
@@ -218,20 +232,20 @@ def dashboard_paciente(request):
         id_paciente=paciente_id
     ).select_related('id_medico').order_by('-fecha_creacion')[:5]
 
-    medicos_ids = todas_citas.values_list('id_medico', flat=True).distinct()
+    medicos_ids         = todas_citas.values_list('id_medico', flat=True).distinct()
     medicos_disponibles = Medico.objects.filter(estado=True).order_by('especialidad', 'nombre')
 
     context = {
-        'nombre':             request.session.get('nombre'),
-        'total_citas':        todas_citas.count(),
-        'citas_proximas':     todas_citas.filter(
+        'nombre':              request.session.get('nombre'),
+        'total_citas':         todas_citas.count(),
+        'citas_proximas':      todas_citas.filter(
             Q(fecha__gt=hoy) | Q(fecha=hoy, hora__gt=ahora.time())
         ).count(),
-        'total_historiales':  Historial_Clinico.objects.filter(id_paciente=paciente_id).count(),
-        'total_medicos':      len(set(medicos_ids)),
-        'proximas_citas':     proximas_citas,
-        'historiales':        historiales,
-        'medicos_disponibles':medicos_disponibles,
+        'total_historiales':   Historial_Clinico.objects.filter(id_paciente=paciente_id).count(),
+        'total_medicos':       len(set(medicos_ids)),
+        'proximas_citas':      proximas_citas,
+        'historiales':         historiales,
+        'medicos_disponibles': medicos_disponibles,
     }
     return render(request, 'dashboard/paciente/inicio_paciente.html', context)
 
@@ -245,8 +259,8 @@ def citas_paciente_json(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
 
     paciente_id = request.session.get('usuario_id')
-    ahora = datetime.now()
-    citas = Agendamiento.objects.filter(id_paciente=paciente_id).select_related('id_medico').order_by('-fecha', '-hora')
+    ahora       = datetime.now()
+    citas       = Agendamiento.objects.filter(id_paciente=paciente_id).select_related('id_medico').order_by('-fecha', '-hora')
 
     data = []
     for c in citas:
@@ -292,8 +306,8 @@ def agendar_cita_paciente(request):
         if Agendamiento.objects.filter(id_paciente_id=paciente_id, fecha=fecha_str, hora=hora_str).exists():
             return JsonResponse({'error': 'Ya tienes una cita a esta hora.'}, status=400)
 
-        paciente  = get_object_or_404(Paciente, pk=paciente_id)
-        medico    = get_object_or_404(Medico, pk=medico_id)
+        paciente   = get_object_or_404(Paciente, pk=paciente_id)
+        medico     = get_object_or_404(Medico, pk=medico_id)
         nueva_cita = Agendamiento.objects.create(
             cita=cita_tipo, fecha=fecha_str, hora=hora_str,
             id_paciente=paciente, id_medico=medico,
@@ -304,8 +318,8 @@ def agendar_cita_paciente(request):
         except Exception as e:
             print(f"Error de correo: {e}")
 
-        momento_llamada  = datetime.now() + timedelta(seconds=30)
-        fecha_para_voz   = fecha_cita.strftime('%d de %B')
+        momento_llamada = datetime.now() + timedelta(seconds=30)
+        fecha_para_voz  = fecha_cita.strftime('%d de %B')
         scheduler.add_job(
             llamada_twilio_tarea, trigger='date', run_date=momento_llamada,
             args=[paciente.nombre, cita_tipo, fecha_para_voz, hora_str],
@@ -324,7 +338,7 @@ def reprogramar_cita_paciente(request, pk):
 
     cita = get_object_or_404(Agendamiento, pk=pk, id_paciente=request.session['usuario_id'])
     try:
-        data           = json.loads(request.body)
+        data            = json.loads(request.body)
         nueva_fecha_str = data.get('fecha')
         nueva_hora_str  = data.get('hora')
 
@@ -392,8 +406,8 @@ def obtener_disponibilidad_medico(request):
     horas_ocupadas = [h.strftime('%H:%M') for h in citas_ocupadas]
 
     horarios = []
-    inicio = datetime.strptime("06:00", "%H:%M")
-    fin    = datetime.strptime("18:00", "%H:%M")
+    inicio   = datetime.strptime("06:00", "%H:%M")
+    fin      = datetime.strptime("18:00", "%H:%M")
 
     while inicio < fin:
         hora_slot = inicio.strftime("%H:%M")
@@ -412,10 +426,14 @@ def perfil_admin_json(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     admin = get_object_or_404(Administrador, pk=request.session['usuario_id'])
     return JsonResponse({
-        'nombre': admin.nombre, 'apellido': admin.apellido,
-        'tipo_doc': admin.tipo_doc, 'numero_doc': admin.numero_doc,
-        'genero': admin.genero, 'telefono': admin.telefono,
-        'correo': admin.correo, 'estado': admin.estado,
+        'nombre':     admin.nombre,
+        'apellido':   admin.apellido,
+        'tipo_doc':   admin.tipo_doc,
+        'numero_doc': admin.numero_doc,
+        'genero':     admin.genero,
+        'telefono':   admin.telefono,
+        'correo':     admin.correo,
+        'estado':     admin.estado,
     })
 
 
@@ -425,19 +443,19 @@ def editar_perfil_admin(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     admin = get_object_or_404(Administrador, pk=request.session['usuario_id'])
     try:
-        data = json.loads(request.body)
-        admin.nombre    = data.get('nombre',   admin.nombre)
-        admin.apellido  = data.get('apellido', admin.apellido)
-        admin.genero    = data.get('genero',   admin.genero)
-        admin.telefono  = data.get('telefono', admin.telefono)
-        admin.correo    = data.get('correo',   admin.correo)
+        data           = json.loads(request.body)
+        admin.nombre   = data.get('nombre',   admin.nombre)
+        admin.apellido = data.get('apellido', admin.apellido)
+        admin.genero   = data.get('genero',   admin.genero)
+        admin.telefono = data.get('telefono', admin.telefono)
+        admin.correo   = data.get('correo',   admin.correo)
         pw = data.get('contrasena', '').strip()
         if pw:
-            admin.contrasena = pw
+            admin.set_contrasena(pw)  # ✅ hashea la nueva contraseña
         admin.save()
         request.session['nombre'] = f"{admin.nombre} {admin.apellido}"
         return JsonResponse({'ok': True, 'nombre': request.session['nombre']})
-    except:
+    except Exception:
         return JsonResponse({'error': 'Error al procesar datos'}, status=400)
 
 
@@ -446,12 +464,17 @@ def perfil_paciente_json(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     paciente = get_object_or_404(Paciente, pk=request.session['usuario_id'])
     return JsonResponse({
-        'nombre': paciente.nombre, 'apellido': paciente.apellido,
-        'tipo_doc': paciente.tipo_doc, 'numero_doc': paciente.numero_doc,
-        'genero': paciente.genero, 'fecha_nacimiento': str(paciente.fecha_nacimiento),
-        'tipo_sangre': paciente.tipo_sangre, 'direccion': paciente.direccion,
-        'telefono': paciente.telefono, 'correo': paciente.correo,
-        'estado': paciente.estado,
+        'nombre':           paciente.nombre,
+        'apellido':         paciente.apellido,
+        'tipo_doc':         paciente.tipo_doc,
+        'numero_doc':       paciente.numero_doc,
+        'genero':           paciente.genero,
+        'fecha_nacimiento': str(paciente.fecha_nacimiento),
+        'tipo_sangre':      paciente.tipo_sangre,
+        'direccion':        paciente.direccion,
+        'telefono':         paciente.telefono,
+        'correo':           paciente.correo,
+        'estado':           paciente.estado,
     })
 
 
@@ -461,7 +484,7 @@ def editar_perfil_paciente(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     paciente = get_object_or_404(Paciente, pk=request.session['usuario_id'])
     try:
-        data = json.loads(request.body)
+        data               = json.loads(request.body)
         paciente.nombre    = data.get('nombre',    paciente.nombre)
         paciente.apellido  = data.get('apellido',  paciente.apellido)
         paciente.telefono  = data.get('telefono',  paciente.telefono)
@@ -469,7 +492,7 @@ def editar_perfil_paciente(request):
         paciente.direccion = data.get('direccion', paciente.direccion)
         pw = data.get('contrasena', '').strip()
         if pw:
-            paciente.contrasena = pw
+            paciente.set_contrasena(pw)  # ✅ hashea la nueva contraseña
         paciente.save()
         request.session['nombre'] = f"{paciente.nombre} {paciente.apellido}"
         return JsonResponse({'ok': True, 'nombre': request.session['nombre']})
@@ -523,12 +546,17 @@ def paciente_medico_json(request, pk):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     paciente = get_object_or_404(Paciente, pk=pk)
     return JsonResponse({
-        'nombre': paciente.nombre, 'apellido': paciente.apellido,
-        'tipo_doc': paciente.tipo_doc, 'numero_doc': paciente.numero_doc,
-        'genero': paciente.genero, 'fecha_nacimiento': str(paciente.fecha_nacimiento),
-        'tipo_sangre': paciente.tipo_sangre, 'telefono': paciente.telefono,
-        'correo': paciente.correo, 'direccion': paciente.direccion,
-        'estado': paciente.estado,
+        'nombre':           paciente.nombre,
+        'apellido':         paciente.apellido,
+        'tipo_doc':         paciente.tipo_doc,
+        'numero_doc':       paciente.numero_doc,
+        'genero':           paciente.genero,
+        'fecha_nacimiento': str(paciente.fecha_nacimiento),
+        'tipo_sangre':      paciente.tipo_sangre,
+        'telefono':         paciente.telefono,
+        'correo':           paciente.correo,
+        'direccion':        paciente.direccion,
+        'estado':           paciente.estado,
     })
 
 
@@ -536,8 +564,8 @@ def historial_paciente_medico_json(request, pk):
     if request.session.get('rol') != 'medico':
         return JsonResponse({'error': 'No autorizado'}, status=403)
 
-    medico_id = request.session.get('usuario_id')
-    paciente  = get_object_or_404(Paciente, pk=pk)
+    medico_id   = request.session.get('usuario_id')
+    paciente    = get_object_or_404(Paciente, pk=pk)
     historiales = (
         Historial_Clinico.objects.filter(id_paciente=paciente)
         .select_related('id_medico').order_by('-fecha_creacion')
@@ -572,7 +600,7 @@ def guardar_historial_medico(request):
 
         paciente = get_object_or_404(Paciente, pk=paciente_id)
         medico   = get_object_or_404(Medico, pk=medico_id)
-        hoy = date.today()
+        hoy      = date.today()
 
         if Historial_Clinico.objects.filter(id_medico=medico, id_paciente=paciente, fecha_creacion=hoy).exists():
             return JsonResponse({'error': 'Ya registraste un historial para este paciente hoy.'}, status=400)
@@ -581,7 +609,7 @@ def guardar_historial_medico(request):
             antecedentes=antecedentes, id_paciente=paciente, id_medico=medico,
         )
         return JsonResponse({
-            'ok': True,
+            'ok':              True,
             'paciente_nombre': f"{paciente.nombre} {paciente.apellido}",
             'id_historial':    historial.id_historial,
         })
@@ -594,11 +622,15 @@ def perfil_medico_json(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     medico = get_object_or_404(Medico, pk=request.session['usuario_id'])
     return JsonResponse({
-        'nombre': medico.nombre, 'apellido': medico.apellido,
-        'tipo_doc': medico.tipo_doc, 'numero_doc': medico.numero_doc,
-        'genero': medico.genero, 'especialidad': medico.especialidad,
-        'telefono': medico.telefono, 'correo': medico.correo,
-        'estado': medico.estado,
+        'nombre':       medico.nombre,
+        'apellido':     medico.apellido,
+        'tipo_doc':     medico.tipo_doc,
+        'numero_doc':   medico.numero_doc,
+        'genero':       medico.genero,
+        'especialidad': medico.especialidad,
+        'telefono':     medico.telefono,
+        'correo':       medico.correo,
+        'estado':       medico.estado,
     })
 
 
@@ -608,14 +640,14 @@ def editar_perfil_medico(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     medico = get_object_or_404(Medico, pk=request.session['usuario_id'])
     try:
-        data = json.loads(request.body)
+        data            = json.loads(request.body)
         medico.nombre   = data.get('nombre',   medico.nombre)
         medico.apellido = data.get('apellido', medico.apellido)
         medico.telefono = data.get('telefono', medico.telefono)
         medico.correo   = data.get('correo',   medico.correo)
         pw = data.get('contrasena', '').strip()
         if pw:
-            medico.contrasena = pw
+            medico.set_contrasena(pw)  # ✅ hashea la nueva contraseña
         medico.save()
         request.session['nombre'] = f"{medico.nombre} {medico.apellido}"
         return JsonResponse({'ok': True})
@@ -646,29 +678,57 @@ class AdminListView(AdminRequiredMixin, ListView):
     context_object_name = 'admins'
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        q  = self.request.GET.get('q', '').strip()
+        qs       = super().get_queryset()
+        q        = self.request.GET.get('q', '').strip()
+        genero   = self.request.GET.get('genero', '').strip()
+        estado   = self.request.GET.get('estado', '').strip()
+        tipo_doc = self.request.GET.get('tipo_doc', '').strip()
+
         if q:
             qs = qs.filter(
                 Q(nombre__icontains=q) | Q(apellido__icontains=q) |
                 Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
                 Q(telefono__icontains=q)
             )
+        if genero:
+            qs = qs.filter(genero=genero)
+        qs = _filtrar_estado(qs, estado)
+        if tipo_doc:
+            qs = qs.filter(tipo_doc=tipo_doc)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
+        ctx['q']           = self.request.GET.get('q', '')
+        ctx['genero']      = self.request.GET.get('genero', '')
+        ctx['estado']      = self.request.GET.get('estado', '')
+        ctx['tipo_doc']    = self.request.GET.get('tipo_doc', '')
+        ctx['hay_filtros'] = any([ctx['q'], ctx['genero'], ctx['estado'], ctx['tipo_doc']])
         return ctx
 
 
 def reporte_administradores(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-    q     = request.GET.get('q', '').strip()
-    tipo  = request.GET.get('tipo', 'pdf')
-    qs    = Administrador.objects.all()
-    qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'telefono')
+    q        = request.GET.get('q', '').strip()
+    genero   = request.GET.get('genero', '').strip()
+    estado   = request.GET.get('estado', '').strip()
+    tipo_doc = request.GET.get('tipo_doc', '').strip()
+    tipo     = request.GET.get('tipo', 'pdf')
+
+    qs = Administrador.objects.all()
+    if q:
+        qs = qs.filter(
+            Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+            Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
+            Q(telefono__icontains=q)
+        )
+    if genero:
+        qs = qs.filter(genero=genero)
+    qs = _filtrar_estado(qs, estado)
+    if tipo_doc:
+        qs = qs.filter(tipo_doc=tipo_doc)
+
     if tipo == 'excel':
         data     = generar_excel_administradores(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -708,29 +768,65 @@ class MedicoListView(AdminRequiredMixin, ListView):
     context_object_name = 'medicos'
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        q  = self.request.GET.get('q', '').strip()
+        qs           = super().get_queryset()
+        q            = self.request.GET.get('q', '').strip()
+        genero       = self.request.GET.get('genero', '').strip()
+        estado       = self.request.GET.get('estado', '').strip()
+        tipo_doc     = self.request.GET.get('tipo_doc', '').strip()
+        especialidad = self.request.GET.get('especialidad', '').strip()
+
         if q:
             qs = qs.filter(
                 Q(nombre__icontains=q) | Q(apellido__icontains=q) |
                 Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
                 Q(especialidad__icontains=q) | Q(telefono__icontains=q)
             )
+        if genero:
+            qs = qs.filter(genero=genero)
+        qs = _filtrar_estado(qs, estado)
+        if tipo_doc:
+            qs = qs.filter(tipo_doc=tipo_doc)
+        if especialidad:
+            qs = qs.filter(especialidad=especialidad)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
+        ctx['q']            = self.request.GET.get('q', '')
+        ctx['genero']       = self.request.GET.get('genero', '')
+        ctx['estado']       = self.request.GET.get('estado', '')
+        ctx['tipo_doc']     = self.request.GET.get('tipo_doc', '')
+        ctx['especialidad'] = self.request.GET.get('especialidad', '')
+        ctx['especialidades'] = Medico.objects.values_list('especialidad', flat=True).distinct().order_by('especialidad')
+        ctx['hay_filtros']  = any([ctx['q'], ctx['genero'], ctx['estado'], ctx['tipo_doc'], ctx['especialidad']])
         return ctx
 
 
 def reporte_medicos(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-    q     = request.GET.get('q', '').strip()
-    tipo  = request.GET.get('tipo', 'pdf')
-    qs    = Medico.objects.all()
-    qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'especialidad', 'telefono')
+    q            = request.GET.get('q', '').strip()
+    genero       = request.GET.get('genero', '').strip()
+    estado       = request.GET.get('estado', '').strip()
+    tipo_doc     = request.GET.get('tipo_doc', '').strip()
+    especialidad = request.GET.get('especialidad', '').strip()
+    tipo         = request.GET.get('tipo', 'pdf')
+
+    qs = Medico.objects.all()
+    if q:
+        qs = qs.filter(
+            Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+            Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
+            Q(especialidad__icontains=q) | Q(telefono__icontains=q)
+        )
+    if genero:
+        qs = qs.filter(genero=genero)
+    qs = _filtrar_estado(qs, estado)
+    if tipo_doc:
+        qs = qs.filter(tipo_doc=tipo_doc)
+    if especialidad:
+        qs = qs.filter(especialidad=especialidad)
+
     if tipo == 'excel':
         data     = generar_excel_medicos(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -770,29 +866,64 @@ class PacienteListView(AdminRequiredMixin, ListView):
     context_object_name = 'pacientes'
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        q  = self.request.GET.get('q', '').strip()
+        qs          = super().get_queryset()
+        q           = self.request.GET.get('q', '').strip()
+        genero      = self.request.GET.get('genero', '').strip()
+        estado      = self.request.GET.get('estado', '').strip()
+        tipo_doc    = self.request.GET.get('tipo_doc', '').strip()
+        tipo_sangre = self.request.GET.get('tipo_sangre', '').strip()
+
         if q:
             qs = qs.filter(
                 Q(nombre__icontains=q) | Q(apellido__icontains=q) |
                 Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
                 Q(telefono__icontains=q) | Q(tipo_sangre__icontains=q)
             )
+        if genero:
+            qs = qs.filter(genero=genero)
+        qs = _filtrar_estado(qs, estado)
+        if tipo_doc:
+            qs = qs.filter(tipo_doc=tipo_doc)
+        if tipo_sangre:
+            qs = qs.filter(tipo_sangre=tipo_sangre)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
+        ctx['q']           = self.request.GET.get('q', '')
+        ctx['genero']      = self.request.GET.get('genero', '')
+        ctx['estado']      = self.request.GET.get('estado', '')
+        ctx['tipo_doc']    = self.request.GET.get('tipo_doc', '')
+        ctx['tipo_sangre'] = self.request.GET.get('tipo_sangre', '')
+        ctx['hay_filtros'] = any([ctx['q'], ctx['genero'], ctx['estado'], ctx['tipo_doc'], ctx['tipo_sangre']])
         return ctx
 
 
 def reporte_pacientes(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-    q     = request.GET.get('q', '').strip()
-    tipo  = request.GET.get('tipo', 'pdf')
-    qs    = Paciente.objects.all()
-    qs, _ = _aplicar_filtro(qs, q, 'nombre', 'apellido', 'numero_doc', 'correo', 'telefono', 'tipo_sangre')
+    q           = request.GET.get('q', '').strip()
+    genero      = request.GET.get('genero', '').strip()
+    estado      = request.GET.get('estado', '').strip()
+    tipo_doc    = request.GET.get('tipo_doc', '').strip()
+    tipo_sangre = request.GET.get('tipo_sangre', '').strip()
+    tipo        = request.GET.get('tipo', 'pdf')
+
+    qs = Paciente.objects.all()
+    if q:
+        qs = qs.filter(
+            Q(nombre__icontains=q) | Q(apellido__icontains=q) |
+            Q(numero_doc__icontains=q) | Q(correo__icontains=q) |
+            Q(telefono__icontains=q) | Q(tipo_sangre__icontains=q)
+        )
+    if genero:
+        qs = qs.filter(genero=genero)
+    qs = _filtrar_estado(qs, estado)
+    if tipo_doc:
+        qs = qs.filter(tipo_doc=tipo_doc)
+    if tipo_sangre:
+        qs = qs.filter(tipo_sangre=tipo_sangre)
+
     if tipo == 'excel':
         data     = generar_excel_pacientes(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -832,8 +963,12 @@ class AgendamientoListView(AdminRequiredMixin, ListView):
     context_object_name = 'citas'
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related('id_paciente', 'id_medico')
-        q  = self.request.GET.get('q', '').strip()
+        qs          = super().get_queryset().select_related('id_paciente', 'id_medico')
+        q           = self.request.GET.get('q', '').strip()
+        fecha_desde = self.request.GET.get('fecha_desde', '').strip()
+        fecha_hasta = self.request.GET.get('fecha_hasta', '').strip()
+        tipo_cita   = self.request.GET.get('tipo_cita', '').strip()
+
         if q:
             qs = qs.filter(
                 Q(cita__icontains=q) |
@@ -842,20 +977,35 @@ class AgendamientoListView(AdminRequiredMixin, ListView):
                 Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q) |
                 Q(id_medico__especialidad__icontains=q)
             )
+        if fecha_desde:
+            qs = qs.filter(fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha__lte=fecha_hasta)
+        if tipo_cita:
+            qs = qs.filter(cita=tipo_cita)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
+        ctx['q']           = self.request.GET.get('q', '')
+        ctx['fecha_desde'] = self.request.GET.get('fecha_desde', '')
+        ctx['fecha_hasta'] = self.request.GET.get('fecha_hasta', '')
+        ctx['tipo_cita']   = self.request.GET.get('tipo_cita', '')
+        ctx['tipos_cita']  = Agendamiento.objects.values_list('cita', flat=True).distinct().order_by('cita')
+        ctx['hay_filtros'] = any([ctx['q'], ctx['fecha_desde'], ctx['fecha_hasta'], ctx['tipo_cita']])
         return ctx
 
 
 def reporte_agendamientos(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-    q    = request.GET.get('q', '').strip()
-    tipo = request.GET.get('tipo', 'pdf')
-    qs   = Agendamiento.objects.select_related('id_paciente', 'id_medico').all()
+    q           = request.GET.get('q', '').strip()
+    tipo_cita   = request.GET.get('tipo_cita', '').strip()
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+    tipo        = request.GET.get('tipo', 'pdf')
+
+    qs = Agendamiento.objects.select_related('id_paciente', 'id_medico').all()
     if q:
         qs = qs.filter(
             Q(cita__icontains=q) |
@@ -863,6 +1013,13 @@ def reporte_agendamientos(request):
             Q(id_paciente__numero_doc__icontains=q) |
             Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q)
         )
+    if tipo_cita:
+        qs = qs.filter(cita=tipo_cita)
+    if fecha_desde:
+        qs = qs.filter(fecha__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(fecha__lte=fecha_hasta)
+
     if tipo == 'excel':
         data     = generar_excel_agendamientos(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -902,8 +1059,12 @@ class HistorialListView(AdminRequiredMixin, ListView):
     context_object_name = 'historiales'
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related('id_paciente', 'id_medico')
-        q  = self.request.GET.get('q', '').strip()
+        qs           = super().get_queryset().select_related('id_paciente', 'id_medico')
+        q            = self.request.GET.get('q', '').strip()
+        fecha_desde  = self.request.GET.get('fecha_desde', '').strip()
+        fecha_hasta  = self.request.GET.get('fecha_hasta', '').strip()
+        especialidad = self.request.GET.get('especialidad', '').strip()
+
         if q:
             qs = qs.filter(
                 Q(antecedentes__icontains=q) |
@@ -912,20 +1073,35 @@ class HistorialListView(AdminRequiredMixin, ListView):
                 Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q) |
                 Q(id_medico__especialidad__icontains=q)
             )
+        if fecha_desde:
+            qs = qs.filter(fecha_creacion__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha_creacion__lte=fecha_hasta)
+        if especialidad:
+            qs = qs.filter(id_medico__especialidad=especialidad)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
+        ctx['q']            = self.request.GET.get('q', '')
+        ctx['fecha_desde']  = self.request.GET.get('fecha_desde', '')
+        ctx['fecha_hasta']  = self.request.GET.get('fecha_hasta', '')
+        ctx['especialidad'] = self.request.GET.get('especialidad', '')
+        ctx['especialidades'] = Medico.objects.values_list('especialidad', flat=True).distinct().order_by('especialidad')
+        ctx['hay_filtros']  = any([ctx['q'], ctx['fecha_desde'], ctx['fecha_hasta'], ctx['especialidad']])
         return ctx
 
 
 def reporte_historiales(request):
     if request.session.get('rol') != 'admin':
         return redirect('login')
-    q    = request.GET.get('q', '').strip()
-    tipo = request.GET.get('tipo', 'pdf')
-    qs   = Historial_Clinico.objects.select_related('id_paciente', 'id_medico').all()
+    q            = request.GET.get('q', '').strip()
+    especialidad = request.GET.get('especialidad', '').strip()
+    fecha_desde  = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta  = request.GET.get('fecha_hasta', '').strip()
+    tipo         = request.GET.get('tipo', 'pdf')
+
+    qs = Historial_Clinico.objects.select_related('id_paciente', 'id_medico').all()
     if q:
         qs = qs.filter(
             Q(antecedentes__icontains=q) |
@@ -933,6 +1109,13 @@ def reporte_historiales(request):
             Q(id_paciente__numero_doc__icontains=q) |
             Q(id_medico__nombre__icontains=q) | Q(id_medico__apellido__icontains=q)
         )
+    if especialidad:
+        qs = qs.filter(id_medico__especialidad=especialidad)
+    if fecha_desde:
+        qs = qs.filter(fecha_creacion__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(fecha_creacion__lte=fecha_hasta)
+
     if tipo == 'excel':
         data     = generar_excel_historial(qs)
         response = HttpResponse(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -960,3 +1143,83 @@ class HistorialDeleteView(AdminRequiredMixin, DeleteView):
     model         = Historial_Clinico
     template_name = 'historial_clinico/eliminar_historiales.html'
     success_url   = reverse_lazy('ver_historiales')
+
+
+import pandas as pd
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.contrib.auth.hashers import make_password
+from .models import Medico
+
+def importar_medicos(request):
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        archivo = request.FILES['archivo_excel']
+        try:
+            df = pd.read_excel(archivo)
+
+            # Columnas requeridas
+            columnas_requeridas = ['TIPO_DOC', 'NUMERO_DOC', 'NOMBRE', 'APELLIDO',
+                                   'GENERO', 'ESPECIALIDAD', 'TELEFONO', 'CORREO']
+            for col in columnas_requeridas:
+                if col not in df.columns:
+                    messages.error(request, f"El archivo no tiene la columna requerida: {col}")
+                    return redirect('dashboard_admin')
+
+            password_segura = "CitaYa2026*"
+            creados    = 0
+            duplicados = []  # Lista de mensajes de error por fila
+
+            for index, fila in df.iterrows():
+                numero_doc = str(fila['NUMERO_DOC']).strip()
+                correo     = str(fila['CORREO']).strip()
+                nombre     = str(fila['NOMBRE']).strip()
+                apellido   = str(fila['APELLIDO']).strip()
+
+                # Verificar duplicado por número de documento
+                if Medico.objects.filter(numero_doc=numero_doc).exists():
+                    duplicados.append(
+                        f"Fila {index + 2}: {nombre} {apellido} — "
+                        f"el documento '{numero_doc}' ya está registrado."
+                    )
+                    continue  # Saltar este registro
+
+                # Verificar duplicado por correo
+                if Medico.objects.filter(correo=correo).exists():
+                    duplicados.append(
+                        f"Fila {index + 2}: {nombre} {apellido} — "
+                        f"el correo '{correo}' ya está registrado."
+                    )
+                    continue  # Saltar este registro
+
+                # Si no hay duplicado, crear el médico
+                Medico.objects.create(
+                    tipo_doc     = str(fila['TIPO_DOC']).strip(),
+                    numero_doc   = numero_doc,
+                    nombre       = nombre,
+                    apellido     = apellido,
+                    genero       = str(fila['GENERO']).strip(),
+                    especialidad = str(fila['ESPECIALIDAD']).strip(),
+                    telefono     = str(fila['TELEFONO']).strip(),
+                    correo       = correo,
+                    contrasena   = make_password(password_segura),
+                    estado       = True,
+                )
+                creados += 1
+
+            # Mensajes de resultado
+            if creados > 0:
+                messages.success(
+                    request,
+                    f"✔ {creados} médico(s) importado(s) correctamente. "
+                    f"Clave temporal: {password_segura}"
+                )
+            if duplicados:
+                for msg in duplicados:
+                    messages.warning(request, f"⚠ Duplicado omitido — {msg}")
+            if creados == 0 and not duplicados:
+                messages.info(request, "El archivo no contenía registros válidos.")
+
+        except Exception as e:
+            messages.error(request, f"Error al procesar el archivo: {e}")
+
+    return redirect('dashboard_admin')

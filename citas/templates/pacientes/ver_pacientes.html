@@ -9,46 +9,135 @@
     </a>
 </div>
 
-{# ── BARRA DE BÚSQUEDA + BOTONES DE REPORTE ── #}
 <div class="toolbar-reportes">
-
     <form method="GET" action="{% url 'ver_pacientes' %}" class="search-form">
         <div class="search-input-wrap">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-                type="text"
-                name="q"
-                value="{{ q }}"
-                placeholder="Buscar por nombre, documento, correo, sangre…"
-                class="search-input"
-                autocomplete="off"
-            >
+            <input type="text" name="q" value="{{ q }}"
+                   placeholder="Buscar por nombre, documento, correo, sangre…"
+                   class="search-input" autocomplete="off">
             {% if q %}
-                <a href="{% url 'ver_pacientes' %}" class="search-clear" title="Limpiar">
-                    <i class="fa-solid fa-xmark"></i>
-                </a>
+                <a href="{% url 'ver_pacientes' %}" class="search-clear"><i class="fa-solid fa-xmark"></i></a>
             {% endif %}
         </div>
+        <input type="hidden" name="genero"      value="{{ genero }}">
+        <input type="hidden" name="estado"      value="{{ estado }}">
+        <input type="hidden" name="tipo_doc"    value="{{ tipo_doc }}">
+        <input type="hidden" name="tipo_sangre" value="{{ tipo_sangre }}">
         <button type="submit" class="btn btn-search">Buscar</button>
     </form>
 
+    <button type="button" class="btn-filter-toggle {% if genero or estado or tipo_doc or tipo_sangre %}active{% endif %}"
+            id="filterToggleBtn" onclick="toggleFilterPanel()">
+        <i class="fa-solid fa-sliders"></i> Filtros
+        <span class="filter-count {% if genero or estado or tipo_doc or tipo_sangre %}show{% endif %}" id="filterCount"></span>
+    </button>
+
     <div class="reporte-btns">
-        <a href="{% url 'reporte_pacientes' %}?tipo=pdf{% if q %}&q={{ q }}{% endif %}"
-           target="_blank" class="btn btn-reporte btn-pdf">
-            <i class="fa-solid fa-file-pdf"></i> PDF
-        </a>
-        <a href="{% url 'reporte_pacientes' %}?tipo=excel{% if q %}&q={{ q }}{% endif %}"
-           class="btn btn-reporte btn-excel">
-            <i class="fa-solid fa-file-excel"></i> Excel
-        </a>
-    </div>
+    <a href="{% url 'reporte_pacientes' %}?tipo=pdf&q={{ q|urlencode }}&genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}&tipo_sangre={{ tipo_sangre|urlencode }}"
+       target="_blank" class="btn btn-reporte btn-pdf">
+        <i class="fa-solid fa-file-pdf"></i> PDF
+    </a>
+    <a href="{% url 'reporte_pacientes' %}?tipo=excel&q={{ q|urlencode }}&genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}&tipo_sangre={{ tipo_sangre|urlencode }}"
+       class="btn btn-reporte btn-excel">
+        <i class="fa-solid fa-file-excel"></i> Excel
+    </a>
+</div>
 </div>
 
-{% if q %}
-<p class="search-info">
-    Resultados para <strong>"{{ q }}"</strong> — {{ pacientes|length }} registro(s).
-    <a href="{% url 'ver_pacientes' %}">Ver todos</a>
-</p>
+<div class="filter-panel {% if genero or estado or tipo_doc or tipo_sangre %}open{% endif %}" id="filterPanel">
+    <div class="filter-panel-title"><i class="fa-solid fa-sliders"></i> Filtros avanzados</div>
+    <form method="GET" action="{% url 'ver_pacientes' %}" id="filterForm">
+        <input type="hidden" name="q" value="{{ q }}">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Género</label>
+                <select name="genero" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="M" {% if genero == "M" %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if genero == "F" %}selected{% endif %}>Femenino</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Estado</label>
+                <select name="estado" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="1" {% if estado == "1" %}selected{% endif %}>Activo</option>
+                    <option value="0" {% if estado == "0" %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Tipo de documento</label>
+                <select name="tipo_doc" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="CC" {% if tipo_doc == "CC" %}selected{% endif %}>Cédula de ciudadanía</option>
+                    <option value="CE" {% if tipo_doc == "CE" %}selected{% endif %}>Cédula de extranjería</option>
+                    <option value="PA" {% if tipo_doc == "PA" %}selected{% endif %}>Pasaporte</option>
+                    <option value="TI" {% if tipo_doc == "TI" %}selected{% endif %}>Tarjeta de identidad</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Tipo de sangre</label>
+                <select name="tipo_sangre" onchange="updateBadgeCount()">
+                    <option value="">Todos</option>
+                    <option value="A+"  {% if tipo_sangre == "A+"  %}selected{% endif %}>A+</option>
+                    <option value="A-"  {% if tipo_sangre == "A-"  %}selected{% endif %}>A-</option>
+                    <option value="B+"  {% if tipo_sangre == "B+"  %}selected{% endif %}>B+</option>
+                    <option value="B-"  {% if tipo_sangre == "B-"  %}selected{% endif %}>B-</option>
+                    <option value="AB+" {% if tipo_sangre == "AB+" %}selected{% endif %}>AB+</option>
+                    <option value="AB-" {% if tipo_sangre == "AB-" %}selected{% endif %}>AB-</option>
+                    <option value="O+"  {% if tipo_sangre == "O+"  %}selected{% endif %}>O+</option>
+                    <option value="O-"  {% if tipo_sangre == "O-"  %}selected{% endif %}>O-</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <a href="{% url 'ver_pacientes' %}{% if q %}?q={{ q }}{% endif %}" class="btn-reset-filters">
+                <i class="fa-solid fa-rotate-left"></i> Limpiar filtros
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-magnifying-glass"></i> Aplicar
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if q or genero or estado or tipo_doc or tipo_sangre %}
+<div class="active-filters-row show">
+    <span>Filtros activos:</span>
+    {% if q %}
+        <span class="active-badge">
+            Búsqueda: "{{ q }}"
+            <a href="?genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}&tipo_sangre={{ tipo_sangre }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if genero %}
+        <span class="active-badge">
+            Género: {% if genero == "M" %}Masculino{% else %}Femenino{% endif %}
+            <a href="?q={{ q }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}&tipo_sangre={{ tipo_sangre }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if estado %}
+        <span class="active-badge">
+            Estado: {% if estado == "1" %}Activo{% else %}Inactivo{% endif %}
+            <a href="?q={{ q }}&genero={{ genero }}&tipo_doc={{ tipo_doc }}&tipo_sangre={{ tipo_sangre }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if tipo_doc %}
+        <span class="active-badge">
+            Doc: {{ tipo_doc }}
+            <a href="?q={{ q }}&genero={{ genero }}&estado={{ estado }}&tipo_sangre={{ tipo_sangre }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    {% if tipo_sangre %}
+        <span class="active-badge">
+            Sangre: {{ tipo_sangre }}
+            <a href="?q={{ q }}&genero={{ genero }}&estado={{ estado }}&tipo_doc={{ tipo_doc }}"><button>×</button></a>
+        </span>
+    {% endif %}
+    <a href="{% url 'ver_pacientes' %}" class="btn-reset-filters">Limpiar todo</a>
+</div>
+<p class="search-info">{{ pacientes|length }} registro(s) encontrado(s).</p>
 {% endif %}
 
 <div class="card">
@@ -56,17 +145,9 @@
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Tipo Doc</th>
-                    <th>Número Doc</th>
-                    <th>Nombre Completo</th>
-                    <th>Género</th>
-                    <th>Nacimiento</th>
-                    <th>Sangre</th>
-                    <th>Teléfono</th>
-                    <th>Correo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>#</th><th>Tipo Doc</th><th>Número Doc</th><th>Nombre Completo</th>
+                    <th>Género</th><th>Nacimiento</th><th>Sangre</th>
+                    <th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,14 +189,8 @@
                     <td colspan="11">
                         <div class="empty-state">
                             <div class="ei">👤</div>
-                            <p>
-                                {% if q %}
-                                    No se encontraron pacientes con "<strong>{{ q }}</strong>".<br>
-                                    <a href="{% url 'ver_pacientes' %}" style="color:var(--accent)">Ver todos</a>
-                                {% else %}
-                                    No hay pacientes registrados.<br>
-                                    <a href="{% url 'crear_pacientes' %}" style="color:var(--accent)">Registrar paciente</a>
-                                {% endif %}
+                            <p>No se encontraron resultados.<br>
+                               <a href="{% url 'ver_pacientes' %}" style="color:var(--accent)">Ver todos</a>
                             </p>
                         </div>
                     </td>
@@ -125,5 +200,19 @@
         </table>
     </div>
 </div>
+
+<script>
+function toggleFilterPanel() {
+    document.getElementById('filterPanel').classList.toggle('open');
+    document.getElementById('filterToggleBtn').classList.toggle('active');
+}
+function updateBadgeCount() {
+    var count = 0;
+    document.querySelectorAll('#filterForm select').forEach(function(s) { if (s.value) count++; });
+    var el = document.getElementById('filterCount');
+    el.textContent = count;
+    count > 0 ? el.classList.add('show') : el.classList.remove('show');
+}
+</script>
 
 {% endblock %}

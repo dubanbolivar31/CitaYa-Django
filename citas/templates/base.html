@@ -154,6 +154,10 @@
             <i class="fa-solid fa-clipboard-list"></i>
             <span>Ver Historiales</span>
         </a>
+        <a href="javascript:void(0)" class="quick-card" onclick="abrirModal('modalCargaMasiva')">
+            <i class="fa-solid fa-file-excel" style="color: #059669;"></i>
+            <span>Carga Masiva de Medicos</span>
+        </a>
     </div>
     {% endif %}
 
@@ -283,6 +287,34 @@
                 <i class="fa-solid fa-right-from-bracket"></i> Sí, salir
             </a>
         </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalCargaMasiva">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-file-import"></i> Importar Médicos</h3>
+            <button class="modal-close" onclick="cerrarModal('modalCargaMasiva')">&times;</button>
+        </div>
+        <form action="{% url 'importar_medicos' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group-m full">
+                    <label style="display: block; margin-bottom: 10px;">Seleccione archivo Excel (.xlsx)</label>
+                    <input type="file" name="archivo_excel" accept=".xlsx, .xls" required 
+                           style="width: 100%; padding: 10px; border: 1px dashed #ccc; border-radius: 5px;">
+                </div>
+                <p style="font-size: 11px; color: #666; margin-top: 10px;">
+                    * Asegúrese de que el archivo contenga la especialidad "Medicina General".
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-secondary" onclick="cerrarModal('modalCargaMasiva')">Cancelar</button>
+                <button type="submit" class="btn-modal btn-primary">
+                    <i class="fa-solid fa-upload"></i> Cargar Datos
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
