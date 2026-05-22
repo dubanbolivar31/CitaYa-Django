@@ -1,5 +1,7 @@
+import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone
 
 class Administrador(models.Model):
     id_admin   = models.AutoField(primary_key=True)
@@ -94,3 +96,27 @@ class Historial_Clinico(models.Model):
 
     def __str__(self):
         return f"Historial de {self.id_paciente.nombre} - {self.fecha_creacion}"
+
+
+# *** RECUPERAR CONTRASEÑA ***
+
+class PasswordResetToken(models.Model):
+    ROL_CHOICES = [
+        ('admin',    'Administrador'),
+        ('medico',   'Médico'),
+        ('paciente', 'Paciente'),
+    ]
+
+    id_token   = models.AutoField(primary_key=True)
+    token      = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    rol        = models.CharField(max_length=10, choices=ROL_CHOICES)
+    usuario_id = models.IntegerField()
+    correo     = models.EmailField()
+    creado_en  = models.DateTimeField(auto_now_add=True)
+    usado      = models.BooleanField(default=False)
+
+    def esta_vigente(self):
+        return not self.usado and (timezone.now() - self.creado_en).total_seconds() < 3600  # ✅ fix bug
+
+    def __str__(self):
+        return f"{self.rol} | {self.correo} | {'✓' if self.usado else '⏳'}"

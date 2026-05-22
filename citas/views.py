@@ -1,4 +1,9 @@
 import json
+import os
+import uuid
+from django.utils import timezone
+from .models import PasswordResetToken
+from dotenv import load_dotenv
 from datetime import date
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
@@ -29,14 +34,18 @@ from twilio.rest import Client
 
 from .models import Administrador, Agendamiento, Historial_Clinico, Medico, Paciente
 
+load_dotenv()
+
 # ── SCHEDULER ─────────────────────────────────────────────────────────────
 scheduler = BackgroundScheduler()
 scheduler.start()
 
 def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
-    account_sid = 'AC02543e93d5cd70a21e891b250d558f65'
-    auth_token  = '5c995316dd6f6bb95ba27988df84ec12'
-    client = Client(account_sid, auth_token)
+    sid = os.getenv('TWILIO_ACCOUNT_SID')
+    token = os.getenv('TWILIO_AUTH_TOKEN')
+    if not sid or not token:
+        return   
+    client = Client(sid, token)
     try:
         client.calls.create(
             twiml=f'''
@@ -49,8 +58,8 @@ def llamada_twilio_tarea(nombre, especialidad, fecha, hora):
                     </Say>
                 </Response>
             ''',
-            to='+573146867513',
-            from_='+18128979180'
+            to = os.getenv('TWILIO_TO_NUMBER'),
+            from_ = os.getenv('TWILIO_FROM_NUMBER')
         )
         print(f"📞 Llamada enviada a {nombre}")
     except Exception as e:
@@ -280,9 +289,13 @@ def citas_paciente_json(request):
 
 @require_POST
 def agendar_cita_paciente(request):
+    sid = os.getenv('TWILIO_ACCOUNT_SID')
+    token = os.getenv('TWILIO_AUTH_TOKEN')
     if request.session.get('rol') != 'paciente':
         return JsonResponse({'error': 'No autorizado'}, status=403)
-
+    
+    if not sid or not token:
+        return JsonResponse({'error': 'Error de autenticación'}, status=403)
     try:
         data      = json.loads(request.body)
         cita_tipo = data.get('cita')
@@ -1223,3 +1236,124 @@ def importar_medicos(request):
             messages.error(request, f"Error al procesar el archivo: {e}")
 
     return redirect('dashboard_admin')
+
+# =========================================================================
+# RECUPERACIÓN DE CONTRASEÑA
+# =========================================================================
+from django.contrib.auth.hashers import make_password
+
+def _enviar_correo_reset(destinatario, nombre, reset_url):
+    """Envía el correo usando el correo de soporte (no el de recordatorios)."""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from django.template.loader import render_to_string
+    from django.conf import settings
+
+    html = render_to_string('emails/reset_password.html', {
+        'nombre':    nombre,
+        'correo':    destinatario,
+        'reset_url': reset_url,
+    })
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'CitaYa — Recupera tu contraseña'
+    msg['From']    = settings.SUPPORT_FROM_EMAIL
+    msg['To']      = destinatario
+    msg.attach(MIMEText(html, 'html'))
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.ehlo()
+        server.starttls()
+        server.login(settings.SUPPORT_EMAIL_HOST_USER, settings.SUPPORT_EMAIL_HOST_PASSWORD)
+        server.sendmail(settings.SUPPORT_EMAIL_HOST_USER, destinatario, msg.as_string())
+
+
+def solicitar_reset(request):
+    """Paso 1 — el usuario escribe su correo."""
+    if request.method == 'POST':
+        correo = request.POST.get('correo', '').strip().lower()
+
+        # Buscar en los tres modelos
+        usuario = None
+        rol     = None
+
+        obj = Administrador.objects.filter(correo__iexact=correo).first()
+        if obj:
+            usuario, rol = obj, 'admin'
+
+        if not usuario:
+            obj = Medico.objects.filter(correo__iexact=correo).first()
+            if obj:
+                usuario, rol = obj, 'medico'
+
+        if not usuario:
+            obj = Paciente.objects.filter(correo__iexact=correo).first()
+            if obj:
+                usuario, rol = obj, 'paciente'
+
+        if usuario:
+            # Invalida tokens anteriores de ese correo
+            PasswordResetToken.objects.filter(correo__iexact=correo, usado=False).update(usado=True)
+
+            token_obj = PasswordResetToken.objects.create(
+                rol        = rol,
+                usuario_id = getattr(usuario, f'id_{rol}') if rol != 'admin' else usuario.id_admin,
+                correo     = correo,
+            )
+
+            reset_url = request.build_absolute_uri(
+                f'/recuperar/confirmar/{token_obj.token}/'
+            )
+
+            try:
+                nombre = f"{usuario.nombre} {usuario.apellido}"
+                _enviar_correo_reset(correo, nombre, reset_url)
+            except Exception as e:
+                print(f"Error enviando correo reset: {e}")
+                messages.error(request, 'No se pudo enviar el correo. Intenta más tarde.')
+                return render(request, 'Inicio_Sesion-Registro/recuperar_solicitud.html')
+
+        # Siempre mostramos el mismo mensaje (seguridad — no revelar si el correo existe)
+        messages.success(request, 'Si ese correo está registrado, recibirás un enlace en breve.')
+        return redirect('solicitar_reset')
+
+    return render(request, 'Inicio_Sesion-Registro/recuperar_solicitud.html')
+
+
+def confirmar_reset(request, token):
+    """Paso 2 — el usuario llega desde el enlace del correo."""
+    token_obj = PasswordResetToken.objects.filter(token=token).first()
+
+    if not token_obj or not token_obj.esta_vigente():
+        messages.error(request, 'El enlace no es válido o ya expiró.')
+        return redirect('solicitar_reset')
+
+    if request.method == 'POST':
+        pw1 = request.POST.get('contrasena', '')
+        pw2 = request.POST.get('contrasena2', '')
+
+        if len(pw1) < 8:
+            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            return render(request, 'Inicio_Sesion-Registro/recuperar_confirmar.html', {'token': token})
+
+        if pw1 != pw2:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'Inicio_Sesion-Registro/recuperar_confirmar.html', {'token': token})
+
+        # Actualizar contraseña según el rol
+        nueva = make_password(pw1)
+        if token_obj.rol == 'admin':
+            Administrador.objects.filter(id_admin=token_obj.usuario_id).update(contrasena=nueva)
+        elif token_obj.rol == 'medico':
+            Medico.objects.filter(id_medico=token_obj.usuario_id).update(contrasena=nueva)
+        else:
+            Paciente.objects.filter(id_paciente=token_obj.usuario_id).update(contrasena=nueva)
+
+        token_obj.usado = True
+        token_obj.save()
+
+        messages.success(request, '¡Contraseña actualizada! Ya puedes iniciar sesión.')
+        return redirect('login')
+
+    return render(request, 'Inicio_Sesion-Registro/recuperar_confirmar.html', {'token': token})

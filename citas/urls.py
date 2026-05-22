@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from citas import views
 from .views import (
     AdminListView, AdminCreateView, AdminUpdateView, AdminDeleteView,
     MedicoListView, MedicoCreateView, MedicoUpdateView, MedicoDeleteView,
@@ -107,4 +108,10 @@ urlpatterns = [
     path('historiales/reporte/',           views.reporte_historiales,     name='reporte_historiales'),
 
     path('importar-medicos/', views.importar_medicos, name='importar_medicos'),
+
+
+    # Recuperar contraseña
+    path('recuperar/',                      views.solicitar_reset,  name='solicitar_reset'),
+    path('recuperar/confirmar/<uuid:token>/', views.confirmar_reset, name='confirmar_reset'),
+
 ]

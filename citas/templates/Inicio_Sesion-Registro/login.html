@@ -25,11 +25,11 @@
                     {% csrf_token %}
 
                     {% if messages %}
-                        {% for message in messages %}
-                        <div class="msg msg--error">
-                            <span>{{ message }}</span>
-                        </div>
-                        {% endfor %}
+                    {% for message in messages %}
+                    <div class="msg msg--error">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
                     {% endif %}
 
                     {% if 'registro' in request.GET %}
@@ -42,14 +42,8 @@
                         <label class="text" for="numero">Número de documento</label>
                     </div>
                     <div class="input">
-                        <input
-                            type="text"
-                            id="numero"
-                            name="numerodoc"
-                            inputmode="numeric"
-                            placeholder="Ej: 1234567890"
-                            autocomplete="username"
-                            required>
+                        <input type="text" id="numero" name="numerodoc" inputmode="numeric" placeholder="Ej: 1234567890"
+                            autocomplete="username" required>
                         <small id="errorDocumento" class="field-error" style="display:none; color:red;"></small>
                     </div>
 
@@ -58,18 +52,14 @@
                     </div>
                     <div class="input">
                         <div class="input-password-container">
-                            <input
-                                type="password"
-                                id="clave"
-                                name="contrasena"
-                                placeholder="••••••••"
-                                autocomplete="current-password"
-                                required>
+                            <input type="password" id="clave" name="contrasena" placeholder="••••••••"
+                                autocomplete="current-password" required>
                             <span class="toggle-password" id="toggleEye" style="cursor:pointer;">
                                 <svg id="eyeIcon" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
                                 </svg>
                             </span>
                         </div>
@@ -79,7 +69,7 @@
                     <button type="submit" class="login_button">Iniciar Sesión</button>
 
                     <div class="cuenta">
-                        <a href="#">¿Olvidaste tu contraseña?</a>
+                        <a href="{% url 'solicitar_reset' %}">¿Olvidaste tu contraseña?</a>
                     </div>
 
                     <div class="no-cuenta">
@@ -105,59 +95,60 @@
     </div>
 
     <script>
-    const numInput   = document.getElementById('numero');
-    const claveInput = document.getElementById('clave');
-    const errDoc     = document.getElementById('errorDocumento');
-    const errPass    = document.getElementById('errorContrasena');
-    const toggleBtn  = document.getElementById('toggleEye');
-    const eyeIcon    = document.getElementById('eyeIcon');
-    const form       = document.querySelector('.container_formulario-login');
+        const numInput = document.getElementById('numero');
+        const claveInput = document.getElementById('clave');
+        const errDoc = document.getElementById('errorDocumento');
+        const errPass = document.getElementById('errorContrasena');
+        const toggleBtn = document.getElementById('toggleEye');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const form = document.querySelector('.container_formulario-login');
 
-    /* ── Toggle contraseña ── */
-    const SVG_OPEN  = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-    const SVG_CLOSE = `<line x1="17.94" y1="17.94" x2="6.06" y2="6.06"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M6.53 6.53A13.4 13.4 0 0 0 1 12s4 8 11 8a13.2 13.2 0 0 0 5.36-1.12"/><circle cx="12" cy="12" r="3"/>`;
+        /* ── Toggle contraseña ── */
+        const SVG_OPEN = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        const SVG_CLOSE = `<line x1="17.94" y1="17.94" x2="6.06" y2="6.06"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M6.53 6.53A13.4 13.4 0 0 0 1 12s4 8 11 8a13.2 13.2 0 0 0 5.36-1.12"/><circle cx="12" cy="12" r="3"/>`;
 
-    toggleBtn.addEventListener('click', () => {
-        const isPass = claveInput.type === 'password';
-        claveInput.type = isPass ? 'text' : 'password';
-        eyeIcon.innerHTML = isPass ? SVG_CLOSE : SVG_OPEN;
-    });
+        toggleBtn.addEventListener('click', () => {
+            const isPass = claveInput.type === 'password';
+            claveInput.type = isPass ? 'text' : 'password';
+            eyeIcon.innerHTML = isPass ? SVG_CLOSE : SVG_OPEN;
+        });
 
-    /* ── Solo números en documento ── */
-    numInput.addEventListener('input', function() {
-        this.value = this.value.replace(/\D/g, '');
-    });
+        /* ── Solo números en documento ── */
+        numInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+        });
 
-    /* ── Validación al enviar ── */
-    form.addEventListener('submit', function (e) {
-        let hasError = false;
+        /* ── Validación al enviar ── */
+        form.addEventListener('submit', function (e) {
+            let hasError = false;
 
-        // Validar Documento (Ej: entre 6 y 10 dígitos)
-        if (numInput.value.length < 6 || numInput.value.length > 10) {
-            errDoc.textContent = 'El documento debe tener entre 6 y 10 dígitos';
-            errDoc.style.display = 'block';
-            numInput.classList.add('input--error');
-            hasError = true;
-        } else {
-            errDoc.style.display = 'none';
-            numInput.classList.remove('input--error');
-        }
+            // Validar Documento (Ej: entre 6 y 10 dígitos)
+            if (numInput.value.length < 6 || numInput.value.length > 10) {
+                errDoc.textContent = 'El documento debe tener entre 6 y 10 dígitos';
+                errDoc.style.display = 'block';
+                numInput.classList.add('input--error');
+                hasError = true;
+            } else {
+                errDoc.style.display = 'none';
+                numInput.classList.remove('input--error');
+            }
 
-        // Validar Clave (Mínimo 10 caracteres)
-        if (claveInput.value.length < 10) {
-            errPass.textContent = 'La contraseña debe tener al menos 10 caracteres';
-            errPass.style.display = 'block';
-            claveInput.classList.add('input--error');
-            hasError = true;
-        } else {
-            errPass.style.display = 'none';
-            claveInput.classList.remove('input--error');
-        }
+            // Validar Clave (Mínimo 10 caracteres)
+            if (claveInput.value.length < 10) {
+                errPass.textContent = 'La contraseña debe tener al menos 10 caracteres';
+                errPass.style.display = 'block';
+                claveInput.classList.add('input--error');
+                hasError = true;
+            } else {
+                errPass.style.display = 'none';
+                claveInput.classList.remove('input--error');
+            }
 
-        if (hasError) {
-            e.preventDefault();
-        }
-    });
+            if (hasError) {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
+
 </html>

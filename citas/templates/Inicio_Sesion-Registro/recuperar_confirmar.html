@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image" href="{% static 'assets/img/logoti.png' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/login.css?v=1.1' %}">
+    <title>Cita Ya - Nueva Contraseña</title>
+    <style>
+        .subtitle-reset {
+            font-size: 14px;
+            color: #64748b;
+            margin: 16px 0 8px;
+            line-height: 1.6;
+        }
+
+        .label {
+            padding: 1.2rem 0 0.4rem 0;
+        }
+
+        .label:first-of-type {
+            padding-top: 1.2rem;
+        }
+
+        .strength-wrap {
+            margin-top: 6px;
+        }
+
+        .strength-track {
+            height: 5px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        .strength-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+            min-height: 16px;
+            color: #94a3b8;
+            display: block;
+        }
+
+        .login_button {
+            display: block;
+            width: 100%;
+            margin-top: 1.8rem;
+            border-radius: 2rem;
+        }
+
+        .cuenta {
+            margin-top: 1.4rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .cuenta a {
+            font-size: 14px;
+            color: #0F4C75;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .cuenta a:hover {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body class="body">
+
+    <div class="container_login">
+
+        <div class="apartado_1">
+            <div class="container_login-form">
+
+                <div class="logo-name">
+                    <img src="{% static 'assets/img/nombre.png' %}" alt="CitaYa">
+                </div>
+
+                <p class="subtitle-reset">
+                    Crea una contraseña segura de al menos 8 caracteres.
+                </p>
+
+                <form method="POST" action="{% url 'confirmar_reset' token %}" novalidate>
+                    {% csrf_token %}
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="msg {% if message.tags == 'success' %}msg--success{% else %}msg--error{% endif %}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="label">
+                        <label class="text" for="clave1">Nueva contraseña</label>
+                    </div>
+                    <div class="input">
+                        <div class="input-password-container">
+                            <input type="password" id="clave1" name="contrasena" placeholder="••••••••"
+                                autocomplete="new-password" required>
+                            <span class="toggle-password" id="toggleEye1">
+                                <svg id="eyeIcon1" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="strength-wrap">
+                            <div class="strength-track">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <span class="strength-label" id="strengthLabel"></span>
+                        </div>
+                        <small id="errorClave1" class="field-error"></small>
+                    </div>
+
+                    <div class="label">
+                        <label class="text" for="clave2">Repite la contraseña</label>
+                    </div>
+                    <div class="input">
+                        <div class="input-password-container">
+                            <input type="password" id="clave2" name="contrasena2" placeholder="••••••••"
+                                autocomplete="new-password" required>
+                            <span class="toggle-password" id="toggleEye2">
+                                <svg id="eyeIcon2" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </span>
+                        </div>
+                        <small id="errorClave2" class="field-error"></small>
+                    </div>
+
+                    <button type="submit" class="login_button">Cambiar contraseña</button>
+
+                    <div class="cuenta">
+                        <a href="{% url 'login' %}">← Volver al inicio de sesión</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <div class="apartado_2">
+            <div class="emoji-icon">
+                <img src="{% static 'assets/img/bienvenida.png' %}" alt="CitaYa">
+            </div>
+            <div class="h1-info">
+                <h1>Nueva contraseña</h1>
+            </div>
+            <div class="P-info">
+                <p>Elige una contraseña segura para proteger tu cuenta en CitaYa</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SVG_OPEN = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        const SVG_CLOSE = `<line x1="17.94" y1="17.94" x2="6.06" y2="6.06"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <path d="M6.53 6.53A13.4 13.4 0 0 0 1 12s4 8 11 8a13.2 13.2 0 0 0 5.36-1.12"/>
+        <circle cx="12" cy="12" r="3"/>`;
+
+        function togglePass(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            icon.innerHTML = isPass ? SVG_CLOSE : SVG_OPEN;
+        }
+        document.getElementById('toggleEye1').addEventListener('click', () => togglePass('clave1', 'eyeIcon1'));
+        document.getElementById('toggleEye2').addEventListener('click', () => togglePass('clave2', 'eyeIcon2'));
+
+        // Barra de fortaleza
+        const clave1 = document.getElementById('clave1');
+        const fill = document.getElementById('strengthFill');
+        const strengthLbl = document.getElementById('strengthLabel');
+
+        const LEVELS = [
+            { w: '0%', bg: '#e2e8f0', txt: '' },
+            { w: '25%', bg: '#ef4444', txt: 'Débil' },
+            { w: '55%', bg: '#f59e0b', txt: 'Regular' },
+            { w: '80%', bg: '#3b82f6', txt: 'Buena' },
+            { w: '100%', bg: '#059669', txt: 'Fuerte ✓' },
+        ];
+
+        clave1.addEventListener('input', function () {
+            const v = this.value;
+            let score = 0;
+            if (v.length >= 8) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[0-9]/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+            const l = LEVELS[score];
+            fill.style.width = l.w;
+            fill.style.background = l.bg;
+            strengthLbl.textContent = l.txt;
+            strengthLbl.style.color = l.bg;
+        });
+
+        // Validación al enviar
+        const form = document.querySelector('form');
+        const clave2 = document.getElementById('clave2');
+        const err1 = document.getElementById('errorClave1');
+        const err2 = document.getElementById('errorClave2');
+
+        form.addEventListener('submit', function (e) {
+            let hasError = false;
+
+            if (clave1.value.length < 8) {
+                err1.textContent = 'La contraseña debe tener al menos 8 caracteres';
+                err1.style.display = 'block';
+                clave1.classList.add('input--error');
+                hasError = true;
+            } else {
+                err1.style.display = 'none';
+                clave1.classList.remove('input--error');
+            }
+
+            if (clave1.value !== clave2.value) {
+                err2.textContent = 'Las contraseñas no coinciden';
+                err2.style.display = 'block';
+                clave2.classList.add('input--error');
+                hasError = true;
+            } else {
+                err2.style.display = 'none';
+                clave2.classList.remove('input--error');
+            }
+
+            if (hasError) e.preventDefault();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image" href="{% static 'assets/img/registrarnut.png' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
+    <title>Cita Ya - Recuperar Contraseña</title>
+    <style>
+        .subtitle-reset {
+            font-size: 14px;
+            color: #64748b;
+            margin: 16px 0 8px;
+            line-height: 1.6;
+        }
+
+        .label:first-of-type {
+            padding-top: 1.2rem;
+        }
+
+        .login_button {
+            display: block;
+            width: 100%;
+            margin-top: 1.8rem;
+            border-radius: 2rem;
+        }
+
+        .cuenta {
+            margin-top: 1.4rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .cuenta a {
+            font-size: 14px;
+            color: #0F4C75;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .cuenta a:hover {
+            opacity: 0.7;
+        }
+
+        .h1-info h1 {
+            text-align: center;
+        }
+            
+    </style>
+</head>
+
+<body class="body">
+
+    <div class="container_login">
+
+        <div class="apartado_1">
+            <div class="container_login-form">
+
+                <div class="logo-name">
+                    <img src="{% static 'assets/img/nombre.png' %}" alt="CitaYa">
+                </div>
+
+                <p class="subtitle-reset">
+                    Escribe el correo con el que te registraste y te enviaremos un enlace para restablecer tu
+                    contraseña.
+                </p>
+
+                <form method="POST" action="{% url 'solicitar_reset' %}" novalidate>
+                    {% csrf_token %}
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="msg {% if message.tags == 'success' %}msg--success{% else %}msg--error{% endif %}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="label">
+                        <label class="text" for="correo">Correo electrónico</label>
+                    </div>
+                    <div class="input">
+                        <input type="email" id="correo" name="correo" placeholder="ejemplo@correo.com"
+                            autocomplete="email" required>
+                        <small id="errorCorreo" class="field-error"></small>
+                    </div>
+
+                    <button type="submit" class="login_button">Enviar enlace</button>
+
+                    <div class="cuenta">
+                        <a href="{% url 'login' %}">← Volver al inicio de sesión</a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+        <div class="apartado_2">
+            <div class="emoji-icon">
+                <img src="{% static 'assets/img/bienvenida.png' %}" alt="CitaYa">
+            </div>
+            <div class="h1-info">
+                <h1>¿Olvidaste tu contraseña?</h1>
+            </div>
+            <div class="P-info">
+                <p>Te enviaremos un enlace seguro para que puedas crear una nueva contraseña</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const form = document.querySelector('form');
+        const correoInput = document.getElementById('correo');
+        const errCorreo = document.getElementById('errorCorreo');
+
+        form.addEventListener('submit', function (e) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(correoInput.value.trim())) {
+                errCorreo.textContent = 'Ingresa un correo válido';
+                errCorreo.style.display = 'block';
+                correoInput.classList.add('input--error');
+                e.preventDefault();
+            } else {
+                errCorreo.style.display = 'none';
+                correoInput.classList.remove('input--error');
+            }
+        });
+    </script>
+
+</body>
+
+</html>
