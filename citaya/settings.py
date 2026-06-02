@@ -16,7 +16,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    '.onrender.com',   # cubre cualquier subdominio de Render
+    '.onrender.com',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← sirve los estáticos en prod
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -104,7 +104,15 @@ USE_TZ = True
 # ── ESTÁTICOS ─────────────────────────────────────────────────────────────
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # ── EMAIL — Resend ────────────────────────────────────────────────────────
 RESEND_API_KEY     = os.getenv('RESEND_API_KEY')
@@ -112,6 +120,12 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 SUPPORT_FROM_EMAIL = os.getenv('SUPPORT_FROM_EMAIL')
 
 resend.api_key = RESEND_API_KEY
+
+# ── PRODUCCIÓN ────────────────────────────────────────────────────────────
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE   = True
+    CSRF_COOKIE_SECURE      = True
 
 # ── TEST ──────────────────────────────────────────────────────────────────
 if 'test' in sys.argv:
