@@ -1243,10 +1243,7 @@ def importar_medicos(request):
 from django.contrib.auth.hashers import make_password
 
 def _enviar_correo_reset(destinatario, nombre, reset_url):
-    """Envía el correo usando el correo de soporte (no el de recordatorios)."""
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
+    import resend
     from django.template.loader import render_to_string
     from django.conf import settings
 
@@ -1256,17 +1253,12 @@ def _enviar_correo_reset(destinatario, nombre, reset_url):
         'reset_url': reset_url,
     })
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'CitaYa — Recupera tu contraseña'
-    msg['From']    = settings.SUPPORT_FROM_EMAIL
-    msg['To']      = destinatario
-    msg.attach(MIMEText(html, 'html'))
-
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.ehlo()
-        server.starttls()
-        server.login(settings.SUPPORT_EMAIL_HOST_USER, settings.SUPPORT_EMAIL_HOST_PASSWORD)
-        server.sendmail(settings.SUPPORT_EMAIL_HOST_USER, destinatario, msg.as_string())
+    resend.Emails.send({
+        "from":    settings.SUPPORT_FROM_EMAIL,
+        "to":      [destinatario],
+        "subject": "CitaYa — Recupera tu contraseña",
+        "html":    html,
+    })
 
 
 def solicitar_reset(request):
