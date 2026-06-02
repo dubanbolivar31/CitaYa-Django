@@ -162,16 +162,6 @@ body{
   border-radius:var(--radius-lg) var(--radius-lg) 0 0;
 }
 .stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
-
-/* ── STAT-CARD INTERACTIVA ─────────────────────────────────── */
-.stat-card-clickable{cursor:pointer;}
-.stat-card-clickable:hover{
-  transform:translateY(-4px);
-  box-shadow:var(--shadow-md);
-  border-color:color-mix(in srgb,var(--c,var(--blue-700)) 30%,white);
-}
-.stat-card-clickable:active{transform:translateY(-1px);}
-.stat-card-clickable.loading{pointer-events:none;opacity:.75;}
 .stat-icon{
   width:48px;height:48px;border-radius:var(--radius-md);
   background:color-mix(in srgb,var(--c,var(--blue-700)) 10%,white);

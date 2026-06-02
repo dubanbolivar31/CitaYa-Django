@@ -34,11 +34,6 @@ urlpatterns = [
     path('api/medico/historial/<int:pk>/', views.historial_paciente_medico_json, name='historial_paciente_medico_json'),
     path('api/medico/historial/guardar/',  views.guardar_historial_medico,       name='guardar_historial_medico'),
 
-    # ── STATS MÉDICO (nuevas rutas para stat-cards interactivas) ──────
-    path('api/medico/stats/todas-citas/',    views.todas_citas_medico_json, name='todas_citas_medico_json'),
-    path('api/medico/stats/citas-hoy/',      views.citas_hoy_medico_json,   name='citas_hoy_medico_json'),
-    path('api/medico/stats/mis-historiales/', views.mis_historiales_json,   name='mis_historiales_json'),
-
     # ── PERFIL MÉDICO ──────────────────────────────────────────────────
     path('perfil/medico/json/',   views.perfil_medico_json,   name='perfil_medico_json'),
     path('perfil/medico/editar/', views.editar_perfil_medico, name='editar_perfil_medico'),
@@ -58,8 +53,6 @@ urlpatterns = [
     path('api/paciente/historial/',                    views.historial_paciente_json,        name='historial_paciente_json'),
     path('api/medicos-por-especialidad/',              views.obtener_medicos_por_especialidad,name='medicos_por_especialidad'),
     path('api/disponibilidad-medico/',                 views.obtener_disponibilidad_medico,  name='disponibilidad_medico'),
-    path('api/paciente/medicos-tratantes/',             views.medicos_tratantes_json,          name='medicos_tratantes_json'),
-    path('api/medico/subir-foto/',                     views.subir_foto_medico,               name='subir_foto_medico'),
     path('api/paciente/citas/agendar/',                views.agendar_cita_paciente,          name='agendar_cita_paciente'),
     path('api/paciente/citas/reprogramar/<int:pk>/',   views.reprogramar_cita_paciente,      name='reprogramar_cita_paciente'),
     path('api/paciente/citas/cancelar/<int:pk>/',      views.cancelar_cita_paciente,         name='cancelar_cita_paciente'),

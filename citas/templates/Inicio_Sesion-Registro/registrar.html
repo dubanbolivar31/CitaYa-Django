@@ -40,11 +40,14 @@
         <main class="card-body">
 
             <!-- Mensajes de error del servidor -->
-            {% if messages %}
+            {% if form.errors or messages %}
             <div class="server-error-box" role="alert">
                 {% for message in messages %}
-                    <p class="{{ message.tags }}">{{ message }}</p>
+                    <p>{{ message }}</p>
                 {% endfor %}
+                {% if form.errors %}
+                    <p>Por favor corrige los errores indicados.</p>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -59,10 +62,10 @@
                         <label for="tipo_doc">Tipo de documento</label>
                         <select id="tipo_doc" name="tipo_doc" required>
                             <option value="">Seleccione…</option>
-                            <option value="CC" {% if post.tipo_doc == 'CC' %}selected{% endif %}>CC</option>
-                            <option value="TI" {% if post.tipo_doc == 'TI' %}selected{% endif %}>TI</option>
-                            <option value="CE" {% if post.tipo_doc == 'CE' %}selected{% endif %}>CE</option>
-                            <option value="PP" {% if post.tipo_doc == 'PP' %}selected{% endif %}>Pasaporte</option>
+                            <option value="CC">CC</option>
+                            <option value="TI">TI</option>
+                            <option value="CE">CE</option>
+                            <option value="PP">Pasaporte</option>
                         </select>
                     </div>
 
@@ -74,7 +77,6 @@
         id="numero_doc"
         name="numero_doc"
         placeholder="Ej: 1023456789"
-        value="{{ post.numero_doc|default:'' }}"
         required>
 </div>
 
@@ -164,7 +166,7 @@ numeroDoc.addEventListener("input", () => {
                             type="text"
                             id="nombre"
                             name="nombre"
-                            value="{{ post.nombre|default:'' }}"
+                            value="{{ form.nombre.value|default_if_none:'' }}"
                             placeholder="Juan Carlos"
                             maxlength="50"
                             required>
@@ -177,7 +179,7 @@ numeroDoc.addEventListener("input", () => {
                             type="text"
                             id="apellido"
                             name="apellido"
-                            value="{{ post.apellido|default:'' }}"
+                            value="{{ form.apellido.value|default_if_none:'' }}"
                             placeholder="Pérez González"
                             maxlength="50"
                             required>
@@ -188,9 +190,9 @@ numeroDoc.addEventListener("input", () => {
                         <label for="genero">Género</label>
                         <select id="genero" name="genero" required>
                             <option value="">Seleccione…</option>
-                            <option value="M" {% if post.genero == 'M' %}selected{% endif %}>Masculino</option>
-                            <option value="F" {% if post.genero == 'F' %}selected{% endif %}>Femenino</option>
-                            <option value="Otro" {% if post.genero == 'Otro' %}selected{% endif %}>Otro</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="Otro">Otro</option>
                         </select>
                     </div>
 
@@ -201,7 +203,7 @@ numeroDoc.addEventListener("input", () => {
                             type="date"
                             id="fechaNacimiento"
                             name="fecha_nacimiento"
-                            value="{{ post.fecha_nacimiento|default:'' }}"
+                            value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}"
                             required>
                     </div>
 
@@ -210,14 +212,14 @@ numeroDoc.addEventListener("input", () => {
                         <label for="tipo_sangre">Tipo de sangre</label>
                         <select id="tipo_sangre" name="tipo_sangre" required>
                             <option value="">Seleccione…</option>
-                            <option value="A+"  {% if post.tipo_sangre == 'A+' %}selected{% endif %}>A+</option>
-                            <option value="A-"  {% if post.tipo_sangre == 'A-' %}selected{% endif %}>A-</option>
-                            <option value="B+"  {% if post.tipo_sangre == 'B+' %}selected{% endif %}>B+</option>
-                            <option value="B-"  {% if post.tipo_sangre == 'B-' %}selected{% endif %}>B-</option>
-                            <option value="AB+" {% if post.tipo_sangre == 'AB+' %}selected{% endif %}>AB+</option>
-                            <option value="AB-" {% if post.tipo_sangre == 'AB-' %}selected{% endif %}>AB-</option>
-                            <option value="O+"  {% if post.tipo_sangre == 'O+' %}selected{% endif %}>O+</option>
-                            <option value="O-"  {% if post.tipo_sangre == 'O-' %}selected{% endif %}>O-</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
                         </select>
                     </div>
 
@@ -228,7 +230,7 @@ numeroDoc.addEventListener("input", () => {
                             type="tel"
                             id="telefono"
                             name="telefono"
-                            value="{{ post.telefono|default:'' }}"
+                            value="{{ form.telefono.value|default_if_none:'' }}"
                             placeholder="Ej: 3124567890"
                             inputmode="numeric"
                             required>
@@ -241,7 +243,7 @@ numeroDoc.addEventListener("input", () => {
                             type="email"
                             id="correo"
                             name="correo"
-                            value="{{ post.correo|default:'' }}"
+                            value="{{ form.correo.value|default_if_none:'' }}"
                             placeholder="correo@ejemplo.com"
                             maxlength="100"
                             required>
@@ -254,7 +256,7 @@ numeroDoc.addEventListener("input", () => {
                             type="text"
                             id="direccion"
                             name="direccion"
-                            value="{{ post.direccion|default:'' }}"
+                            value="{{ form.direccion.value|default_if_none:'' }}"
                             placeholder="Calle 123 #45-67"
                             maxlength="100"
                             required>
