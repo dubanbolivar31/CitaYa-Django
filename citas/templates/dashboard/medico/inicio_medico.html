@@ -43,7 +43,7 @@
 
     <!-- ── STATS ──────────────────────────────────────────── -->
     <div class="stats-grid">
-        <div class="stat-card" style="--c:#0F4C75">
+        <div class="stat-card stat-card-clickable" data-modal="modal-stats-citas" style="--c:#0F4C75" title="Ver todas mis citas">
             <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
             <div class="stat-info">
                 <span class="stat-num">{{ total_citas }}</span>
@@ -51,7 +51,7 @@
             </div>
             <i class="fa-solid fa-calendar-check stat-bg-icon"></i>
         </div>
-        <div class="stat-card" style="--c:#1a8a5a">
+        <div class="stat-card stat-card-clickable" data-modal="modal-stats-hoy" style="--c:#1a8a5a" title="Ver citas de hoy">
             <div class="stat-icon" style="background:rgba(26,138,90,.12);color:#1a8a5a">
                 <i class="fa-solid fa-calendar-day"></i>
             </div>
@@ -61,7 +61,7 @@
             </div>
             <i class="fa-solid fa-calendar-day stat-bg-icon"></i>
         </div>
-        <div class="stat-card" style="--c:#d97706">
+        <div class="stat-card stat-card-clickable" data-modal="modal-stats-historiales" style="--c:#d97706" title="Ver mis historiales">
             <div class="stat-icon" style="background:rgba(217,119,6,.12);color:#d97706">
                 <i class="fa-solid fa-file-waveform"></i>
             </div>
@@ -71,7 +71,7 @@
             </div>
             <i class="fa-solid fa-file-waveform stat-bg-icon"></i>
         </div>
-        <div class="stat-card" style="--c:#6366f1">
+        <div class="stat-card stat-card-clickable" data-modal="modal-stats-pacientes" style="--c:#6366f1" title="Ver pacientes atendidos">
             <div class="stat-icon" style="background:rgba(99,102,241,.12);color:#6366f1">
                 <i class="fa-solid fa-users"></i>
             </div>
@@ -290,6 +290,70 @@
             <button class="btn btn-primary" id="btn-guardar-perfil">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑧ STATS — TODAS MIS CITAS -->
+<div class="modal-overlay" id="modal-stats-citas">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-calendar-check"></i> Todas mis citas</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-modal-stats-citas">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑨ STATS — CITAS DE HOY -->
+<div class="modal-overlay" id="modal-stats-hoy">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-calendar-day"></i> Citas de hoy</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-modal-stats-hoy">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑩ STATS — MIS HISTORIALES -->
+<div class="modal-overlay" id="modal-stats-historiales">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-file-waveform"></i> Mis historiales</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-modal-stats-historiales">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ⑪ STATS — PACIENTES ATENDIDOS -->
+<div class="modal-overlay" id="modal-stats-pacientes">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-users"></i> Pacientes atendidos</h3>
+            <button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="body-modal-stats-pacientes">
+            <div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close>Cerrar</button>
         </div>
     </div>
 </div>
@@ -837,6 +901,166 @@ document.addEventListener('click', () =>
 /* ── INIT ─────────────────────────────────────────────── */
 buildDayPicker();
 loadAgenda(fechaSel);
+
+/* ══════════════════════════════════════════════════════════
+   STAT-CARDS INTERACTIVAS
+══════════════════════════════════════════════════════════ */
+const STAT_URLS = {
+    'modal-stats-citas':       "{% url 'todas_citas_medico_json' %}",
+    'modal-stats-hoy':         "{% url 'citas_hoy_medico_json' %}",
+    'modal-stats-historiales': "{% url 'mis_historiales_json' %}",
+    'modal-stats-pacientes':   "{% url 'todas_citas_medico_json' %}",
+};
+
+/* Función genérica: abre modal, fetch, renderiza */
+async function loadStatModal(card, modalId, url, renderFn) {
+    openModal(modalId);
+    card.classList.add('loading');
+    const body = document.getElementById('body-' + modalId);
+    body.innerHTML = '<div class="m-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>';
+    try {
+        const data = await (await fetch(url)).json();
+        renderFn(body, data);
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = '<div class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> Error al cargar los datos.</div>';
+    } finally {
+        card.classList.remove('loading');
+    }
+}
+
+/* ── Listeners en cada stat-card ─────────────────────── */
+document.querySelectorAll('.stat-card-clickable').forEach(card => {
+    card.addEventListener('click', () => {
+        const modalId = card.dataset.modal;
+        if (!modalId) return;
+        const url = STAT_URLS[modalId];
+        if (!url) return;
+
+        if (modalId === 'modal-stats-citas')
+            loadStatModal(card, modalId, url, renderTodasCitas);
+        else if (modalId === 'modal-stats-hoy')
+            loadStatModal(card, modalId, url, renderCitasHoy);
+        else if (modalId === 'modal-stats-historiales')
+            loadStatModal(card, modalId, url, renderMisHistoriales);
+        else if (modalId === 'modal-stats-pacientes')
+            loadStatModal(card, modalId, url, renderPacientesAtendidos);
+    });
+});
+
+/* ── Render: Todas las citas ─────────────────────────── */
+function renderTodasCitas(body, data) {
+    const citas = data.citas || [];
+    if (!citas.length) {
+        body.innerHTML = `<div class="empty-state"><i class="fa-solid fa-calendar-xmark"></i><p>Sin citas registradas aún.</p></div>`;
+        return;
+    }
+    body.innerHTML = citas.map(c => `
+        <div class="hist-row" style="cursor:pointer" onclick="abrirPaciente(${c.id_paciente}, null, null, false)">
+            <div class="hist-icon" style="background:${c.estado==='Cumplida'?'rgba(34,169,110,.12)':'rgba(15,76,117,.12)'};color:${c.estado==='Cumplida'?'#22a96e':'#0F4C75'}">
+                <i class="fa-solid ${c.estado==='Cumplida'?'fa-circle-check':'fa-clock'}"></i>
+            </div>
+            <div class="hist-info">
+                <div class="hist-titulo">${c.paciente_nombre}</div>
+                <div class="hist-sub">
+                    <i class="fa-solid fa-calendar"></i> ${c.fecha}
+                    &nbsp;·&nbsp;
+                    <i class="fa-regular fa-clock"></i> ${c.hora}
+                    &nbsp;·&nbsp;
+                    <i class="fa-solid fa-briefcase-medical"></i> ${c.tipo_cita}
+                </div>
+            </div>
+            <span class="badge ${c.estado==='Cumplida'?'badge-cumplida':'badge-pendiente'}" style="white-space:nowrap">
+                ${c.estado}
+            </span>
+        </div>`).join('');
+}
+
+/* ── Render: Citas de hoy ────────────────────────────── */
+function renderCitasHoy(body, data) {
+    const citas = data.citas || [];
+    if (!citas.length) {
+        body.innerHTML = `<div class="empty-state"><i class="fa-solid fa-calendar-day"></i><p>No hay citas agendadas para hoy.</p></div>`;
+        return;
+    }
+    body.innerHTML = citas.map(c => `
+        <div class="hist-row" style="cursor:pointer" onclick="abrirPaciente(${c.id_paciente}, null, null, ${c.cumplida})">
+            <div class="hist-icon" style="background:${c.cumplida?'rgba(34,169,110,.12)':'rgba(26,138,90,.12)'};color:${c.cumplida?'#22a96e':'#1a8a5a'}">
+                <i class="fa-solid ${c.cumplida?'fa-circle-check':'fa-circle-dot'}"></i>
+            </div>
+            <div class="hist-info">
+                <div class="hist-titulo">${c.paciente_nombre}</div>
+                <div class="hist-sub">
+                    <i class="fa-regular fa-clock"></i> ${c.hora}
+                    &nbsp;·&nbsp;
+                    <i class="fa-solid fa-briefcase-medical"></i> ${c.tipo_cita}
+                    &nbsp;·&nbsp;
+                    <i class="fa-solid fa-id-card"></i> ${c.paciente_doc}
+                </div>
+            </div>
+            <span class="badge ${c.cumplida?'badge-cumplida':'badge-activa'}" style="white-space:nowrap">
+                ${c.cumplida?'Cumplida':'Pendiente'}
+            </span>
+        </div>`).join('');
+}
+
+/* ── Render: Mis historiales ─────────────────────────── */
+function renderMisHistoriales(body, data) {
+    const historiales = data.historiales || [];
+    if (!historiales.length) {
+        body.innerHTML = `<div class="empty-state"><i class="fa-solid fa-file-circle-xmark"></i><p>No has creado historiales clínicos aún.</p></div>`;
+        return;
+    }
+    body.innerHTML = historiales.map((h, idx) => `
+        <div class="hist-row" data-stat-idx="${idx}" style="cursor:pointer">
+            <div class="hist-icon hist-icon-propio">
+                <i class="fa-solid fa-notes-medical"></i>
+            </div>
+            <div class="hist-info">
+                <div class="hist-titulo">${h.paciente_nombre} <span style="font-weight:400;color:var(--gray-400)">· ${h.paciente_doc}</span></div>
+                <div class="hist-sub"><i class="fa-solid fa-calendar"></i> ${h.fecha_creacion}</div>
+                <div class="hist-preview">${(h.antecedentes||'').substring(0,120)}${(h.antecedentes||'').length > 120?'…':''}</div>
+            </div>
+            <button class="btn-solo-ver"><i class="fa-solid fa-eye"></i> Ver</button>
+        </div>`).join('');
+
+    body._stat_historiales = historiales;
+    body.querySelectorAll('[data-stat-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+            const h = body._stat_historiales[el.dataset.statIdx];
+            verDetalleHistorial(h.fecha_creacion, h.paciente_nombre, h.antecedentes || '');
+        });
+    });
+}
+
+/* ── Render: Pacientes atendidos ─────────────────────── */
+function renderPacientesAtendidos(body, data) {
+    const citas = data.citas || [];
+    // Deduplicar por id_paciente
+    const seen = new Map();
+    citas.forEach(c => {
+        if (!seen.has(c.id_paciente)) {
+            seen.set(c.id_paciente, { id: c.id_paciente, nombre: c.paciente_nombre, doc: c.paciente_doc });
+        }
+    });
+    const pacientes = Array.from(seen.values());
+
+    if (!pacientes.length) {
+        body.innerHTML = `<div class="empty-state"><i class="fa-solid fa-users-slash"></i><p>Aún no has atendido ningún paciente.</p></div>`;
+        return;
+    }
+    body.innerHTML = pacientes.map(p => `
+        <div class="hist-row" style="cursor:pointer" onclick="abrirPaciente(${p.id}, null, null, false)">
+            <div class="hist-icon" style="background:rgba(99,102,241,.12);color:#6366f1">
+                <i class="fa-solid fa-user-injured"></i>
+            </div>
+            <div class="hist-info">
+                <div class="hist-titulo">${p.nombre}</div>
+                <div class="hist-sub"><i class="fa-solid fa-id-card"></i> ${p.doc}</div>
+            </div>
+            <button class="btn-solo-ver"><i class="fa-solid fa-eye"></i> Ver ficha</button>
+        </div>`).join('');
+}
 </script>
 </body>
 </html>

@@ -26,7 +26,7 @@
 
                     {% if messages %}
                     {% for message in messages %}
-                    <div class="msg msg--error">
+                    <div class="msg {% if message.tags == 'success' %}msg--success{% else %}msg--error{% endif %}">
                         <span>{{ message }}</span>
                     </div>
                     {% endfor %}
@@ -118,13 +118,12 @@
             this.value = this.value.replace(/\D/g, '');
         });
 
-        /* ── Validación al enviar ── */
+        /* ── Validación al enviar — solo campos vacíos ── */
         form.addEventListener('submit', function (e) {
             let hasError = false;
 
-            // Validar Documento (Ej: entre 6 y 10 dígitos)
-            if (numInput.value.length < 6 || numInput.value.length > 10) {
-                errDoc.textContent = 'El documento debe tener entre 6 y 10 dígitos';
+            if (numInput.value.trim() === '') {
+                errDoc.textContent = 'Ingresa tu número de documento';
                 errDoc.style.display = 'block';
                 numInput.classList.add('input--error');
                 hasError = true;
@@ -133,9 +132,8 @@
                 numInput.classList.remove('input--error');
             }
 
-            // Validar Clave (Mínimo 10 caracteres)
-            if (claveInput.value.length < 10) {
-                errPass.textContent = 'La contraseña debe tener al menos 10 caracteres';
+            if (claveInput.value.trim() === '') {
+                errPass.textContent = 'Ingresa tu contraseña';
                 errPass.style.display = 'block';
                 claveInput.classList.add('input--error');
                 hasError = true;

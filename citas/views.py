@@ -143,38 +143,138 @@ def login(request):
 
 
 def registro(request):
+    import re
     if request.method == 'POST':
+        tipo_doc         = request.POST.get('tipo_doc', '').strip()
+        numero_doc       = request.POST.get('numero_doc', '').strip()
+        nombre           = request.POST.get('nombre', '').strip()
+        apellido         = request.POST.get('apellido', '').strip()
+        genero           = request.POST.get('genero', '').strip()
+        fecha_nacimiento = request.POST.get('fecha_nacimiento', '').strip()
+        tipo_sangre      = request.POST.get('tipo_sangre', '').strip()
+        telefono         = request.POST.get('telefono', '').strip()
+        correo           = request.POST.get('correo', '').strip()
+        direccion        = request.POST.get('direccion', '').strip()
+        contrasena       = request.POST.get('contrasena', '').strip()
+        confirmar        = request.POST.get('confirmar_contrasena', '').strip()
+
+        errores = []
+
+        # ── Campos obligatorios ────────────────────────────────────────────
+        if not tipo_doc:
+            errores.append('El tipo de documento es obligatorio.')
+        if not numero_doc:
+            errores.append('El número de documento es obligatorio.')
+        if not nombre:
+            errores.append('El nombre es obligatorio.')
+        if not apellido:
+            errores.append('El apellido es obligatorio.')
+        if not genero:
+            errores.append('El género es obligatorio.')
+        if not fecha_nacimiento:
+            errores.append('La fecha de nacimiento es obligatoria.')
+        if not tipo_sangre:
+            errores.append('El tipo de sangre es obligatorio.')
+        if not telefono:
+            errores.append('El teléfono es obligatorio.')
+        if not correo:
+            errores.append('El correo electrónico es obligatorio.')
+        if not direccion:
+            errores.append('La dirección es obligatoria.')
+        if not contrasena:
+            errores.append('La contraseña es obligatoria.')
+
+        # ── Validaciones de formato (solo si los campos no están vacíos) ───
+        if tipo_doc and tipo_doc not in ('CC', 'TI', 'CE', 'PP'):
+            errores.append('Tipo de documento no válido.')
+
+        if numero_doc:
+            if tipo_doc == 'CC' and (not numero_doc.isdigit() or not (6 <= len(numero_doc) <= 10)):
+                errores.append('Cédula de ciudadanía: entre 6 y 10 dígitos.')
+            elif tipo_doc == 'TI' and (not numero_doc.isdigit() or len(numero_doc) != 10):
+                errores.append('Tarjeta de identidad: exactamente 10 dígitos.')
+            elif tipo_doc == 'CE' and (not numero_doc.isdigit() or not (6 <= len(numero_doc) <= 12)):
+                errores.append('Cédula de extranjería: entre 6 y 12 dígitos.')
+            elif tipo_doc == 'PP' and not re.match(r'^[a-zA-Z0-9]{1,15}$', numero_doc):
+                errores.append('Pasaporte: solo letras y números, máximo 15 caracteres.')
+
+        if nombre and (len(nombre.replace(' ', '')) < 3 or not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', nombre)):
+            errores.append('El nombre debe tener mínimo 3 letras y solo puede contener letras.')
+
+        if apellido and (len(apellido.replace(' ', '')) < 3 or not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', apellido)):
+            errores.append('El apellido debe tener mínimo 3 letras y solo puede contener letras.')
+
+        if genero and genero not in ('M', 'F', 'Otro'):
+            errores.append('Género no válido.')
+
+        if fecha_nacimiento:
+            try:
+                from datetime import date as date_type
+                fn = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
+                hoy = date_type.today()
+                edad = (hoy - fn).days // 365
+                if fn >= hoy:
+                    errores.append('La fecha de nacimiento debe ser anterior a hoy.')
+                elif edad > 90:
+                    errores.append('La fecha de nacimiento no puede ser mayor a 90 años.')
+                elif edad < 0:
+                    errores.append('Fecha de nacimiento inválida.')
+            except ValueError:
+                errores.append('Formato de fecha de nacimiento inválido.')
+
+        if tipo_sangre and tipo_sangre not in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'):
+            errores.append('Tipo de sangre no válido.')
+
+        if telefono and (not telefono.isdigit() or len(telefono) != 10 or telefono[0] != '3'):
+            errores.append('El teléfono debe tener 10 dígitos y empezar con 3.')
+
+        if correo and not re.match(r'^[^@]{5,}@[^@]+\.[^@]+$', correo):
+            errores.append('El correo electrónico no es válido (mínimo 5 caracteres antes del @).')
+
+        if direccion and len(direccion) < 5:
+            errores.append('La dirección debe tener al menos 5 caracteres.')
+
+        if contrasena:
+            if len(contrasena) < 8:
+                errores.append('La contraseña debe tener mínimo 8 caracteres.')
+            elif not re.search(r'[A-Z]', contrasena):
+                errores.append('La contraseña debe tener al menos una mayúscula.')
+            elif not re.search(r'[!@#$%^&*]', contrasena):
+                errores.append('La contraseña debe tener al menos un carácter especial (!@#$%^&*).')
+
+        if contrasena and confirmar and contrasena != confirmar:
+            errores.append('Las contraseñas no coinciden.')
+
+        # ── Si hay errores, volver al formulario ───────────────────────────
+        if errores:
+            for e in errores:
+                messages.error(request, e)
+            return render(request, 'Inicio_Sesion-Registro/registrar.html', {'post': request.POST})
+
+        # ── Verificar duplicado ────────────────────────────────────────────
+        if Paciente.objects.filter(numero_doc=numero_doc).exists():
+            messages.error(request, 'Ya existe un usuario con ese número de documento.')
+            return render(request, 'Inicio_Sesion-Registro/registrar.html', {'post': request.POST})
+
+        if Paciente.objects.filter(correo=correo).exists():
+            messages.error(request, 'Ya existe un usuario con ese correo electrónico.')
+            return render(request, 'Inicio_Sesion-Registro/registrar.html', {'post': request.POST})
+
+        # ── Crear paciente ─────────────────────────────────────────────────
         try:
-            tipo_doc         = request.POST.get('tipo_doc')
-            numero_doc       = request.POST.get('numero_doc')
-            nombre           = request.POST.get('nombre')
-            apellido         = request.POST.get('apellido')
-            genero           = request.POST.get('genero')
-            fecha_nacimiento = request.POST.get('fecha_nacimiento')
-            tipo_sangre      = request.POST.get('tipo_sangre')
-            telefono         = request.POST.get('telefono')
-            correo           = request.POST.get('correo')
-            direccion        = request.POST.get('direccion')
-            contrasena       = request.POST.get('contrasena')
-
-            if Paciente.objects.filter(numero_doc=numero_doc).exists():
-                messages.error(request, 'Ya existe un usuario con ese documento.')
-                return redirect('registro')
-
             Paciente.objects.create(
                 tipo_doc=tipo_doc, numero_doc=numero_doc, nombre=nombre,
                 apellido=apellido, genero=genero, fecha_nacimiento=fecha_nacimiento,
                 tipo_sangre=tipo_sangre, telefono=telefono, correo=correo,
                 direccion=direccion,
-                contrasena=make_password(contrasena),  # ✅ hashea la contraseña
+                contrasena=make_password(contrasena),
                 estado=True
             )
             messages.success(request, 'Registro exitoso. Ahora puedes iniciar sesión.')
             return redirect('login')
-
         except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
-            return redirect('registro')
+            messages.error(request, f'Error al guardar: {str(e)}')
+            return render(request, 'Inicio_Sesion-Registro/registrar.html', {'post': request.POST})
 
     return render(request, 'Inicio_Sesion-Registro/registrar.html')
 
@@ -289,13 +389,9 @@ def citas_paciente_json(request):
 
 @require_POST
 def agendar_cita_paciente(request):
-    sid = os.getenv('TWILIO_ACCOUNT_SID')
-    token = os.getenv('TWILIO_AUTH_TOKEN')
     if request.session.get('rol') != 'paciente':
         return JsonResponse({'error': 'No autorizado'}, status=403)
-    
-    if not sid or not token:
-        return JsonResponse({'error': 'Error de autenticación'}, status=403)
+
     try:
         data      = json.loads(request.body)
         cita_tipo = data.get('cita')
@@ -405,6 +501,54 @@ def historial_paciente_json(request):
 def obtener_medicos_por_especialidad(request):
     especialidad = request.GET.get('especialidad')
     medicos = Medico.objects.filter(especialidad=especialidad, estado=True).values('id_medico', 'nombre', 'apellido')
+
+
+def medicos_tratantes_json(request):
+    """Devuelve los médicos que han atendido al paciente logueado."""
+    if request.session.get('rol') != 'paciente':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    paciente_id = request.session.get('usuario_id')
+    medicos_ids = Agendamiento.objects.filter(
+        id_paciente=paciente_id
+    ).values_list('id_medico', flat=True).distinct()
+
+    medicos = Medico.objects.filter(id_medico__in=medicos_ids, estado=True)
+    data = []
+    for m in medicos:
+        data.append({
+            'id':          m.id_medico,
+            'nombre':      m.nombre,
+            'apellido':    m.apellido,
+            'especialidad': m.especialidad,
+            'foto':        m.foto.url if m.foto else None,
+        })
+    return JsonResponse({'medicos': data})
+
+
+@require_POST
+def subir_foto_medico(request):
+    """Permite al médico subir su foto de perfil."""
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    medico = get_object_or_404(Medico, pk=request.session['usuario_id'])
+    foto   = request.FILES.get('foto')
+
+    if not foto:
+        return JsonResponse({'error': 'No se recibió ninguna imagen.'}, status=400)
+
+    # Validar tipo de archivo
+    if not foto.content_type.startswith('image/'):
+        return JsonResponse({'error': 'Solo se permiten imágenes.'}, status=400)
+
+    # Validar tamaño máximo (2 MB)
+    if foto.size > 2 * 1024 * 1024:
+        return JsonResponse({'error': 'La imagen no puede superar 2 MB.'}, status=400)
+
+    medico.foto = foto
+    medico.save()
+    return JsonResponse({'ok': True, 'foto_url': medico.foto.url})
     return JsonResponse({'medicos': list(medicos)})
 
 
@@ -628,6 +772,91 @@ def guardar_historial_medico(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+# =========================================================================
+# APIs MÉDICO — STATS (nuevas vistas para las stat-cards interactivas)
+# =========================================================================
+
+def todas_citas_medico_json(request):
+    """Devuelve todas las citas del médico autenticado (pasadas y futuras)."""
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    medico_id = request.session.get('usuario_id')
+    citas = (
+        Agendamiento.objects
+        .filter(id_medico=medico_id)
+        .select_related('id_paciente')
+        .order_by('-fecha', '-hora')
+    )
+    ahora = datetime.now()
+    data = [{
+        'id_agendamiento': c.id_agendamiento,
+        'fecha':           str(c.fecha),
+        'hora':            c.hora.strftime('%H:%M'),
+        'tipo_cita':       c.cita,
+        'id_paciente':     c.id_paciente.id_paciente,
+        'paciente_nombre': f"{c.id_paciente.nombre} {c.id_paciente.apellido}",
+        'paciente_doc':    c.id_paciente.numero_doc,
+        'estado':          'Cumplida' if datetime.combine(c.fecha, c.hora) < ahora else 'Pendiente',
+    } for c in citas]
+    return JsonResponse({'citas': data})
+
+
+def citas_hoy_medico_json(request):
+    """Devuelve las citas del médico para el día de hoy."""
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    medico_id  = request.session.get('usuario_id')
+    hoy        = date.today()
+    medico_obj = get_object_or_404(Medico, id_medico=medico_id)
+
+    citas = (
+        Agendamiento.objects
+        .filter(id_medico=medico_id, fecha=hoy)
+        .select_related('id_paciente')
+        .order_by('hora')
+    )
+    historiales_hoy = set(
+        Historial_Clinico.objects
+        .filter(id_medico=medico_obj, fecha_creacion=hoy)
+        .values_list('id_paciente_id', flat=True)
+    )
+    data = [{
+        'id_agendamiento': c.id_agendamiento,
+        'hora':            c.hora.strftime('%H:%M'),
+        'tipo_cita':       c.cita,
+        'id_paciente':     c.id_paciente.id_paciente,
+        'paciente_nombre': f"{c.id_paciente.nombre} {c.id_paciente.apellido}",
+        'paciente_doc':    c.id_paciente.numero_doc,
+        'cumplida':        (c.id_paciente.id_paciente in historiales_hoy),
+    } for c in citas]
+    return JsonResponse({'citas': data})
+
+
+def mis_historiales_json(request):
+    """Devuelve todos los historiales clínicos creados por el médico autenticado."""
+    if request.session.get('rol') != 'medico':
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    medico_id = request.session.get('usuario_id')
+    historiales = (
+        Historial_Clinico.objects
+        .filter(id_medico=medico_id)
+        .select_related('id_paciente')
+        .order_by('-fecha_creacion')
+    )
+    data = [{
+        'id_historial':    h.id_historial,
+        'fecha_creacion':  h.fecha_creacion.strftime('%d/%m/%Y'),
+        'antecedentes':    h.antecedentes,
+        'paciente_nombre': f"{h.id_paciente.nombre} {h.id_paciente.apellido}",
+        'paciente_doc':    h.id_paciente.numero_doc,
+        'id_paciente':     h.id_paciente.id_paciente,
+    } for h in historiales]
+    return JsonResponse({'historiales': data})
 
 
 def perfil_medico_json(request):

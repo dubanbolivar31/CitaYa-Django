@@ -158,6 +158,11 @@
         </div>
         {% endfor %}
     </div>
+    <!-- ── MÉDICOS TRATANTES ─────────────────────────────────── -->
+    <p class="section-title" style="margin-top:32px">Médicos tratantes</p>
+    <div class="medicos-grid" id="medicos-tratantes-grid">
+        <div class="pac-loader"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+    </div>
 
 </div><!-- /dashboard-wrapper -->
 
@@ -403,13 +408,14 @@
 ════════════════════════════════════════════════════════════ -->
 <script>
 const URLS = {
-    perfilJson:      "{% url 'perfil_paciente_json' %}",
-    editarPerfil:    "{% url 'editar_perfil_paciente' %}",
-    citasJson:       "{% url 'citas_paciente_json' %}",
-    agendarCita:     "{% url 'agendar_cita_paciente' %}",
-    reprogramarBase: "{% url 'reprogramar_cita_paciente' 0 %}".replace('/0/', '/'),
-    cancelarBase:    "{% url 'cancelar_cita_paciente' 0 %}".replace('/0/', '/'),
-    historialJson:   "{% url 'historial_paciente_json' %}",
+    perfilJson:          "{% url 'perfil_paciente_json' %}",
+    editarPerfil:        "{% url 'editar_perfil_paciente' %}",
+    citasJson:           "{% url 'citas_paciente_json' %}",
+    agendarCita:         "{% url 'agendar_cita_paciente' %}",
+    reprogramarBase:     "{% url 'reprogramar_cita_paciente' 0 %}".replace('/0/', '/'),
+    cancelarBase:        "{% url 'cancelar_cita_paciente' 0 %}".replace('/0/', '/'),
+    historialJson:       "{% url 'historial_paciente_json' %}",
+    medicosTratantes:    "{% url 'medicos_tratantes_json' %}",
 };
 const CSRF = "{{ csrf_token }}";
 
@@ -843,6 +849,43 @@ document.getElementById('btn-guardar-perfil').addEventListener('click', async e 
     // Recarga justo cuando vence la cita más próxima
     setTimeout(() => location.reload(), msHastaVencimiento);
 })();
+
+/* ── MÉDICOS TRATANTES ────────────────────────────────────── */
+async function loadMedicosTratantes() {
+    const grid = document.getElementById('medicos-tratantes-grid');
+    try {
+        const data = await (await fetch(URLS.medicosTratantes)).json();
+        if (!data.medicos?.length) {
+            grid.innerHTML = `
+                <div class="pac-empty" style="grid-column:1/-1">
+                    <i class="fa-solid fa-user-doctor"></i>
+                    <p>Aún no tienes médicos tratantes registrados.</p>
+                </div>`;
+            return;
+        }
+        grid.innerHTML = data.medicos.map(m => `
+            <div class="medico-card">
+                <div class="medico-foto-wrap">
+                    ${m.foto
+                        ? `<img src="${m.foto}" alt="Foto Dr. ${m.nombre}" class="medico-foto">`
+                        : `<div class="medico-foto-placeholder"><i class="fa-solid fa-user-doctor"></i></div>`
+                    }
+                </div>
+                <div class="medico-card-info">
+                    <div class="medico-card-nombre">Dr. ${m.nombre} ${m.apellido}</div>
+                    <div class="medico-card-esp">
+                        <i class="fa-solid fa-stethoscope"></i> ${m.especialidad}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch {
+        grid.innerHTML = '<div class="pac-empty" style="grid-column:1/-1"><p>Error al cargar médicos.</p></div>';
+    }
+}
+
+// Cargar médicos tratantes al iniciar
+loadMedicosTratantes();
 
 </script>
 
