@@ -39,7 +39,6 @@ class Medico(models.Model):
     correo       = models.EmailField(unique=True)
     contrasena   = models.CharField(max_length=255)
     estado       = models.BooleanField(default=True)
-    foto         = models.ImageField(upload_to='medicos/fotos/', null=True, blank=True)
 
     def set_contrasena(self, raw_password):
         self.contrasena = make_password(raw_password)
