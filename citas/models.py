@@ -19,7 +19,9 @@ class Administrador(models.Model):
         self.contrasena = make_password(raw_password)
 
     def check_contrasena(self, raw_password):
-        return check_password(raw_password, self.contrasena)
+        if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
+            return check_password(raw_password, self.contrasena)
+        return self.contrasena == raw_password
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
@@ -37,12 +39,15 @@ class Medico(models.Model):
     correo       = models.EmailField(unique=True)
     contrasena   = models.CharField(max_length=255)
     estado       = models.BooleanField(default=True)
+    foto         = models.ImageField(upload_to='medicos/fotos/', null=True, blank=True)
 
     def set_contrasena(self, raw_password):
         self.contrasena = make_password(raw_password)
 
     def check_contrasena(self, raw_password):
-        return check_password(raw_password, self.contrasena)
+        if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
+            return check_password(raw_password, self.contrasena)
+        return self.contrasena == raw_password
 
     def __str__(self):
         return f"Dr. {self.nombre} {self.apellido} - {self.especialidad}"
@@ -67,7 +72,9 @@ class Paciente(models.Model):
         self.contrasena = make_password(raw_password)
 
     def check_contrasena(self, raw_password):
-        return check_password(raw_password, self.contrasena)
+        if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
+            return check_password(raw_password, self.contrasena)
+        return self.contrasena == raw_password
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
@@ -116,7 +123,6 @@ class PasswordResetToken(models.Model):
     usado      = models.BooleanField(default=False)
 
     def esta_vigente(self):
-        return not self.usado and (timezone.now() - self.creado_en).total_seconds() < 3600  # ✅ fix bug
-
+        return not self.usado and (timezone.now() - self.creado_en).total_seconds() < 3600
     def __str__(self):
         return f"{self.rol} | {self.correo} | {'✓' if self.usado else '⏳'}"
