@@ -1178,7 +1178,7 @@ def importar_medicos(request):
                     messages.error(request, f"El archivo no tiene la columna requerida: {col}")
                     return redirect('dashboard_admin')
 
-            password_segura = "CitaYa2026*"
+            password_segura = "Admincitaya0*"
             creados    = 0
             duplicados = []  # Lista de mensajes de error por fila
 
