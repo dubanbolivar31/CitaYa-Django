@@ -121,25 +121,22 @@ header.scrolled .nav_li-a:hover {
 }
 
 .button_login {
-    color: #fff;
+    color: var(--azul-profundo);
+    background: var(--verde-menta);
     text-decoration: none;
-    background: linear-gradient(135deg, var(--azul-profundo), var(--azul-medio));
-    border-radius: 50px;
-    padding: 0.65rem 1.6rem;
+    border-radius: 15px;
+    padding: 0.55rem 1.4rem;
     font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 0.03em;
-    transition: all var(--transicion);
-    box-shadow: 0 4px 15px rgba(15, 76, 117, 0.3);
-    border: 2px solid transparent;
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+    transition: background var(--transicion), transform var(--transicion);
+    border: none;
+    white-space: nowrap;
 }
 
 .button_login:hover {
-    background: transparent;
-    border-color: var(--azul-profundo);
-    color: var(--azul-profundo);
-    box-shadow: none;
-    transform: translateY(-2px);
+    background: #8fd9bc;
+    transform: translateY(-1px);
 }
 
 header.scrolled .button_login:hover {
@@ -748,6 +745,7 @@ footer::before {
     align-items: center;
     justify-content: center;
     transition: all var(--transicion);
+    text-decoration: none;
 }
 
 .redes a:hover {
