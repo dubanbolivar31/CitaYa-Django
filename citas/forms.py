@@ -1,152 +1,340 @@
 import re
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
 from django import forms
 from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
+
 from .models import Administrador, Medico, Paciente, Agendamiento, Historial_Clinico
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# VALIDADORES REUTILIZABLES
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# CONSTANTES — valores permitidos (única fuente de verdad)
+# ══════════════════════════════════════════════════════════════════════════════
 
-def validar_solo_numeros(value, nombre_campo="Este campo"):
-    if not value.isdigit():
-        raise forms.ValidationError(f"{nombre_campo} solo puede contener números.")
+TIPOS_DOC = {
+    'CC':  {'solo_digitos': True,  'min': 6,  'max': 10, 'exacto': None},
+    'TI':  {'solo_digitos': True,  'min': 10, 'max': 10, 'exacto': 10},
+    'CE':  {'solo_digitos': True,  'min': 6,  'max': 12, 'exacto': None},
+    'PP':  {'solo_digitos': False, 'min': 5,  'max': 15, 'exacto': None},
+}
+
+GENEROS_VALIDOS   = {'M', 'F', 'OTRO'}
+SANGRES_VALIDAS   = {'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'}
+PATRON_NOMBRE     = re.compile(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+(\s[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+)*$')
+PATRON_ALFANUM    = re.compile(r'^[a-zA-Z0-9]+$')
+RE_CONTROL        = re.compile(r'[\x00-\x1F\x7F-\x9F\u200B-\u200D\uFEFF]')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _limpiar(valor):
+    """Elimina caracteres de control Unicode y espacios extremos."""
+    return RE_CONTROL.sub('', (valor or '')).strip()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# VALIDADORES REUTILIZABLES
+# ══════════════════════════════════════════════════════════════════════════════
+
+def validar_nombre_texto(value, etiqueta='Este campo'):
+    """Solo letras latinas/españolas y espacios simples entre palabras, mín. 2 letras."""
+    v = _limpiar(value)
+    if not v:
+        raise ValidationError(f'{etiqueta} es obligatorio.')
+    if not PATRON_NOMBRE.match(v):
+        raise ValidationError(f'{etiqueta} solo puede contener letras y espacios simples.')
+    if len(v.replace(' ', '')) < 2:
+        raise ValidationError(f'{etiqueta} debe tener al menos 2 letras.')
+    return v
+
+
+def validar_numero_doc(value, tipo_doc):
+    """
+    Valida el número de documento según el tipo:
+      CC  → 6-10 dígitos
+      TI  → exactamente 10 dígitos
+      CE  → 6-12 dígitos
+      PP  → 5-15 caracteres alfanuméricos
+    """
+    v   = _limpiar(value)
+    cfg = TIPOS_DOC.get(tipo_doc)
+
+    if not v:
+        raise ValidationError('El número de documento es obligatorio.')
+    if not cfg:
+        raise ValidationError('Tipo de documento no reconocido.')
+
+    if cfg['solo_digitos']:
+        if not v.isdigit():
+            raise ValidationError('El número de documento solo puede contener dígitos numéricos.')
+        if cfg['exacto'] and len(v) != cfg['exacto']:
+            raise ValidationError(
+                f'La {_nombre_tipo(tipo_doc)} debe tener exactamente {cfg["exacto"]} dígitos.'
+            )
+        elif not cfg['exacto'] and not (cfg['min'] <= len(v) <= cfg['max']):
+            raise ValidationError(
+                f'La {_nombre_tipo(tipo_doc)} debe tener entre {cfg["min"]} y {cfg["max"]} dígitos.'
+            )
+    else:
+        if not PATRON_ALFANUM.match(v):
+            raise ValidationError('El pasaporte solo puede contener letras y números, sin espacios ni símbolos.')
+        if not (cfg['min'] <= len(v) <= cfg['max']):
+            raise ValidationError(
+                f'El pasaporte debe tener entre {cfg["min"]} y {cfg["max"]} caracteres.'
+            )
+    return v
+
+
+def _nombre_tipo(tipo_doc):
+    nombres = {'CC': 'Cédula de Ciudadanía', 'TI': 'Tarjeta de Identidad',
+               'CE': 'Cédula de Extranjería', 'PP': 'Pasaporte'}
+    return nombres.get(tipo_doc, 'documento')
+
 
 def validar_telefono(value):
-    if not value.isdigit():
-        raise forms.ValidationError("El teléfono solo puede contener números.")
-    if len(value) != 10:
-        raise forms.ValidationError("El teléfono debe tener exactamente 10 dígitos.")
+    """10 dígitos, debe empezar en 3 (celular colombiano)."""
+    v = _limpiar(value).replace(' ', '')
+    if not v:
+        raise ValidationError('El teléfono es obligatorio.')
+    if not v.isdigit():
+        raise ValidationError('El teléfono solo puede contener dígitos numéricos.')
+    if len(v) != 10:
+        raise ValidationError('El teléfono debe tener exactamente 10 dígitos.')
+    if v[0] != '3':
+        raise ValidationError('El teléfono debe ser un celular colombiano (empieza con 3).')
+    return v
 
-def validar_numero_doc(value):
-    if not value.isdigit():
-        raise forms.ValidationError("El número de documento solo puede contener números.")
 
 def validar_contrasena(value):
     """
-    Mínimo 10 caracteres, al menos una mayúscula, una minúscula y un carácter especial.
-    Solo se llama cuando el campo tiene contenido.
+    Mínimo 8 caracteres, máximo 128.
+    Al menos: 1 mayúscula, 1 minúscula, 1 dígito, 1 carácter especial.
     """
-    if len(value) < 10:
-        raise forms.ValidationError("La contraseña debe tener al menos 10 caracteres.")
+    errores = []
+    if len(value) < 8:
+        errores.append('mínimo 8 caracteres')
+    if len(value) > 128:
+        errores.append('máximo 128 caracteres')
     if not re.search(r'[A-Z]', value):
-        raise forms.ValidationError("La contraseña debe contener al menos una letra mayúscula.")
+        errores.append('al menos 1 mayúscula')
     if not re.search(r'[a-z]', value):
-        raise forms.ValidationError("La contraseña debe contener al menos una letra minúscula.")
-    if not re.search(r'[^A-Za-z0-9]', value):
-        raise forms.ValidationError("La contraseña debe contener al menos un carácter especial (ej: *, @, #, !).")
+        errores.append('al menos 1 minúscula')
+    if not re.search(r'[0-9]', value):
+        errores.append('al menos 1 número')
+    if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>/?`~\\|]', value):
+        errores.append('al menos 1 carácter especial (!@#$%^&*...)')
+    if errores:
+        raise ValidationError(f'La contraseña necesita: {", ".join(errores)}.')
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+def validar_direccion(value):
+    v = _limpiar(value)
+    if not v:
+        raise ValidationError('La dirección es obligatoria.')
+    if len(v) < 5:
+        raise ValidationError('La dirección debe tener al menos 5 caracteres.')
+    if re.search(r'<[^>]*>|javascript:', v, re.IGNORECASE):
+        raise ValidationError('La dirección contiene caracteres no permitidos.')
+    return v
+
+
+def validar_fecha_nacimiento(value):
+    """Entre 1 mes y 90 años atrás."""
+    if not value:
+        raise ValidationError('La fecha de nacimiento es obligatoria.')
+    hoy    = date.today()
+    min_f  = hoy - relativedelta(months=1)
+    max_f  = hoy - relativedelta(years=90)
+    if value > min_f:
+        raise ValidationError('El paciente debe tener al menos 1 mes de nacido.')
+    if value < max_f:
+        raise ValidationError('La fecha excede el rango máximo de 90 años.')
+    return value
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MIXIN — unicidad de correo, teléfono y número de documento al crear y editar
+# ══════════════════════════════════════════════════════════════════════════════
+
+class UniqueFieldsMixin:
+    """
+    Verifica unicidad de correo, teléfono y número de documento
+    excluyendo la instancia actual en caso de edición.
+    Se debe definir `unique_model` en la subclase.
+    """
+    unique_model = None   # debe apuntarse al modelo correcto en cada Form
+
+    def _check_unique(self, campo, valor, mensaje):
+        qs = self.unique_model.objects.filter(**{campo: valor})
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError(mensaje)
+        return valor
+
+    def clean_correo(self):
+        valor = _limpiar(self.cleaned_data.get('correo', '')).lower()
+        if not valor:
+            raise ValidationError('El correo es obligatorio.')
+        return self._check_unique(
+            'correo__iexact', valor,
+            'Ese correo electrónico ya está registrado por otro usuario.'
+        )
+
+    def clean_telefono(self):
+        valor = validar_telefono(self.cleaned_data.get('telefono', ''))
+        return self._check_unique(
+            'telefono', valor,
+            'Ese número de teléfono ya está registrado por otro usuario.'
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # FORM: ADMINISTRADOR
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 
-class AdministradorForm(forms.ModelForm):
+class AdministradorForm(UniqueFieldsMixin, forms.ModelForm):
+    unique_model = Administrador
+
     contrasena = forms.CharField(
         required=False,
         widget=forms.PasswordInput(render_value=False),
-        label="Contraseña",
+        label='Contraseña',
+        help_text='Mín. 8 caracteres, mayúscula, minúscula, número y símbolo. Déjalo en blanco para no cambiarla.',
     )
 
     class Meta:
-        model = Administrador
+        model  = Administrador
         fields = '__all__'
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def clean_tipo_doc(self):
+        v = _limpiar(self.cleaned_data.get('tipo_doc', ''))
+        if v not in TIPOS_DOC:
+            raise ValidationError('Tipo de documento no válido.')
+        return v
 
     def clean_numero_doc(self):
-        value = self.cleaned_data.get('numero_doc', '').strip()
-        validar_numero_doc(value)
-        return value
+        tipo = _limpiar(self.data.get('tipo_doc', ''))  # leer directamente del POST
+        v    = _limpiar(self.cleaned_data.get('numero_doc', ''))
+        v    = validar_numero_doc(v, tipo)
+        # Unicidad
+        qs = Administrador.objects.filter(numero_doc=v)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError('Ese número de documento ya está registrado.')
+        return v
 
-    def clean_telefono(self):
-        value = self.cleaned_data.get('telefono', '').strip()
-        validar_telefono(value)
-        return value
+    def clean_nombre(self):
+        return validar_nombre_texto(self.cleaned_data.get('nombre', ''), 'El nombre')
+
+    def clean_apellido(self):
+        return validar_nombre_texto(self.cleaned_data.get('apellido', ''), 'El apellido')
+
+    def clean_genero(self):
+        v = _limpiar(self.cleaned_data.get('genero', ''))
+        if v not in GENEROS_VALIDOS:
+            raise ValidationError('Selecciona un género válido.')
+        return v
 
     def clean_contrasena(self):
         value = self.cleaned_data.get('contrasena', '').strip()
         if value:
             validar_contrasena(value)
-        return value
-
-    def clean_nombre(self):
-        value = self.cleaned_data.get('nombre', '').strip()
-        if not value:
-            raise forms.ValidationError("El nombre es obligatorio.")
-        return value
-
-    def clean_apellido(self):
-        value = self.cleaned_data.get('apellido', '').strip()
-        if not value:
-            raise forms.ValidationError("El apellido es obligatorio.")
+        elif not self.instance.pk:
+            # Creación: contraseña obligatoria
+            raise ValidationError('La contraseña es obligatoria al crear un administrador.')
         return value
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
+            instance.contrasena = make_password(pw)
         elif instance.pk:
-            # Sin cambio de contraseña: conserva el hash existente en la BD
             instance.contrasena = Administrador.objects.get(pk=instance.pk).contrasena
         if commit:
             instance.save()
         return instance
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 # FORM: MÉDICO
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 
-class MedicoForm(forms.ModelForm):
+class MedicoForm(UniqueFieldsMixin, forms.ModelForm):
+    unique_model = Medico
+
     contrasena = forms.CharField(
         required=False,
         widget=forms.PasswordInput(render_value=False),
-        label="Contraseña",
+        label='Contraseña',
+        help_text='Mín. 8 caracteres, mayúscula, minúscula, número y símbolo. Déjalo en blanco para no cambiarla.',
     )
 
     class Meta:
-        model = Medico
+        model  = Medico
         fields = '__all__'
 
-    def clean_numero_doc(self):
-        value = self.cleaned_data.get('numero_doc', '').strip()
-        validar_numero_doc(value)
-        return value
+    def clean_tipo_doc(self):
+        v = _limpiar(self.cleaned_data.get('tipo_doc', ''))
+        if v not in TIPOS_DOC:
+            raise ValidationError('Tipo de documento no válido.')
+        return v
 
-    def clean_telefono(self):
-        value = self.cleaned_data.get('telefono', '').strip()
-        validar_telefono(value)
-        return value
+    def clean_numero_doc(self):
+        tipo = _limpiar(self.data.get('tipo_doc', ''))
+        v    = _limpiar(self.cleaned_data.get('numero_doc', ''))
+        v    = validar_numero_doc(v, tipo)
+        qs   = Medico.objects.filter(numero_doc=v)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError('Ese número de documento ya está registrado.')
+        return v
+
+    def clean_nombre(self):
+        return validar_nombre_texto(self.cleaned_data.get('nombre', ''), 'El nombre')
+
+    def clean_apellido(self):
+        return validar_nombre_texto(self.cleaned_data.get('apellido', ''), 'El apellido')
+
+    def clean_genero(self):
+        v = _limpiar(self.cleaned_data.get('genero', ''))
+        if v not in GENEROS_VALIDOS:
+            raise ValidationError('Selecciona un género válido.')
+        return v
+
+    def clean_especialidad(self):
+        v = _limpiar(self.cleaned_data.get('especialidad', ''))
+        if not v:
+            raise ValidationError('La especialidad es obligatoria.')
+        if len(v) < 3:
+            raise ValidationError('La especialidad debe tener al menos 3 caracteres.')
+        if re.search(r'[<>{}[\]|]', v):
+            raise ValidationError('La especialidad contiene caracteres no permitidos.')
+        return v
 
     def clean_contrasena(self):
         value = self.cleaned_data.get('contrasena', '').strip()
         if value:
             validar_contrasena(value)
-        return value
-
-    def clean_nombre(self):
-        value = self.cleaned_data.get('nombre', '').strip()
-        if not value:
-            raise forms.ValidationError("El nombre es obligatorio.")
-        return value
-
-    def clean_apellido(self):
-        value = self.cleaned_data.get('apellido', '').strip()
-        if not value:
-            raise forms.ValidationError("El apellido es obligatorio.")
-        return value
-
-    def clean_especialidad(self):
-        value = self.cleaned_data.get('especialidad', '').strip()
-        if not value:
-            raise forms.ValidationError("La especialidad es obligatoria.")
+        elif not self.instance.pk:
+            raise ValidationError('La contraseña es obligatoria al crear un médico.')
         return value
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
+            instance.contrasena = make_password(pw)
         elif instance.pk:
             instance.contrasena = Medico.objects.get(pk=instance.pk).contrasena
         if commit:
@@ -154,63 +342,81 @@ class MedicoForm(forms.ModelForm):
         return instance
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 # FORM: PACIENTE
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 
-class PacienteForm(forms.ModelForm):
+class PacienteForm(UniqueFieldsMixin, forms.ModelForm):
+    unique_model = Paciente
+
     contrasena = forms.CharField(
         required=False,
         widget=forms.PasswordInput(render_value=False),
-        label="Contraseña",
+        label='Contraseña',
+        help_text='Mín. 8 caracteres, mayúscula, minúscula, número y símbolo. Déjalo en blanco para no cambiarla.',
     )
 
     class Meta:
-        model = Paciente
+        model  = Paciente
         fields = '__all__'
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    def clean_numero_doc(self):
-        value = self.cleaned_data.get('numero_doc', '').strip()
-        validar_numero_doc(value)
-        return value
+    def clean_tipo_doc(self):
+        v = _limpiar(self.cleaned_data.get('tipo_doc', ''))
+        if v not in TIPOS_DOC:
+            raise ValidationError('Tipo de documento no válido.')
+        return v
 
-    def clean_telefono(self):
-        value = self.cleaned_data.get('telefono', '').strip()
-        validar_telefono(value)
-        return value
+    def clean_numero_doc(self):
+        tipo = _limpiar(self.data.get('tipo_doc', ''))
+        v    = _limpiar(self.cleaned_data.get('numero_doc', ''))
+        v    = validar_numero_doc(v, tipo)
+        qs   = Paciente.objects.filter(numero_doc=v)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError('Ese número de documento ya está registrado.')
+        return v
+
+    def clean_nombre(self):
+        return validar_nombre_texto(self.cleaned_data.get('nombre', ''), 'El nombre')
+
+    def clean_apellido(self):
+        return validar_nombre_texto(self.cleaned_data.get('apellido', ''), 'El apellido')
+
+    def clean_genero(self):
+        v = _limpiar(self.cleaned_data.get('genero', ''))
+        if v not in GENEROS_VALIDOS:
+            raise ValidationError('Selecciona un género válido.')
+        return v
+
+    def clean_fecha_nacimiento(self):
+        return validar_fecha_nacimiento(self.cleaned_data.get('fecha_nacimiento'))
+
+    def clean_tipo_sangre(self):
+        v = _limpiar(self.cleaned_data.get('tipo_sangre', ''))
+        if v not in SANGRES_VALIDAS:
+            raise ValidationError('Selecciona un tipo de sangre válido.')
+        return v
+
+    def clean_direccion(self):
+        return validar_direccion(self.cleaned_data.get('direccion', ''))
 
     def clean_contrasena(self):
         value = self.cleaned_data.get('contrasena', '').strip()
         if value:
             validar_contrasena(value)
-        return value
-
-    def clean_nombre(self):
-        value = self.cleaned_data.get('nombre', '').strip()
-        if not value:
-            raise forms.ValidationError("El nombre es obligatorio.")
-        return value
-
-    def clean_apellido(self):
-        value = self.cleaned_data.get('apellido', '').strip()
-        if not value:
-            raise forms.ValidationError("El apellido es obligatorio.")
-        return value
-
-    def clean_direccion(self):
-        value = self.cleaned_data.get('direccion', '').strip()
-        if not value:
-            raise forms.ValidationError("La dirección es obligatoria.")
+        elif not self.instance.pk:
+            raise ValidationError('La contraseña es obligatoria al crear un paciente.')
         return value
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         pw = self.cleaned_data.get('contrasena', '').strip()
         if pw:
-            instance.contrasena = make_password(pw)  # ✅ hashea la nueva contraseña
+            instance.contrasena = make_password(pw)
         elif instance.pk:
             instance.contrasena = Paciente.objects.get(pk=instance.pk).contrasena
         if commit:
@@ -218,13 +424,13 @@ class PacienteForm(forms.ModelForm):
         return instance
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 # FORM: AGENDAMIENTO
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 
 class AgendamientoForm(forms.ModelForm):
     class Meta:
-        model = Agendamiento
+        model  = Agendamiento
         fields = '__all__'
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
@@ -232,23 +438,67 @@ class AgendamientoForm(forms.ModelForm):
         }
 
     def clean_cita(self):
-        value = self.cleaned_data.get('cita', '').strip()
-        if not value:
-            raise forms.ValidationError("El tipo de cita es obligatorio.")
-        return value
+        v = _limpiar(self.cleaned_data.get('cita', ''))
+        if not v:
+            raise ValidationError('El tipo de cita es obligatorio.')
+        if len(v) < 3:
+            raise ValidationError('El tipo de cita debe tener al menos 3 caracteres.')
+        if re.search(r'[<>{}[\]|]', v):
+            raise ValidationError('El tipo de cita contiene caracteres no permitidos.')
+        return v
+
+    def clean_fecha(self):
+        fecha = self.cleaned_data.get('fecha')
+        if not fecha:
+            raise ValidationError('La fecha es obligatoria.')
+        return fecha
+
+    def clean_hora(self):
+        hora = self.cleaned_data.get('hora')
+        if not hora:
+            raise ValidationError('La hora es obligatoria.')
+        return hora
+
+    def clean_id_paciente(self):
+        v = self.cleaned_data.get('id_paciente')
+        if not v:
+            raise ValidationError('El paciente es obligatorio.')
+        return v
+
+    def clean_id_medico(self):
+        v = self.cleaned_data.get('id_medico')
+        if not v:
+            raise ValidationError('El médico es obligatorio.')
+        return v
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 # FORM: HISTORIAL CLÍNICO
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 
 class HistorialForm(forms.ModelForm):
     class Meta:
-        model = Historial_Clinico
+        model  = Historial_Clinico
         fields = '__all__'
 
     def clean_antecedentes(self):
-        value = self.cleaned_data.get('antecedentes', '').strip()
-        if not value:
-            raise forms.ValidationError("Los antecedentes no pueden estar vacíos.")
-        return value
+        v = _limpiar(self.cleaned_data.get('antecedentes', ''))
+        if not v:
+            raise ValidationError('Los antecedentes no pueden estar vacíos.')
+        if len(v) < 10:
+            raise ValidationError('Los antecedentes deben tener al menos 10 caracteres.')
+        if re.search(r'<script|javascript:', v, re.IGNORECASE):
+            raise ValidationError('Los antecedentes contienen contenido no permitido.')
+        return v
+
+    def clean_id_paciente(self):
+        v = self.cleaned_data.get('id_paciente')
+        if not v:
+            raise ValidationError('El paciente es obligatorio.')
+        return v
+
+    def clean_id_medico(self):
+        v = self.cleaned_data.get('id_medico')
+        if not v:
+            raise ValidationError('El médico es obligatorio.')
+        return v
