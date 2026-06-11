@@ -62,7 +62,7 @@ class Paciente(models.Model):
     fecha_nacimiento = models.DateField()
     tipo_sangre      = models.CharField(max_length=5)
     direccion        = models.CharField(max_length=200)
-    telefono         = models.CharField(max_length=15)
+    telefono         = models.CharField(max_length=15, unique=True)
     correo           = models.EmailField(unique=True)
     contrasena       = models.CharField(max_length=255) 
     estado           = models.BooleanField(default=True)

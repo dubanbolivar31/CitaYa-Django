@@ -7,510 +7,629 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Registro | Cita Ya</title>
     <link rel="icon" type="image" href="{% static 'assets/img/registrarnut.png' %}">
-
+    
     <!-- Tipografías -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,wght@0,600;1,300&display=swap" rel="stylesheet">
-
+    
     <!-- Estilos -->
     <link rel="stylesheet" href="{% static 'assets/css/registro.css' %}">
 </head>
 
 <body>
-
+    
     <div class="card">
-
+        
         <!-- ── ENCABEZADO ── -->
         <header class="card-header">
-
-            <!-- Logo circular -->
             <div class="header-img-wrap">
                 <img src="{% static 'assets/img/registrarnut.png' %}" alt="Logo Cita Ya">
             </div>
-
-            <!-- Nombre de la app -->
             <p class="step-label">Crear cuenta</p>
-
-
-
         </header>
-
+        
         <!-- ── CUERPO ── -->
         <main class="card-body">
-
-            <!-- Mensajes de error del servidor -->
+            
+            <!-- Mensajes del servidor -->
             {% if form.errors or messages %}
-            <div class="server-error-box" role="alert">
+            <div class="server-error-box" role="alert" aria-live="polite">
                 {% for message in messages %}
-                    <p>{{ message }}</p>
+                <p>{{ message }}</p>
                 {% endfor %}
                 {% if form.errors %}
-                    <p>Por favor corrige los errores indicados.</p>
+                <p>Por favor corrige los errores indicados.</p>
                 {% endif %}
             </div>
             {% endif %}
-
-            <!-- Formulario de registro -->
-            <form id="registro-form" method="POST" action="{% url 'registro' %}" novalidate>
-                {% csrf_token %}
-
-                <div class="fields two-col">
-
-                    <!-- Tipo de documento -->
-                    <div class="field">
-                        <label for="tipo_doc">Tipo de documento</label>
-                        <select id="tipo_doc" name="tipo_doc" required>
-                            <option value="">Seleccione…</option>
-                            <option value="CC">CC</option>
-                            <option value="TI">TI</option>
-                            <option value="CE">CE</option>
-                            <option value="PP">Pasaporte</option>
-                        </select>
+            
+            <!-- Formulario -->
+            <form
+            id="registro-form"
+            method="POST"
+            action="{% url 'registro' %}"
+            novalidate
+            autocomplete="off"
+            spellcheck="false">
+            
+            {% csrf_token %}
+            
+            <div class="fields two-col">
+                
+                <!-- ── Tipo de documento ── -->
+                <div class="field">
+                    <label for="tipo_doc">
+                        Tipo de documento
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <select id="tipo_doc" name="tipo_doc" required autocomplete="off">
+                        <option value="">Seleccione…</option>
+                        <option value="CC"  {% if form.tipo_doc.value == 'CC'  %}selected{% endif %}>CC — Cédula de ciudadanía</option>
+                        <option value="TI"  {% if form.tipo_doc.value == 'TI'  %}selected{% endif %}>TI — Tarjeta de identidad</option>
+                        <option value="CE"  {% if form.tipo_doc.value == 'CE'  %}selected{% endif %}>CE — Cédula extranjería</option>
+                        <option value="PP"  {% if form.tipo_doc.value == 'PP'  %}selected{% endif %}>PP — Pasaporte</option>
+                    </select>
+                    <span class="field-msg" id="msg-tipo_doc" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Número de documento ── -->
+                <div class="field">
+                    <label for="numero_doc">
+                        Número de documento
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="text"
+                    id="numero_doc"
+                    name="numero_doc"
+                    value="{{ form.numero_doc.value|default_if_none:'' }}"
+                    placeholder="Seleccione tipo primero"
+                    maxlength="15"
+                    autocomplete="off"
+                    inputmode="numeric"
+                    required>
+                    <span class="field-msg" id="msg-numero_doc" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Nombre ── -->
+                <div class="field">
+                    <label for="nombre">
+                        Nombre
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    value="{{ form.nombre.value|default_if_none:'' }}"
+                    placeholder="Juan Carlos"
+                    maxlength="50"
+                    autocomplete="given-name"
+                    required>
+                    <span class="field-msg" id="msg-nombre" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Apellido ── -->
+                <div class="field">
+                    <label for="apellido">
+                        Apellido
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="text"
+                    id="apellido"
+                    name="apellido"
+                    value="{{ form.apellido.value|default_if_none:'' }}"
+                    placeholder="Pérez González"
+                    maxlength="50"
+                    autocomplete="family-name"
+                    required>
+                    <span class="field-msg" id="msg-apellido" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Género ── -->
+                <div class="field">
+                    <label for="genero">
+                        Género
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <select id="genero" name="genero" required autocomplete="off">
+                        <option value="">Seleccione…</option>
+                        <option value="M"    {% if form.genero.value == 'M'    %}selected{% endif %}>Masculino</option>
+                        <option value="F"    {% if form.genero.value == 'F'    %}selected{% endif %}>Femenino</option>
+                        <option value="OTRO" {% if form.genero.value == 'OTRO' %}selected{% endif %}>Otro</option>
+                    </select>
+                    <span class="field-msg" id="msg-genero" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Fecha de nacimiento ── -->
+                <div class="field">
+                    <label for="fechaNacimiento">
+                        Fecha de nacimiento
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="date"
+                    id="fechaNacimiento"
+                    name="fecha_nacimiento"
+                    value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}"
+                    autocomplete="bday"
+                    required>
+                    <span class="field-msg" id="msg-fechaNacimiento" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Tipo de sangre ── -->
+                <div class="field">
+                    <label for="tipo_sangre">
+                        Tipo de sangre
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <select id="tipo_sangre" name="tipo_sangre" required autocomplete="off">
+                        <option value="">Seleccione…</option>
+                        <option value="A+"  {% if form.tipo_sangre.value == 'A+'  %}selected{% endif %}>A+</option>
+                        <option value="A-"  {% if form.tipo_sangre.value == 'A-'  %}selected{% endif %}>A−</option>
+                        <option value="B+"  {% if form.tipo_sangre.value == 'B+'  %}selected{% endif %}>B+</option>
+                        <option value="B-"  {% if form.tipo_sangre.value == 'B-'  %}selected{% endif %}>B−</option>
+                        <option value="AB+" {% if form.tipo_sangre.value == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if form.tipo_sangre.value == 'AB-' %}selected{% endif %}>AB−</option>
+                        <option value="O+"  {% if form.tipo_sangre.value == 'O+'  %}selected{% endif %}>O+</option>
+                        <option value="O-"  {% if form.tipo_sangre.value == 'O-'  %}selected{% endif %}>O−</option>
+                    </select>
+                    <span class="field-msg" id="msg-tipo_sangre" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Teléfono ── -->
+                <div class="field">
+                    <label for="telefono">
+                        Teléfono
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="tel"
+                    id="telefono"
+                    name="telefono"
+                    value="{{ form.telefono.value|default_if_none:'' }}"
+                    placeholder="3XXXXXXXXX"
+                    maxlength="10"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                    required>
+                    <span class="field-msg" id="msg-telefono" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Correo electrónico ── -->
+                <div class="field full">
+                    <label for="correo">
+                        Correo electrónico
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="email"
+                    id="correo"
+                    name="correo"
+                    value="{{ form.correo.value|default_if_none:'' }}"
+                    placeholder="correo@ejemplo.com"
+                    maxlength="100"
+                    autocomplete="email"
+                    required>
+                    <span class="field-msg" id="msg-correo" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Dirección ── -->
+                <div class="field full">
+                    <label for="direccion">
+                        Dirección
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                    type="text"
+                    id="direccion"
+                    name="direccion"
+                    value="{{ form.direccion.value|default_if_none:'' }}"
+                    placeholder="Calle 123 #45-67"
+                    maxlength="100"
+                    autocomplete="street-address"
+                    required>
+                    <span class="field-msg" id="msg-direccion" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Contraseña ── -->
+                <div class="field full">
+                    <label for="contrasena">
+                        Contraseña
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <div class="input-eye-wrap">
+                        <input
+                        type="password"
+                        id="contrasena"
+                        name="contrasena"
+                        placeholder="Mínimo 8 caracteres"
+                        maxlength="128"
+                        autocomplete="new-password"
+                        required>
+                        <button type="button" class="eye-btn" data-target="contrasena" aria-label="Mostrar contraseña" tabindex="-1">
+                            <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
                     </div>
+                    <!-- Indicadores de requisitos -->
+                    <ul class="pass-rules" id="pass-rules" aria-label="Requisitos de contraseña">
+                        <li class="rule" id="rule-len">    <span class="rule-dot"></span> Mínimo 8 caracteres</li>
+                        <li class="rule" id="rule-upper">  <span class="rule-dot"></span> Al menos 1 mayúscula</li>
+                        <li class="rule" id="rule-lower">  <span class="rule-dot"></span> Al menos 1 minúscula</li>
+                        <li class="rule" id="rule-num">    <span class="rule-dot"></span> Al menos 1 número</li>
+                        <li class="rule" id="rule-special"><span class="rule-dot"></span> Al menos 1 carácter especial (!@#$%^&*)</li>
+                    </ul>
+                    <span class="field-msg" id="msg-contrasena" aria-live="polite"></span>
+                </div>
+                
+                <!-- ── Confirmar contraseña ── -->
+                <div class="field full">
+                    <label for="confirmarContrasena">
+                        Confirmar contraseña
+                        <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <div class="input-eye-wrap">
+                        <input
+                        type="password"
+                        id="confirmarContrasena"
+                        name="confirmar_contrasena"
+                        placeholder="Repite tu contraseña"
+                        maxlength="128"
+                        autocomplete="new-password"
+                        required>
+                        <button type="button" class="eye-btn" data-target="confirmarContrasena" aria-label="Mostrar contraseña" tabindex="-1">
+                            <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
+                    </div>
+                    <span class="match-hint" id="match-hint" aria-live="polite"></span>
+                    <span class="field-msg" id="msg-confirmarContrasena" aria-live="polite"></span>
+                </div>
+                
+            </div><!-- /.fields -->
+            
+        </form><!-- /#registro-form -->
+        
+    </main>
+    
+    <!-- ── PIE ── -->
+    <footer class="card-footer">
+        <button type="submit" form="registro-form" class="btn btn-submit">
+            Registrarse ›
+        </button>
+    </footer>
+    
+    <p class="login-link">
+        ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
+    </p>
+    
+</div><!-- /.card -->
 
-                    <!-- Número de documento -->
-<div class="field">
-    <label for="numero_doc">Número de documento</label>
-    <input
-        type="text"
-        id="numero_doc"
-        name="numero_doc"
-        placeholder="Ej: 1023456789"
-        required>
-</div>
-
-<!--VALIDACION DE DOCUMENTO SCRIP-->
 <script>
-// seleccionamos elementos
-const tipoDoc = document.getElementById("tipo_doc");
-const numeroDoc = document.getElementById("numero_doc");
-const error = document.getElementById("error");
-
-// cuando cambia el tipo
-tipoDoc.addEventListener("change", () => {
-    numeroDoc.value = "";
-    error.textContent = "";
-
-    if (tipoDoc.value === "cc") {
-        numeroDoc.maxLength = 10;
-        numeroDoc.placeholder = "6 a 10 números";
+    /* ──────────────────────────────────────────────
+    VALIDACIÓN FORMULARIO REGISTRO — versión corregida
+    ────────────────────────────────────────────── */
+    
+    /* ── FECHA DE NACIMIENTO: límites dinámicos ── */
+    (function () {
+        const f   = document.getElementById('fechaNacimiento');
+        const hoy = new Date();
+        const max = new Date(hoy);
+        max.setMonth(max.getMonth() - 1);
+        const min = new Date(hoy);
+        min.setFullYear(min.getFullYear() - 90);
+        f.max = max.toISOString().split('T')[0];
+        f.min = min.toISOString().split('T')[0];
+    })();
+    
+    /* ── HELPERS de marcado visual ── */
+    function markValid(el) {
+        el.classList.remove('field-error');
+        el.classList.add('field-ok');
+        el.setCustomValidity('');
     }
-
-    else if (tipoDoc.value === "ti") {
-        numeroDoc.maxLength = 10;
-        numeroDoc.placeholder = "10 números exactos";
+    function markError(el, msg) {
+        el.classList.remove('field-ok');
+        el.classList.add('field-error');
+        el.setCustomValidity(msg || 'Campo inválido');
     }
-
-    else if (tipoDoc.value === "ce") {
-        numeroDoc.maxLength = 12;
-        numeroDoc.placeholder = "6 a 12 números";
+    function clearMark(el) {
+        el.classList.remove('field-ok', 'field-error');
+        el.setCustomValidity('');
     }
-
-    else if (tipoDoc.value === "pasaporte") {
-        numeroDoc.maxLength = 15;
-        numeroDoc.placeholder = "Alfanumérico";
+    
+    /* ── TIPO Y NÚMERO DE DOCUMENTO
+    CORRECCIÓN: comparar en MAYÚSCULAS porque los values del select son CC, TI, CE, PP
+    CORRECCIÓN: validar según el tipo seleccionado con longitudes correctas
+    CORRECCIÓN: eliminar el script duplicado que estaba en medio del HTML ── */
+    const tipoDoc  = document.getElementById('tipo_doc');
+    const numeroDoc = document.getElementById('numero_doc');
+    
+    tipoDoc.addEventListener('change', function () {
+        numeroDoc.value = '';
+        clearMark(numeroDoc);
+        
+        const tipo = this.value;
+        if (tipo === 'CC') {
+            numeroDoc.maxLength   = 10;
+            numeroDoc.placeholder = '6 a 10 dígitos';
+            numeroDoc.inputMode   = 'numeric';
+        } else if (tipo === 'TI') {
+            numeroDoc.maxLength   = 10;
+            numeroDoc.placeholder = 'Exactamente 10 dígitos';
+            numeroDoc.inputMode   = 'numeric';
+        } else if (tipo === 'CE') {
+            numeroDoc.maxLength   = 12;
+            numeroDoc.placeholder = '6 a 12 dígitos';
+            numeroDoc.inputMode   = 'numeric';
+        } else if (tipo === 'PP') {
+            numeroDoc.maxLength   = 15;
+            numeroDoc.placeholder = 'Alfanumérico (ej: AB123456)';
+            numeroDoc.inputMode   = 'text';
+        }
+    });
+    
+    function validarNumeroDoc() {
+        const tipo  = tipoDoc.value;
+        const valor = numeroDoc.value.trim();
+        
+        if (!tipo) {
+            markError(numeroDoc, 'Primero selecciona el tipo de documento');
+            return false;
+        }
+        if (valor.length === 0) {
+            markError(numeroDoc, 'El número de documento es obligatorio');
+            return false;
+        }
+        
+        if (tipo === 'CC') {
+            if (!/^[0-9]+$/.test(valor)) { markError(numeroDoc, 'Solo números'); return false; }
+            if (valor.length < 6)        { markError(numeroDoc, 'Mínimo 6 dígitos'); return false; }
+        } else if (tipo === 'TI') {
+            if (!/^[0-9]+$/.test(valor)) { markError(numeroDoc, 'Solo números'); return false; }
+            if (valor.length !== 10)     { markError(numeroDoc, 'Debe tener exactamente 10 dígitos'); return false; }
+        } else if (tipo === 'CE') {
+            if (!/^[0-9]+$/.test(valor)) { markError(numeroDoc, 'Solo números'); return false; }
+            if (valor.length < 6)        { markError(numeroDoc, 'Mínimo 6 dígitos'); return false; }
+        } else if (tipo === 'PP') {
+            if (!/^[a-zA-Z0-9]+$/.test(valor)) { markError(numeroDoc, 'Solo letras y números'); return false; }
+            if (valor.length < 5)               { markError(numeroDoc, 'Mínimo 5 caracteres'); return false; }
+        }
+        
+        markValid(numeroDoc);
+        return true;
     }
-});
-
-// validar mientras escribe 🔥
-numeroDoc.addEventListener("input", () => {
-    const tipo = tipoDoc.value;
-    const valor = numeroDoc.value;
-
-    error.textContent = ""; // limpiar error
-
-    if (!tipo) {
-        error.textContent = "Primero selecciona el tipo de documento";
-        return;
+    
+    /* Filtrar caracteres no permitidos mientras escribe */
+    numeroDoc.addEventListener('input', function () {
+        const tipo = tipoDoc.value;
+        if (tipo === 'CC' || tipo === 'TI' || tipo === 'CE') {
+            this.value = this.value.replace(/\D/g, '');
+        } else if (tipo === 'PP') {
+            this.value = this.value.replace(/[^a-zA-Z0-9]/g, '');
+        }
+        if (this.value.length > 0) validarNumeroDoc();
+        else clearMark(this);
+    });
+    
+    /* ── NOMBRE ── */
+    function validarNombre() {
+        const el = document.getElementById('nombre');
+        const s  = el.value.trim().replace(/\s+/g, '');
+        if (s.length === 0) { markError(el, 'El nombre es obligatorio'); return false; }
+        if (s.length < 3)   { markError(el, 'Mínimo 3 caracteres'); return false; }
+        markValid(el);
+        return true;
     }
-
-    if (tipo === "cc") {
-        if (!/^[0-9]*$/.test(valor)) {
-            error.textContent = "Solo números";
-        } else if (valor.length < 6) {
-            error.textContent = "Mínimo 6 dígitos";
+    document.getElementById('nombre').addEventListener('input', function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        if (this.value.length > 0) validarNombre(); else clearMark(this);
+    });
+    
+    /* ── APELLIDO ── */
+    function validarApellido() {
+        const el = document.getElementById('apellido');
+        const s  = el.value.trim().replace(/\s+/g, '');
+        if (s.length === 0) { markError(el, 'El apellido es obligatorio'); return false; }
+        if (s.length < 3)   { markError(el, 'Mínimo 3 caracteres'); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('apellido').addEventListener('input', function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        if (this.value.length > 0) validarApellido(); else clearMark(this);
+    });
+    
+    /* ── GÉNERO ── CORRECCIÓN: los selects no tenían validación alguna */
+    function validarSelect(id, msg) {
+        const el = document.getElementById(id);
+        if (!el.value) { markError(el, msg); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('genero').addEventListener('change', function () {
+        validarSelect('genero', 'Selecciona un género');
+    });
+    
+    /* ── TIPO DE SANGRE ── */
+    document.getElementById('tipo_sangre').addEventListener('change', function () {
+        validarSelect('tipo_sangre', 'Selecciona el tipo de sangre');
+    });
+    
+    /* ── TIPO DE DOCUMENTO (select) ── */
+    document.getElementById('tipo_doc').addEventListener('change', function () {
+        validarSelect('tipo_doc', 'Selecciona el tipo de documento');
+    });
+    
+    /* ── FECHA DE NACIMIENTO ── */
+    function validarFecha() {
+        const el   = document.getElementById('fechaNacimiento');
+        const val  = el.value;
+        if (!val) { markError(el, 'La fecha de nacimiento es obligatoria'); return false; }
+        const fecha = new Date(val);
+        const hoy   = new Date();
+        const min90 = new Date(); min90.setFullYear(hoy.getFullYear() - 90);
+        const max1m = new Date(); max1m.setMonth(hoy.getMonth() - 1);
+        if (fecha < min90) { markError(el, 'Fecha fuera de rango'); return false; }
+        if (fecha > max1m) { markError(el, 'Debes tener al menos 1 mes de nacido'); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('fechaNacimiento').addEventListener('change', validarFecha);
+    
+    /* ── TELÉFONO ── */
+    function validarTelefono() {
+        const el = document.getElementById('telefono');
+        const v  = el.value.trim();
+        if (v.length === 0)  { markError(el, 'El teléfono es obligatorio'); return false; }
+        if (v[0] !== '3')    { markError(el, 'Debe empezar con 3'); return false; }
+        if (v.length !== 10) { markError(el, 'Exactamente 10 dígitos'); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('telefono').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+        if (this.value.length > 0) validarTelefono(); else clearMark(this);
+    });
+    
+    /* ── CORREO
+    CORRECCIÓN: validar formato completo con regex adecuado, no solo el @ ── */
+    function validarCorreo() {
+        const el  = document.getElementById('correo');
+        const v   = el.value.trim();
+        const rex = /^[^\s@]{5,}@[^\s@]+\.[^\s@]{2,}$/;
+        if (v.length === 0)    { markError(el, 'El correo es obligatorio'); return false; }
+        if (!rex.test(v))      { markError(el, 'Correo inválido (mínimo 5 caracteres antes del @)'); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('correo').addEventListener('input', function () {
+        if (this.value.length > 0) validarCorreo(); else clearMark(this);
+    });
+    document.getElementById('correo').addEventListener('blur', validarCorreo);
+    
+    /* ── DIRECCIÓN
+    CORRECCIÓN: no tenía ningún listener ni validación ── */
+    function validarDireccion() {
+        const el = document.getElementById('direccion');
+        const v  = el.value.trim();
+        if (v.length === 0)  { markError(el, 'La dirección es obligatoria'); return false; }
+        if (v.length < 5)    { markError(el, 'Ingresa una dirección válida'); return false; }
+        markValid(el);
+        return true;
+    }
+    document.getElementById('direccion').addEventListener('input', function () {
+        if (this.value.length > 0) validarDireccion(); else clearMark(this);
+    });
+    document.getElementById('direccion').addEventListener('blur', validarDireccion);
+    
+    /* ── OJO (mostrar/ocultar contraseña) ── */
+    document.querySelectorAll('.eye-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const input  = document.getElementById(this.dataset.target);
+            const isPass = input.type === 'password';
+            input.type   = isPass ? 'text' : 'password';
+            this.querySelector('.eye-open').style.display   = isPass ? 'none' : '';
+            this.querySelector('.eye-closed').style.display = isPass ? ''     : 'none';
+            this.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        });
+    });
+    
+    /* ── REQUISITOS DE CONTRASEÑA ── */
+    const passInput   = document.getElementById('contrasena');
+    const ruleLen     = document.getElementById('rule-len');
+    const ruleUpper   = document.getElementById('rule-upper');
+    const ruleSpecial = document.getElementById('rule-special');
+    const rulesBox    = document.getElementById('pass-rules');
+    
+    function checkRule(li, ok) {
+        li.classList.toggle('rule-ok',   ok);
+        li.classList.toggle('rule-fail', !ok);
+    }
+    
+    function validarPassword() {
+        const v          = passInput.value;
+        const lenOk      = v.length >= 8;
+        const upperOk    = /[A-Z]/.test(v);
+        const specialOk  = /[!@#$%^&*]/.test(v);
+        checkRule(ruleLen,     lenOk);
+        checkRule(ruleUpper,   upperOk);
+        checkRule(ruleSpecial, specialOk);
+        if (v.length === 0)                     { clearMark(passInput); return false; }
+        if (!lenOk || !upperOk || !specialOk)   { markError(passInput, 'La contraseña no cumple los requisitos'); return false; }
+        markValid(passInput);
+        return true;
+    }
+    
+    passInput.addEventListener('focus', () => rulesBox.classList.add('visible'));
+    passInput.addEventListener('input', function () {
+        validarPassword();
+        checkMatch();   /* actualizar coincidencia en tiempo real */
+    });
+    
+    /* ── COINCIDENCIA DE CONTRASEÑAS ── */
+    const confirmInput = document.getElementById('confirmarContrasena');
+    const matchHint    = document.getElementById('match-hint');
+    
+    function checkMatch() {
+        const pass    = passInput.value;
+        const confirm = confirmInput.value;
+        if (confirm.length === 0) {
+            matchHint.textContent = '';
+            matchHint.className   = 'match-hint';
+            clearMark(confirmInput);
+            return false;
+        }
+        if (pass === confirm) {
+            matchHint.textContent = '✓ Las contraseñas coinciden';
+            matchHint.className   = 'match-hint match-ok';
+            markValid(confirmInput);
+            return true;
+        } else {
+            matchHint.textContent = '✗ No coinciden';
+            matchHint.className   = 'match-hint match-err';
+            markError(confirmInput, 'Las contraseñas no coinciden');
+            return false;
         }
     }
-
-    else if (tipo === "ti") {
-        if (!/^[0-9]*$/.test(valor)) {
-            error.textContent = "Solo números";
-        } else if (valor.length !== 10) {
-            error.textContent = "Debe tener 10 dígitos";
+    
+    confirmInput.addEventListener('input', checkMatch);
+    
+    /* ── VALIDACIÓN COMPLETA AL ENVIAR
+    CORRECCIÓN: verifica TODOS los campos, no solo contraseña y nombre ── */
+    document.getElementById('registro-form').addEventListener('submit', function (e) {
+        /* Ejecutar cada validación y recopilar resultado */
+        const resultados = [
+        validarSelect('tipo_doc',    'Selecciona el tipo de documento'),
+        validarNumeroDoc(),
+        validarNombre(),
+        validarApellido(),
+        validarSelect('genero',      'Selecciona un género'),
+        validarFecha(),
+        validarSelect('tipo_sangre', 'Selecciona el tipo de sangre'),
+        validarTelefono(),
+        validarCorreo(),
+        validarDireccion(),
+        validarPassword(),
+        checkMatch(),
+        ];
+        
+        const todoValido = resultados.every(Boolean);
+        
+        if (!todoValido) {
+            e.preventDefault();
+            /* Hacer scroll al primer campo con error */
+            const primerError = document.querySelector('.field-error');
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                primerError.focus();
+            }
         }
-    }
-
-    else if (tipo === "ce") {
-        if (!/^[0-9]*$/.test(valor)) {
-            error.textContent = "Solo números";
-        } else if (valor.length < 6) {
-            error.textContent = "Mínimo 6 dígitos";
-        }
-    }
-
-    else if (tipo === "pasaporte") {
-        if (!/^[a-zA-Z0-9]*$/.test(valor)) {
-            error.textContent = "Solo letras y números";
-        }
-    }
-});
+    });
 </script>
-<!--VALIDACION DE DOCUMENTO SCRIP-->
-
-
-                    <!-- Nombre -->
-                    <div class="field">
-                        <label for="nombre">Nombre</label>
-                        <input
-                            type="text"
-                            id="nombre"
-                            name="nombre"
-                            value="{{ form.nombre.value|default_if_none:'' }}"
-                            placeholder="Juan Carlos"
-                            maxlength="50"
-                            required>
-                    </div>
-
-                    <!-- Apellido -->
-                    <div class="field">
-                        <label for="apellido">Apellido</label>
-                        <input
-                            type="text"
-                            id="apellido"
-                            name="apellido"
-                            value="{{ form.apellido.value|default_if_none:'' }}"
-                            placeholder="Pérez González"
-                            maxlength="50"
-                            required>
-                    </div>
-
-                    <!-- Género -->
-                    <div class="field">
-                        <label for="genero">Género</label>
-                        <select id="genero" name="genero" required>
-                            <option value="">Seleccione…</option>
-                            <option value="M">Masculino</option>
-                            <option value="F">Femenino</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-
-                    <!-- Fecha de nacimiento -->
-                    <div class="field">
-                        <label for="fechaNacimiento">Fecha de nacimiento</label>
-                        <input
-                            type="date"
-                            id="fechaNacimiento"
-                            name="fecha_nacimiento"
-                            value="{{ form.fecha_nacimiento.value|date:'Y-m-d'|default_if_none:'' }}"
-                            required>
-                    </div>
-
-                    <!-- Tipo de sangre -->
-                    <div class="field">
-                        <label for="tipo_sangre">Tipo de sangre</label>
-                        <select id="tipo_sangre" name="tipo_sangre" required>
-                            <option value="">Seleccione…</option>
-                            <option value="A+">A+</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B-">B-</option>
-                            <option value="AB+">AB+</option>
-                            <option value="AB-">AB-</option>
-                            <option value="O+">O+</option>
-                            <option value="O-">O-</option>
-                        </select>
-                    </div>
-
-                    <!-- Teléfono -->
-                    <div class="field">
-                        <label for="telefono">Teléfono</label>
-                        <input
-                            type="tel"
-                            id="telefono"
-                            name="telefono"
-                            value="{{ form.telefono.value|default_if_none:'' }}"
-                            placeholder="Ej: 3124567890"
-                            inputmode="numeric"
-                            required>
-                    </div>
-
-                    <!-- Correo electrónico -->
-                    <div class="field full">
-                        <label for="correo">Correo electrónico</label>
-                        <input
-                            type="email"
-                            id="correo"
-                            name="correo"
-                            value="{{ form.correo.value|default_if_none:'' }}"
-                            placeholder="correo@ejemplo.com"
-                            maxlength="100"
-                            required>
-                    </div>
-
-                    <!-- Dirección -->
-                    <div class="field full">
-                        <label for="direccion">Dirección</label>
-                        <input
-                            type="text"
-                            id="direccion"
-                            name="direccion"
-                            value="{{ form.direccion.value|default_if_none:'' }}"
-                            placeholder="Calle 123 #45-67"
-                            maxlength="100"
-                            required>
-                    </div>
-
-                    <!-- Contraseña -->
-                    <div class="field full">
-                        <label for="contrasena">Contraseña</label>
-                        <div class="input-eye-wrap">
-                            <input
-                                type="password"
-                                id="contrasena"
-                                name="contrasena"
-                                placeholder="Mínimo 8 caracteres"
-                                minlength="8"
-                                autocomplete="new-password"
-                                required>
-                            <button type="button" class="eye-btn" data-target="contrasena" aria-label="Mostrar contraseña" tabindex="-1">
-                                <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                            </button>
-                        </div>
-                        <!-- Indicadores de requisitos -->
-                        <ul class="pass-rules" id="pass-rules">
-                            <li class="rule" id="rule-len">   <span class="rule-dot"></span> Mínimo 8 caracteres</li>
-                            <li class="rule" id="rule-upper"> <span class="rule-dot"></span> Al menos 1 mayúscula</li>
-                            <li class="rule" id="rule-special"><span class="rule-dot"></span> Al menos 1 carácter especial (!@#$%^&*)</li>
-                        </ul>
-                    </div>
-
-                    <!-- Confirmar contraseña -->
-                    <div class="field full">
-                        <label for="confirmarContrasena">Confirmar contraseña</label>
-                        <div class="input-eye-wrap">
-                            <input
-                                type="password"
-                                id="confirmarContrasena"
-                                name="confirmar_contrasena"
-                                placeholder="Repite tu contraseña"
-                                minlength="8"
-                                autocomplete="new-password"
-                                required>
-                            <button type="button" class="eye-btn" data-target="confirmarContrasena" aria-label="Mostrar contraseña" tabindex="-1">
-                                <svg class="eye-icon eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                <svg class="eye-icon eye-closed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                            </button>
-                        </div>
-                        <span class="match-hint" id="match-hint"></span>
-                    </div>
-
-                </div><!-- /.fields -->
-
-            </form><!-- /#registro-form -->
-
-        </main>
-
-        <!-- ── PIE ── -->
-        <footer class="card-footer">
-            <button type="submit" form="registro-form" class="btn btn-submit">
-                Registrarse ›
-            </button>
-        </footer>
-
-        <!-- Enlace a login -->
-        <p class="login-link">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
-        </p>
-
-    </div><!-- /.card -->
-
-
-    <!-- ── SCRIPTS DE VALIDACIÓN ── -->
-    <script>
-        /* ── FECHA DE NACIMIENTO ── */
-        (function () {
-            const f   = document.getElementById('fechaNacimiento');
-            const hoy = new Date();
-            const max = new Date(hoy); max.setMonth(max.getMonth() - 1);
-            const min = new Date(hoy); min.setFullYear(min.getFullYear() - 90);
-            f.max = max.toISOString().split('T')[0];
-            f.min = min.toISOString().split('T')[0];
-        })();
-
-        /* ── HELPERS ── */
-        function markValid(el) {
-            el.classList.remove('field-error');
-            el.classList.add('field-ok');
-        }
-        function markError(el) {
-            el.classList.remove('field-ok');
-            el.classList.add('field-error');
-        }
-        function clearMark(el) {
-            el.classList.remove('field-ok', 'field-error');
-        }
-
-        /* ── NÚMERO DE DOCUMENTO ── */
-document.getElementById('numero_doc').addEventListener('input', function () {
-    const v = this.value.replace(/\D/g, '').slice(0, 10);
-    this.value = v;
-
-    if (v.length === 0) {
-        clearMark(this);
-        this.setCustomValidity('');
-        return;
-    }
-
-    if (v.length < 6) {
-        this.setCustomValidity('Mínimo 6 dígitos');
-        markError(this);
-    } else {
-        this.setCustomValidity('');
-        markValid(this);
-    }
-});
-
-        /* ── NOMBRE ── */
-        document.getElementById('nombre').addEventListener('input', function () {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            const s = this.value.replace(/\s/g, '');
-            if (s.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
-            if (s.length < 3) { this.setCustomValidity('Mínimo 3 caracteres'); markError(this); }
-            else              { this.setCustomValidity(''); markValid(this); }
-        });
-
-        /* ── APELLIDO ── */
-        document.getElementById('apellido').addEventListener('input', function () {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-            const s = this.value.replace(/\s/g, '');
-            if (s.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
-            if (s.length < 3) { this.setCustomValidity('Mínimo 3 caracteres'); markError(this); }
-            else              { this.setCustomValidity(''); markValid(this); }
-        });
-
-        /* ── TELÉFONO ── */
-        document.getElementById('telefono').addEventListener('input', function () {
-            const v = this.value.replace(/\D/g, '').slice(0, 10);
-            this.value = v;
-            if (v.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
-            if (v[0] !== '3') { this.setCustomValidity('Debe empezar con 3'); markError(this); }
-            else if (v.length < 10) { this.setCustomValidity('Exactamente 10 dígitos'); markError(this); }
-            else { this.setCustomValidity(''); markValid(this); }
-        });
-
-        /* ── CORREO ── */
-        document.getElementById('correo').addEventListener('input', function () {
-            const at    = this.value.indexOf('@');
-            const local = at > 0 ? this.value.slice(0, at) : '';
-            if (this.value.length === 0) { clearMark(this); this.setCustomValidity(''); return; }
-            if (at <= 0 || local.length < 5) {
-                this.setCustomValidity('Mínimo 5 caracteres antes del @'); markError(this);
-            } else {
-                this.setCustomValidity(''); markValid(this);
-            }
-        });
-
-        /* ── OJO (mostrar/ocultar contraseña) ── */
-        document.querySelectorAll('.eye-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const input  = document.getElementById(this.dataset.target);
-                const isPass = input.type === 'password';
-                input.type   = isPass ? 'text' : 'password';
-                this.querySelector('.eye-open').style.display  = isPass ? 'none'  : '';
-                this.querySelector('.eye-closed').style.display = isPass ? ''     : 'none';
-                this.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
-            });
-        });
-
-        /* ── REQUISITOS DE CONTRASEÑA ── */
-        const passInput = document.getElementById('contrasena');
-        const ruleLen     = document.getElementById('rule-len');
-        const ruleUpper   = document.getElementById('rule-upper');
-        const ruleSpecial = document.getElementById('rule-special');
-        const rulesBox    = document.getElementById('pass-rules');
-
-        function checkRule(li, ok) {
-            li.classList.toggle('rule-ok', ok);
-            li.classList.toggle('rule-fail', !ok);
-        }
-
-        passInput.addEventListener('focus', () => rulesBox.classList.add('visible'));
-
-        passInput.addEventListener('input', function () {
-            const v = this.value;
-            const lenOk     = v.length >= 8;
-            const upperOk   = /[A-Z]/.test(v);
-            const specialOk = /[!@#$%^&*]/.test(v);
-
-            checkRule(ruleLen, lenOk);
-            checkRule(ruleUpper, upperOk);
-            checkRule(ruleSpecial, specialOk);
-
-            if (lenOk && upperOk && specialOk) {
-                this.setCustomValidity(''); markValid(this);
-            } else if (v.length > 0) {
-                this.setCustomValidity('La contraseña no cumple los requisitos'); markError(this);
-            } else {
-                this.setCustomValidity(''); clearMark(this);
-            }
-
-            // actualizar coincidencia en tiempo real
-            checkMatch();
-        });
-
-        /* ── COINCIDENCIA DE CONTRASEÑAS ── */
-        const confirmInput = document.getElementById('confirmarContrasena');
-        const matchHint    = document.getElementById('match-hint');
-
-        function checkMatch() {
-            const pass    = passInput.value;
-            const confirm = confirmInput.value;
-            if (confirm.length === 0) {
-                matchHint.textContent = '';
-                matchHint.className   = 'match-hint';
-                clearMark(confirmInput);
-                confirmInput.setCustomValidity('');
-                return;
-            }
-            if (pass === confirm) {
-                matchHint.textContent = '✓ Las contraseñas coinciden';
-                matchHint.className   = 'match-hint match-ok';
-                confirmInput.setCustomValidity(''); markValid(confirmInput);
-            } else {
-                matchHint.textContent = '✗ No coinciden';
-                matchHint.className   = 'match-hint match-err';
-                confirmInput.setCustomValidity('No coinciden'); markError(confirmInput);
-            }
-        }
-
-        confirmInput.addEventListener('input', checkMatch);
-
-        /* ── VALIDACIÓN AL ENVIAR ── */
-        document.getElementById('registro-form').addEventListener('submit', function (e) {
-            const pass    = passInput.value;
-            const confirm = confirmInput.value;
-
-            if (pass !== confirm) {
-                e.preventDefault();
-                confirmInput.focus();
-                checkMatch();
-                return;
-            }
-
-            const nombre   = document.getElementById('nombre').value.replace(/\s/g, '');
-            const apellido = document.getElementById('apellido').value.replace(/\s/g, '');
-            if (nombre.length < 3 || apellido.length < 3) {
-                e.preventDefault();
-                return;
-            }
-        });
-    </script>
-
-
-
 
 </body>
 </html>

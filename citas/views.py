@@ -143,41 +143,254 @@ def login(request):
 
 
 def registro(request):
-    if request.method == 'POST':
+    """
+    Vista de registro de pacientes.
+
+    Validaciones backend (nunca confiar solo en el frontend):
+    - Todos los campos obligatorios presentes y no vacíos
+    - Tipo de documento en valores permitidos
+    - Número de documento: solo dígitos (excepto PP), longitud según tipo
+    - Nombre y apellido: solo letras, mín. 2 caracteres
+    - Género en valores permitidos
+    - Fecha de nacimiento: rango válido (1 mes – 90 años)
+    - Tipo de sangre en valores permitidos
+    - Teléfono: 10 dígitos, empieza en 3
+    - Correo: formato válido, máx. 100 caracteres
+    - Dirección: mín. 5 caracteres
+    - Contraseña: mín. 8 chars, mayúscula, minúscula, número, especial
+    - Contraseña y confirmación coinciden
+    - Documento no duplicado (verificación previa al INSERT)
+    - Correo no duplicado (verificación previa al INSERT)
+    - IntegrityError capturado por si hay race condition
+    """
+    if request.method != 'POST':
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    import re
+    from datetime import date
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    from django.db import IntegrityError
+
+    # ── 1. Extraer y limpiar todos los campos ─────────────────────────────
+    def limpiar(valor):
+        """Elimina espacios extremos y caracteres de control."""
+        if valor is None:
+            return ''
+        return re.sub(r'[\x00-\x1F\x7F-\x9F\u200B-\u200D\uFEFF]', '', valor).strip()
+
+    tipo_doc         = limpiar(request.POST.get('tipo_doc', ''))
+    numero_doc       = limpiar(request.POST.get('numero_doc', ''))
+    nombre           = limpiar(request.POST.get('nombre', ''))
+    apellido         = limpiar(request.POST.get('apellido', ''))
+    genero           = limpiar(request.POST.get('genero', ''))
+    fecha_nacimiento = limpiar(request.POST.get('fecha_nacimiento', ''))
+    tipo_sangre      = limpiar(request.POST.get('tipo_sangre', ''))
+    telefono         = limpiar(request.POST.get('telefono', ''))
+    correo           = limpiar(request.POST.get('correo', '')).lower()
+    direccion        = limpiar(request.POST.get('direccion', ''))
+    contrasena       = request.POST.get('contrasena', '')        # no strip: puede tener espacios intencionales
+    confirmar        = request.POST.get('confirmar_contrasena', '')
+
+    errores = []
+
+    # ── 2. Campos obligatorios presentes ──────────────────────────────────
+    campos_requeridos = {
+        'tipo_doc':         ('Tipo de documento', tipo_doc),
+        'numero_doc':       ('Número de documento', numero_doc),
+        'nombre':           ('Nombre', nombre),
+        'apellido':         ('Apellido', apellido),
+        'genero':           ('Género', genero),
+        'fecha_nacimiento': ('Fecha de nacimiento', fecha_nacimiento),
+        'tipo_sangre':      ('Tipo de sangre', tipo_sangre),
+        'telefono':         ('Teléfono', telefono),
+        'correo':           ('Correo electrónico', correo),
+        'direccion':        ('Dirección', direccion),
+        'contrasena':       ('Contraseña', contrasena),
+        'confirmar_contrasena': ('Confirmar contraseña', confirmar),
+    }
+    for campo, (etiqueta, valor) in campos_requeridos.items():
+        if not valor:
+            errores.append(f'{etiqueta}: este campo es obligatorio.')
+
+    # Si faltan campos, no seguir validando (evitar errores encadenados)
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    # ── 3. Tipo de documento ──────────────────────────────────────────────
+    TIPOS_DOC_VALIDOS = {'CC', 'TI', 'CE', 'PP'}
+    if tipo_doc not in TIPOS_DOC_VALIDOS:
+        errores.append('Tipo de documento: valor no permitido.')
+
+    # ── 4. Número de documento según tipo ─────────────────────────────────
+    else:
+        if tipo_doc in ('CC', 'TI', 'CE'):
+            if not numero_doc.isdigit():
+                errores.append('Número de documento: solo se permiten dígitos numéricos.')
+            elif tipo_doc == 'TI' and len(numero_doc) != 10:
+                errores.append('Número de documento: la Tarjeta de Identidad debe tener exactamente 10 dígitos.')
+            elif tipo_doc == 'CC' and not (6 <= len(numero_doc) <= 10):
+                errores.append('Número de documento: la Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.')
+            elif tipo_doc == 'CE' and not (6 <= len(numero_doc) <= 12):
+                errores.append('Número de documento: la Cédula de Extranjería debe tener entre 6 y 12 dígitos.')
+        elif tipo_doc == 'PP':
+            if not re.match(r'^[a-zA-Z0-9]+$', numero_doc):
+                errores.append('Número de documento: el pasaporte solo puede contener letras y números.')
+            elif not (5 <= len(numero_doc) <= 15):
+                errores.append('Número de documento: el pasaporte debe tener entre 5 y 15 caracteres.')
+
+    # ── 5. Nombre y apellido ──────────────────────────────────────────────
+    patron_nombre = r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+(\s[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+)*$'
+    if not re.match(patron_nombre, nombre):
+        errores.append('Nombre: solo se permiten letras y espacios simples entre palabras.')
+    elif len(nombre.replace(' ', '')) < 2:
+        errores.append('Nombre: debe tener al menos 2 letras.')
+
+    if not re.match(patron_nombre, apellido):
+        errores.append('Apellido: solo se permiten letras y espacios simples entre palabras.')
+    elif len(apellido.replace(' ', '')) < 2:
+        errores.append('Apellido: debe tener al menos 2 letras.')
+
+    # ── 6. Género ─────────────────────────────────────────────────────────
+    GENEROS_VALIDOS = {'M', 'F', 'OTRO'}
+    if genero not in GENEROS_VALIDOS:
+        errores.append('Género: valor no permitido.')
+
+    # ── 7. Fecha de nacimiento ────────────────────────────────────────────
+    from datetime import datetime
+    try:
+        fecha_obj = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
+        hoy       = date.today()
+
+        # Al menos 1 mes de vida
+        from dateutil.relativedelta import relativedelta
+        if fecha_obj > hoy - relativedelta(months=1):
+            errores.append('Fecha de nacimiento: debes tener al menos 1 mes de nacido.')
+        # Máximo 90 años
+        elif fecha_obj < hoy - relativedelta(years=90):
+            errores.append('Fecha de nacimiento: la fecha excede el rango máximo de 90 años.')
+    except ValueError:
+        errores.append('Fecha de nacimiento: formato de fecha inválido.')
+
+    # ── 8. Tipo de sangre ─────────────────────────────────────────────────
+    TIPOS_SANGRE_VALIDOS = {'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'}
+    if tipo_sangre not in TIPOS_SANGRE_VALIDOS:
+        errores.append('Tipo de sangre: valor no permitido.')
+
+    # ── 9. Teléfono ───────────────────────────────────────────────────────
+    if not telefono.isdigit():
+        errores.append('Teléfono: solo se permiten dígitos numéricos.')
+    elif len(telefono) != 10:
+        errores.append('Teléfono: debe tener exactamente 10 dígitos.')
+    elif telefono[0] != '3':
+        errores.append('Teléfono: un celular colombiano debe comenzar con 3.')
+
+    # ── 10. Correo electrónico ────────────────────────────────────────────
+    if len(correo) > 100:
+        errores.append('Correo: no puede superar los 100 caracteres.')
+    else:
         try:
-            tipo_doc         = request.POST.get('tipo_doc')
-            numero_doc       = request.POST.get('numero_doc')
-            nombre           = request.POST.get('nombre')
-            apellido         = request.POST.get('apellido')
-            genero           = request.POST.get('genero')
-            fecha_nacimiento = request.POST.get('fecha_nacimiento')
-            tipo_sangre      = request.POST.get('tipo_sangre')
-            telefono         = request.POST.get('telefono')
-            correo           = request.POST.get('correo')
-            direccion        = request.POST.get('direccion')
-            contrasena       = request.POST.get('contrasena')
+            validate_email(correo)
+            # local parte mínimo 5 caracteres
+            local = correo.split('@')[0]
+            if len(local) < 5:
+                errores.append('Correo: debe tener al menos 5 caracteres antes del @.')
+        except ValidationError:
+            errores.append('Correo: formato inválido (ej: usuario@dominio.com).')
 
-            if Paciente.objects.filter(numero_doc=numero_doc).exists():
-                messages.error(request, 'Ya existe un usuario con ese documento.')
-                return redirect('registro')
+    # ── 11. Dirección ─────────────────────────────────────────────────────
+    if len(direccion) < 5:
+        errores.append('Dirección: debe tener al menos 5 caracteres.')
+    if re.search(r'<[^>]*>|javascript:', direccion, re.IGNORECASE):
+        errores.append('Dirección: contiene caracteres no permitidos.')
 
-            Paciente.objects.create(
-                tipo_doc=tipo_doc, numero_doc=numero_doc, nombre=nombre,
-                apellido=apellido, genero=genero, fecha_nacimiento=fecha_nacimiento,
-                tipo_sangre=tipo_sangre, telefono=telefono, correo=correo,
-                direccion=direccion,
-                contrasena=make_password(contrasena),  # ✅ hashea la contraseña
-                estado=True
-            )
-            messages.success(request, 'Registro exitoso. Ahora puedes iniciar sesión.')
-            return redirect('login')
+    # ── 12. Contraseña ────────────────────────────────────────────────────
+    pw_errores = []
+    if len(contrasena) < 8:
+        pw_errores.append('mínimo 8 caracteres')
+    if len(contrasena) > 128:
+        pw_errores.append('máximo 128 caracteres')
+    if not re.search(r'[A-Z]', contrasena):
+        pw_errores.append('al menos 1 mayúscula')
+    if not re.search(r'[a-z]', contrasena):
+        pw_errores.append('al menos 1 minúscula')
+    if not re.search(r'[0-9]', contrasena):
+        pw_errores.append('al menos 1 número')
+    if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>/?`~\\|]', contrasena):
+        pw_errores.append('al menos 1 carácter especial')
+    if pw_errores:
+        errores.append(f'Contraseña: {", ".join(pw_errores)}.')
 
-        except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
-            return redirect('registro')
+    # ── 13. Confirmación de contraseña ────────────────────────────────────
+    # Comparación segura (no short-circuit) contra timing attacks
+    if contrasena and confirmar:
+        if len(contrasena) != len(confirmar):
+            errores.append('Las contraseñas no coinciden.')
+        else:
+            diff = 0
+            for a, b in zip(contrasena, confirmar):
+                diff |= ord(a) ^ ord(b)
+            if diff != 0:
+                errores.append('Las contraseñas no coinciden.')
 
-    return render(request, 'Inicio_Sesion-Registro/registrar.html')
+    # ── 14. Si hay errores de validación, devolver sin tocar la BD ────────
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
 
+    # ── 15. Verificar duplicados ANTES del INSERT ─────────────────────────
+    #   (evita exponer el error crudo de MySQL 1062)
+    if Paciente.objects.filter(numero_doc=numero_doc).exists():
+        messages.error(request, 'Ese número de documento ya tiene una cuenta registrada. Si eres tú, inicia sesión.')
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    if Paciente.objects.filter(correo__iexact=correo).exists():
+        messages.error(request, 'Ese correo electrónico ya está registrado. Usa otro correo o inicia sesión.')
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    if Paciente.objects.filter(telefono=telefono).exists():
+        messages.error(request, 'Ese número de teléfono ya está registrado. Usa otro número o inicia sesión.')
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    # ── 16. Crear el paciente ─────────────────────────────────────────────
+    try:
+        Paciente.objects.create(
+            tipo_doc         = tipo_doc,
+            numero_doc       = numero_doc,
+            nombre           = nombre.title(),
+            apellido         = apellido.title(),
+            genero           = genero,
+            fecha_nacimiento = fecha_nacimiento,
+            tipo_sangre      = tipo_sangre,
+            telefono         = telefono,
+            correo           = correo,
+            direccion        = direccion,
+            contrasena       = make_password(contrasena),
+            estado           = True,
+        )
+        messages.success(request, '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.')
+        return redirect('login')
+
+    except IntegrityError as e:
+        # Race condition: dos usuarios enviaron el mismo doc/correo al mismo tiempo
+        err_str = str(e).lower()
+        if 'correo' in err_str:
+            messages.error(request, 'Ese correo electrónico ya está registrado. Usa otro correo o inicia sesión.')
+        elif 'numero_doc' in err_str:
+            messages.error(request, 'Ese número de documento ya tiene una cuenta registrada. Si eres tú, inicia sesión.')
+        elif 'telefono' in err_str:
+            messages.error(request, 'Ese número de teléfono ya está registrado. Usa otro número o inicia sesión.')
+        else:
+            messages.error(request, 'No se pudo completar el registro. Verifica tus datos e intenta de nuevo.')
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
+
+    except Exception:
+        # Nunca exponer el traceback al usuario
+        messages.error(request, 'Ocurrió un error inesperado. Por favor intenta de nuevo en unos momentos.')
+        return render(request, 'Inicio_Sesion-Registro/registrar.html')
 
 # =========================================================================
 # DASHBOARDS
