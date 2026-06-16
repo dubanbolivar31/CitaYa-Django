@@ -1,8 +1,6 @@
--- =====================================================================
+-- ==========================
 -- CITAYA - DATOS DE PRUEBA
--- Contrasena plana: Admincitaya0*
--- Despues de insertar, encriptar con el shell de Django
--- =====================================================================
+-- ==========================
 
 -- 1. ADMINISTRADORES
 INSERT INTO citas_administrador (tipo_doc, numero_doc, nombre, apellido, genero, telefono, correo, contrasena, estado) VALUES
