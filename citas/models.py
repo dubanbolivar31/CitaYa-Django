@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
@@ -21,8 +22,13 @@ class Administrador(models.Model):
     def check_contrasena(self, raw_password):
         if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
             return check_password(raw_password, self.contrasena)
-        return self.contrasena == raw_password
+        
+        raw_password_sha256 = hashlib.sha256(raw_password.encode('utf-8')).hexdigest()
+        if self.contrasena == raw_password_sha256:
+            return True
 
+        return self.contrasena == raw_password
+    
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
@@ -46,6 +52,11 @@ class Medico(models.Model):
     def check_contrasena(self, raw_password):
         if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
             return check_password(raw_password, self.contrasena)
+        
+        raw_password_sha256 = hashlib.sha256(raw_password.encode('utf-8')).hexdigest()
+        if self.contrasena == raw_password_sha256:
+            return True
+
         return self.contrasena == raw_password
 
     def __str__(self):
@@ -73,6 +84,11 @@ class Paciente(models.Model):
     def check_contrasena(self, raw_password):
         if self.contrasena and self.contrasena.startswith(('pbkdf2_', 'bcrypt', 'argon2')):
             return check_password(raw_password, self.contrasena)
+        
+        raw_password_sha256 = hashlib.sha256(raw_password.encode('utf-8')).hexdigest()
+        if self.contrasena == raw_password_sha256:
+            return True
+
         return self.contrasena == raw_password
 
     def __str__(self):
@@ -81,24 +97,24 @@ class Paciente(models.Model):
 
 class Agendamiento(models.Model):
     id_agendamiento = models.AutoField(primary_key=True)
-    cita = models.CharField(max_length=100)
-    fecha = models.DateField()
-    hora = models.TimeField()
+    cita            = models.CharField(max_length=100)
+    fecha           = models.DateField()
+    hora            = models.TimeField()
     
-    id_paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
-    id_medico = models.ForeignKey(Medico, on_delete=models.CASCADE)
+    id_paciente     = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    id_medico       = models.ForeignKey(Medico, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.cita} - {self.fecha}"
     
 
 class Historial_Clinico(models.Model):
-    id_historial = models.AutoField(primary_key=True)
+    id_historial   = models.AutoField(primary_key=True)
     fecha_creacion = models.DateField(auto_now_add=True)
-    antecedentes = models.TextField()
+    antecedentes   = models.TextField()
 
-    id_paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
-    id_medico = models.ForeignKey(Medico, on_delete=models.CASCADE)
+    id_paciente    = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    id_medico      = models.ForeignKey(Medico, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"Historial de {self.id_paciente.nombre} - {self.fecha_creacion}"
@@ -123,5 +139,6 @@ class PasswordResetToken(models.Model):
 
     def esta_vigente(self):
         return not self.usado and (timezone.now() - self.creado_en).total_seconds() < 3600
+
     def __str__(self):
         return f"{self.rol} | {self.correo} | {'✓' if self.usado else '⏳'}"
