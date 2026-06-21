@@ -1,7 +1,58 @@
+"""
+Suite de pruebas de CitaYa.
+
+Organización del archivo
+-------------------------
+PARTE A — PRUEBAS UNITARIAS
+    Prueban una sola unidad de código de forma aislada (un modelo, un
+    método, una validación) sin pasar por el ciclo HTTP completo.
+    No usan el test Client ni dependen de vistas, sesiones o URLs.
+
+PARTE B — PRUEBAS DE INTEGRACIÓN
+    Prueban que varias piezas trabajen juntas: vista + URL + sesión +
+    base de datos + middlewares, todo a través del test Client de
+    Django, simulando una petición HTTP real de principio a fin.
+
+Nota sobre dependencias externas
+---------------------------------
+- Resend (correo): se mockea en TestAgendarCitaJSON con unittest.mock,
+  porque la cuenta está en modo sandbox y solo puede enviar a un correo
+  propio verificado. Sin el mock, cada test que agenda una cita
+  imprimía "Error al enviar el correo: ..." en consola — no rompía el
+  test, pero era ruido visual. Con el mock, ni siquiera se intenta la
+  llamada real a la API de Resend, así que no hay nada que falle ni
+  que imprimir.
+- Twilio (llamada de voz): a propósito NO se mockea (ver docstring de
+  TestAgendarCitaJSON). Es intencional: se quiere que la prueba
+  dispare una llamada real de verificación.
+"""
+
+import sys
+
+# ------------------------------------------------------------------
+# Shim de compatibilidad Python 3.14 + Django (ticket oficial #35844).
+# En Python 3.14 los objetos `super()` se volvieron copiables, lo cual
+# rompe el truco interno de Django en BaseContext.__copy__() que usa
+# el test Client para capturar el context cada vez que se renderiza
+# un template. Ya está arreglado en Django >= 5.2.8, pero mientras no
+# actualices, este shim evita el crash sin afectar tus tests (ninguno
+# de ellos usa response.context, solo nos interesa que el template
+# se haya usado).
+# ------------------------------------------------------------------
+if sys.version_info >= (3, 14):
+    import django.test.client as _django_test_client
+
+    def _store_rendered_templates_safe(store, signal, sender, template, context, **kwargs):
+        store.setdefault('templates', []).append(template)
+        store.setdefault('context', [])
+
+    _django_test_client.store_rendered_templates = _store_rendered_templates_safe
+
 
 import json
 import uuid
 from datetime import date, time, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth.hashers import make_password
 from django.test import Client, TestCase
@@ -18,8 +69,12 @@ CLAVE = "Admincitaya0*"
 
 
 # =========================================================================
-# 1. MODELOS
+# PARTE A — PRUEBAS UNITARIAS
 # =========================================================================
+
+# -------------------------------------------------------------------------
+# A.1 MODELOS
+# -------------------------------------------------------------------------
 
 class TestAdministrador(TestCase):
 
@@ -283,8 +338,13 @@ class TestPasswordResetToken(TestCase):
 
 
 # =========================================================================
-# 2. SESIÓN Y AUTENTICACIÓN
+# PARTE B — PRUEBAS DE INTEGRACIÓN
+# (vista + URL + sesión + base de datos, vía test Client)
 # =========================================================================
+
+# -------------------------------------------------------------------------
+# B.1 SESIÓN Y AUTENTICACIÓN
+# -------------------------------------------------------------------------
 
 class TestSesion(TestCase):
 
@@ -351,9 +411,9 @@ class TestSesion(TestCase):
         self.assertFalse(self.admin.check_contrasena("claveincorrecta"))
 
 
-# =========================================================================
-# 3. PROTECCIÓN — APIs JSON devuelven 403 sin sesión válida
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.2 PROTECCIÓN — APIs JSON devuelven 403 sin sesión válida
+# -------------------------------------------------------------------------
 
 class TestProteccion403(TestCase):
 
@@ -425,9 +485,9 @@ class TestProteccion403(TestCase):
         )
 
 
-# =========================================================================
-# 4. REGISTRO DE PACIENTE
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.3 REGISTRO DE PACIENTE
+# -------------------------------------------------------------------------
 
 class TestRegistroPaciente(TestCase):
 
@@ -448,6 +508,7 @@ class TestRegistroPaciente(TestCase):
             correo="juan.martinez@gmail.com",
             direccion="Cl 50 15-40 Medellin",
             contrasena=CLAVE,
+            confirmar_contrasena=CLAVE,
         )
         datos.update(override)
         return datos
@@ -480,9 +541,9 @@ class TestRegistroPaciente(TestCase):
         self.assertEqual(Paciente.objects.filter(numero_doc="3000000002").count(), 1)
 
 
-# =========================================================================
-# 5. APIs JSON — CITAS DEL PACIENTE
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.4 APIs JSON — CITAS DEL PACIENTE
+# -------------------------------------------------------------------------
 
 class TestCitasJSON(TestCase):
 
@@ -548,9 +609,9 @@ class TestCitasJSON(TestCase):
         self.assertIn("Sofia", data["medico_nombre"])
 
 
-# =========================================================================
-# 6. APIs JSON — AGENDAR CITA (llamada Twilio real al número del .env)
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.5 APIs JSON — AGENDAR CITA (llamada Twilio real al número del .env)
+# -------------------------------------------------------------------------
 
 class TestAgendarCitaJSON(TestCase):
     """
@@ -558,10 +619,24 @@ class TestAgendarCitaJSON(TestCase):
     de verdad usando las credenciales del .env y llama al TWILIO_TO_NUMBER
     configurado (tu número personal). Se programa 30 segundos después
     de agendar la cita.
+
+    El envío de correo SÍ se mockea (ver setUp) porque la cuenta de
+    Resend está en modo sandbox y solo puede enviar a un correo propio
+    verificado: sin el mock, cada test que agenda una cita imprimía
+    "Error al enviar el correo: ..." en consola. Esto no fallaba el
+    test, pero era ruido. Al mockear, ni siquiera se intenta la llamada
+    real a Resend, así que no hay nada que falle ni que imprimir.
     """
 
     def setUp(self):
         self.client = Client()
+
+        # Mockeamos el envío de correo de confirmación de cita para no
+        # depender de Resend durante los tests (modo sandbox).
+        patcher = patch('citas.views.enviar_confirmacion_cita')
+        self.mock_enviar_correo = patcher.start()
+        self.addCleanup(patcher.stop)
+
         # Médico: Roberto Jimenez — Cardiologia (id_medico=4 en producción)
         self.medico = Medico.objects.create(
             tipo_doc="CC", numero_doc="2000000004", nombre="Roberto",
@@ -593,11 +668,10 @@ class TestAgendarCitaJSON(TestCase):
         })
 
     def test_agendar_cita_exitosa_y_activa_llamada_twilio(self):
-        """
-        Agenda la cita y programa la llamada real de Twilio al número
-        configurado en TWILIO_TO_NUMBER del archivo .env.
-        Deberías recibir la llamada ~30 segundos después de correr este test.
-        """
+        from citas.views import scheduler
+        import time
+        import datetime
+
         r = self.client.post(
             reverse("agendar_cita_paciente"),
             data=self._body(),
@@ -605,6 +679,15 @@ class TestAgendarCitaJSON(TestCase):
         )
         self.assertTrue(r.json().get("ok"))
         self.assertEqual(Agendamiento.objects.count(), 1)
+        self.mock_enviar_correo.assert_called_once()
+
+        cita = Agendamiento.objects.first()
+        job_id = f'llamada_{cita.id_agendamiento}'
+
+        scheduler.reschedule_job(job_id, trigger='date', run_date=datetime.datetime.now())
+        scheduler.wakeup()
+
+        time.sleep(2)
 
     def test_fecha_pasada_retorna_400(self):
         r = self.client.post(
@@ -635,9 +718,9 @@ class TestAgendarCitaJSON(TestCase):
         self.assertEqual(r.status_code, 400)
 
 
-# =========================================================================
-# 7. APIs JSON — REPROGRAMAR Y CANCELAR CITA
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.6 APIs JSON — REPROGRAMAR Y CANCELAR CITA
+# -------------------------------------------------------------------------
 
 class TestReprogramarCancelarJSON(TestCase):
 
@@ -722,9 +805,9 @@ class TestReprogramarCancelarJSON(TestCase):
         )
 
 
-# =========================================================================
-# 8. APIs JSON — HISTORIAL CLÍNICO DEL PACIENTE
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.7 APIs JSON — HISTORIAL CLÍNICO DEL PACIENTE
+# -------------------------------------------------------------------------
 
 class TestHistorialPacienteJSON(TestCase):
 
@@ -774,9 +857,9 @@ class TestHistorialPacienteJSON(TestCase):
         self.assertIn("Sofia", data["medico_nombre"])
 
 
-# =========================================================================
-# 9. APIs JSON — AGENDA E HISTORIAL DEL MÉDICO
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.8 APIs JSON — AGENDA E HISTORIAL DEL MÉDICO
+# -------------------------------------------------------------------------
 
 class TestAgendaMedicoJSON(TestCase):
 
@@ -873,9 +956,9 @@ class TestAgendaMedicoJSON(TestCase):
         self.assertEqual(r.status_code, 400)
 
 
-# =========================================================================
-# 10. APIs JSON — PERFILES
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.9 APIs JSON — PERFILES
+# -------------------------------------------------------------------------
 
 class TestPerfilesJSON(TestCase):
 
@@ -980,9 +1063,9 @@ class TestPerfilesJSON(TestCase):
         self.assertEqual(data["tipo_sangre"], "O+")
 
 
-# =========================================================================
-# 11. APIs JSON — DISPONIBILIDAD Y ESPECIALIDADES
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.10 APIs JSON — DISPONIBILIDAD Y ESPECIALIDADES
+# -------------------------------------------------------------------------
 
 class TestDisponibilidadJSON(TestCase):
 
@@ -1052,9 +1135,9 @@ class TestDisponibilidadJSON(TestCase):
         self.assertEqual(data, [])
 
 
-# =========================================================================
-# 12. TOKEN DE RECUPERACIÓN DE CONTRASEÑA
-# =========================================================================
+# -------------------------------------------------------------------------
+# B.11 TOKEN DE RECUPERACIÓN DE CONTRASEÑA
+# -------------------------------------------------------------------------
 
 class TestTokenRecuperacion(TestCase):
 
