@@ -590,6 +590,22 @@ document.getElementById('btn-confirmar-agendar').addEventListener('click', async
     if (!p.cita || !p.id_medico || !p.fecha || !p.hora) {
         msg.innerHTML = '<div class="edit-msg edit-msg-error">Completa todos los campos.</div>'; return;
     }
+
+    /*
+     * VALIDACIÓN: mínimo 2 horas de anticipación para agendar.
+     * Ej: si son las 4:00 pm, la hora más temprana que se puede
+     * agendar para hoy es las 6:00 pm en adelante.
+     */
+    const [ay, am, ad] = p.fecha.split('-');
+    const [ah, ami]    = p.hora.split(':');
+    const fechaHoraCita     = new Date(ay, am - 1, ad, ah, ami, 0);
+    const minAnticipacionMs = 2 * 60 * 60 * 1000; // 2 horas
+
+    if (fechaHoraCita.getTime() - Date.now() < minAnticipacionMs) {
+        msg.innerHTML = '<div class="edit-msg edit-msg-error"><i class="fa-solid fa-triangle-exclamation"></i> Debes agendar con al menos 2 horas de anticipación.</div>';
+        return;
+    }
+
     try {
         const d = await (await fetch(URLS.agendarCita, {
             method: 'POST',

@@ -245,7 +245,7 @@
                         type="password"
                         id="contrasena"
                         name="contrasena"
-                        placeholder="Mínimo 8 caracteres"
+                        placeholder="Mínimo 10 caracteres"
                         maxlength="128"
                         autocomplete="new-password"
                         required>
@@ -256,7 +256,7 @@
                     </div>
                     <!-- Indicadores de requisitos -->
                     <ul class="pass-rules" id="pass-rules" aria-label="Requisitos de contraseña">
-                        <li class="rule" id="rule-len">    <span class="rule-dot"></span> Mínimo 8 caracteres</li>
+                        <li class="rule" id="rule-len">    <span class="rule-dot"></span> Mínimo 10 caracteres</li>
                         <li class="rule" id="rule-upper">  <span class="rule-dot"></span> Al menos 1 mayúscula</li>
                         <li class="rule" id="rule-lower">  <span class="rule-dot"></span> Al menos 1 minúscula</li>
                         <li class="rule" id="rule-num">    <span class="rule-dot"></span> Al menos 1 número</li>
@@ -552,7 +552,7 @@
     
     function validarPassword() {
         const v          = passInput.value;
-        const lenOk      = v.length >= 8;
+        const lenOk      = v.length >= 10;
         const upperOk    = /[A-Z]/.test(v);
         const specialOk  = /[!@#$%^&*]/.test(v);
         checkRule(ruleLen,     lenOk);
