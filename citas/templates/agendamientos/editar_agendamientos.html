@@ -3,11 +3,12 @@
 {% block content %}
 
 <style>
-  .field-hint { font-size:11px; margin-top:4px; min-height:16px; display:block; color:transparent; transition:color 0.15s; }
-  .field-hint.error   { color:#e53e3e; }
-  .field-hint.success { color:#38a169; }
-  input.input-error, select.input-error { border-color:#e53e3e !important; }
-  input.input-ok,    select.input-ok    { border-color:#38a169 !important; }
+    .field-hint { font-size:11px; margin-top:4px; min-height:16px; display:block; color:transparent; transition:color 0.15s; }
+    .field-hint.error   { color:#e53e3e; }
+    .field-hint.success { color:#38a169; }
+    input.input-error, select.input-error { border-color:#e53e3e !important; }
+    input.input-ok,    select.input-ok    { border-color:#38a169 !important; }
+    select:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <div class="page-header">
@@ -18,97 +19,305 @@
 <div class="form-card">
     <form method="post" novalidate id="form-agenda">
         {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px 16px;margin-bottom:18px;color:#c53030;font-size:13.5px;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {% for error in form.non_field_errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <div class="form-grid">
-
+            
+            <!-- Tipo de Cita / Especialidad -->
             <div class="form-group full">
-                <label>Tipo de Cita</label>
+                <label>Tipo de Cita / Especialidad</label>
                 <select name="{{ form.cita.html_name }}" id="f_cita">
-                    <option value="">— Seleccionar —</option>
-                    <option value="Consulta General"       {% if form.cita.value == "Consulta General"       %}selected{% endif %}>Consulta General</option>
-                    <option value="Consulta Especializada" {% if form.cita.value == "Consulta Especializada" %}selected{% endif %}>Consulta Especializada</option>
-                    <option value="Control"                {% if form.cita.value == "Control"                %}selected{% endif %}>Control</option>
-                    <option value="Urgencias"              {% if form.cita.value == "Urgencias"              %}selected{% endif %}>Urgencias</option>
-                    <option value="Procedimiento"          {% if form.cita.value == "Procedimiento"          %}selected{% endif %}>Procedimiento</option>
-                    <option value="Examen de laboratorio"  {% if form.cita.value == "Examen de laboratorio"  %}selected{% endif %}>Examen de laboratorio</option>
+                    <option value="">— Seleccionar tipo —</option>
+                    <option value="Medicina General"      {% if form.cita.value == "Medicina General"      %}selected{% endif %}>Medicina General</option>
+                    <option value="Ortopedia"             {% if form.cita.value == "Ortopedia"             %}selected{% endif %}>Ortopedia</option>
+                    <option value="Psicología"            {% if form.cita.value == "Psicología"            %}selected{% endif %}>Psicología</option>
+                    <option value="Cardiología"           {% if form.cita.value == "Cardiología"           %}selected{% endif %}>Cardiología</option>
+                    <option value="Pediatría"             {% if form.cita.value == "Pediatría"             %}selected{% endif %}>Pediatría</option>
+                    <option value="Dermatología"          {% if form.cita.value == "Dermatología"          %}selected{% endif %}>Dermatología</option>
                 </select>
-                <span class="field-hint {% if form.cita.errors %}error{% endif %}" id="h_cita">{% if form.cita.errors %}{{ form.cita.errors|join:", " }}{% endif %}</span>
+                <span class="field-hint {% if form.cita.errors %}error{% endif %}" id="h_cita">
+                    {% if form.cita.errors %}{{ form.cita.errors|join:", " }}{% endif %}
+                </span>
             </div>
-
-            <div class="form-group">
-                <label>Fecha</label>
-                <input type="date" name="{{ form.fecha.html_name }}" id="f_fecha"
-                       value="{{ form.fecha.value|default:'' }}">
-                <span class="field-hint {% if form.fecha.errors %}error{% endif %}" id="h_fecha">{% if form.fecha.errors %}{{ form.fecha.errors|join:", " }}{% endif %}</span>
-            </div>
-
-            <div class="form-group">
-                <label>Hora</label>
-                <input type="time" name="{{ form.hora.html_name }}" id="f_hora"
-                       value="{{ form.hora.value|default:'' }}">
-                <span class="field-hint {% if form.hora.errors %}error{% endif %}" id="h_hora">{% if form.hora.errors %}{{ form.hora.errors|join:", " }}{% endif %}</span>
-            </div>
-
-            <div class="form-group">
-                <label>Paciente</label>
-                <select name="{{ form.id_paciente.html_name }}" id="f_id_paciente">
-                    <option value="">— Seleccionar —</option>
-                    {% for p in form.id_paciente.field.queryset %}
-                    <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
-                        {{ p.nombre }} {{ p.apellido }} ({{ p.numero_doc }})
-                    </option>
-                    {% endfor %}
-                </select>
-                <span class="field-hint {% if form.id_paciente.errors %}error{% endif %}" id="h_id_paciente">{% if form.id_paciente.errors %}{{ form.id_paciente.errors|join:", " }}{% endif %}</span>
-            </div>
-
-            <div class="form-group">
+            
+            <!-- Médico (filtrado por especialidad) -->
+            <div class="form-group full">
                 <label>Médico</label>
                 <select name="{{ form.id_medico.html_name }}" id="f_id_medico">
-                    <option value="">— Seleccionar —</option>
+                    <option value="">— Selecciona primero la especialidad —</option>
                     {% for m in form.id_medico.field.queryset %}
-                    <option value="{{ m.pk }}" {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
-                        Dr. {{ m.nombre }} {{ m.apellido }} — {{ m.especialidad }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <span class="field-hint {% if form.id_medico.errors %}error{% endif %}" id="h_id_medico">{% if form.id_medico.errors %}{{ form.id_medico.errors|join:", " }}{% endif %}</span>
-            </div>
-
+                    <option value="{{ m.pk }}"
+                    data-especialidad="{{ m.especialidad }}"
+                    {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
+                    Dr. {{ m.nombre }} {{ m.apellido }} — {{ m.especialidad }}
+                </option>
+                {% endfor %}
+            </select>
+            <span class="field-hint {% if form.id_medico.errors %}error{% endif %}" id="h_id_medico">
+                {% if form.id_medico.errors %}{{ form.id_medico.errors|join:", " }}{% endif %}
+            </span>
         </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Actualizar Cita</button>
-            <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+        
+        <!-- Paciente -->
+        <div class="form-group full">
+            <label>Paciente</label>
+            <select name="{{ form.id_paciente.html_name }}" id="f_id_paciente">
+                <option value="">— Seleccionar paciente —</option>
+                {% for p in form.id_paciente.field.queryset %}
+                <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ p.nombre }} {{ p.apellido }} ({{ p.numero_doc }})
+                </option>
+                {% endfor %}
+            </select>
+            <span class="field-hint {% if form.id_paciente.errors %}error{% endif %}" id="h_id_paciente">
+                {% if form.id_paciente.errors %}{{ form.id_paciente.errors|join:", " }}{% endif %}
+            </span>
         </div>
-    </form>
+        
+        <!-- Fecha -->
+        <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" name="{{ form.fecha.html_name }}" id="f_fecha"
+            value="{{ form.fecha.value|default:'' }}">
+            <span class="field-hint {% if form.fecha.errors %}error{% endif %}" id="h_fecha">
+                {% if form.fecha.errors %}{{ form.fecha.errors|join:", " }}{% endif %}
+            </span>
+        </div>
+        
+        <!-- Hora (dropdown dinámico) -->
+        <div class="form-group">
+            <label>Hora disponible</label>
+            <select name="{{ form.hora.html_name }}" id="f_hora">
+                <option value="">— Cargando horarios... —</option>
+            </select>
+            <span class="field-hint {% if form.hora.errors %}error{% endif %}" id="h_hora">
+                {% if form.hora.errors %}{{ form.hora.errors|join:", " }}{% endif %}
+            </span>
+        </div>
+        
+    </div>
+    
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Actualizar Cita</button>
+        <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
 </div>
 
 <script>
-(function(){
-  function setHint(hId,fId,msg,isError){
-    var h=document.getElementById(hId),f=document.getElementById(fId);
-    h.textContent=msg;
-    h.className='field-hint'+(msg?(isError?' error':' success'):'');
-    if(f){f.classList.toggle('input-error',!!(msg&&isError));f.classList.toggle('input-ok',!!(msg&&!isError));if(!msg)f.classList.remove('input-error','input-ok');}
-  }
-  ['cita','id_paciente','id_medico'].forEach(function(k){
-    document.getElementById('f_'+k).addEventListener('change',function(){
-      if(!this.value) setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);
-      else setHint('h_'+k,'f_'+k,'',false);
-    });
-  });
-  ['fecha','hora'].forEach(function(k){
-    document.getElementById('f_'+k).addEventListener('change',function(){
-      if(!this.value) setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);
-      else setHint('h_'+k,'f_'+k,'',false);
-    });
-  });
-  document.getElementById('form-agenda').addEventListener('submit',function(e){
-    var ok=true;
-    ['cita','id_paciente','id_medico','fecha','hora'].forEach(function(k){
-      if(!document.getElementById('f_'+k).value){setHint('h_'+k,'f_'+k,'Este campo es obligatorio.',true);ok=false;}
-    });
-    if(!ok) e.preventDefault();
-  });
-})();
+    (function () {
+        /* ── Referencias ────────────────────────────────── */
+        const selCita     = document.getElementById('f_cita');
+        const selMedico   = document.getElementById('f_id_medico');
+        const selPaciente = document.getElementById('f_id_paciente');
+        const inputFecha  = document.getElementById('f_fecha');
+        const selHora     = document.getElementById('f_hora');
+        
+        // Valor actual de la cita (para restaurar en el select de horas)
+        const valorHoraActual = "{{ object.hora|time:'H:i' }}";
+        
+        /* ── Rango de fechas ────────────────────────────── */
+        const hoy = new Date();
+        const maxF = new Date();
+        maxF.setFullYear(maxF.getFullYear() + 1);
+        inputFecha.min = hoy.toISOString().split('T')[0];
+        inputFecha.max = maxF.toISOString().split('T')[0];
+        
+        /* ── Helpers ────────────────────────────────────── */
+        function setHint(hId, fId, msg, isError) {
+            const h = document.getElementById(hId);
+            const f = document.getElementById(fId);
+            if (!h) return;
+            h.textContent = msg;
+            h.className = 'field-hint' + (msg ? (isError ? ' error' : ' success') : '');
+            if (f) {
+                f.classList.toggle('input-error', !!(msg && isError));
+                f.classList.toggle('input-ok',    !!(msg && !isError));
+                if (!msg) { f.classList.remove('input-error', 'input-ok'); }
+            }
+        }
+        
+        /* ── Guardar todas las opciones de médico antes de filtrar ── */
+        const todasOpsMedico = Array.from(selMedico.querySelectorAll('option[data-especialidad]'))
+        .map(o => ({ value: o.value, text: o.textContent.trim(), esp: o.dataset.especialidad }));
+        
+        /* ── Filtrar médicos por especialidad ───────────── */
+        function filtrarMedicos(medicoARestaurar) {
+            const esp = selCita.value;
+            
+            selHora.innerHTML = '<option value="">— Selecciona médico y fecha primero —</option>';
+            selHora.disabled = true;
+            
+            if (!esp) {
+                selMedico.innerHTML = '<option value="">— Selecciona primero la especialidad —</option>';
+                selMedico.disabled = true;
+                return;
+            }
+            
+            const filtradas = todasOpsMedico.filter(o => o.esp === esp);
+            
+            selMedico.innerHTML = '<option value="">— Selecciona un médico —</option>';
+            
+            if (!filtradas.length) {
+                selMedico.innerHTML += '<option disabled>Sin médicos para esta especialidad</option>';
+                selMedico.disabled = true;
+                return;
+            }
+            
+            filtradas.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value               = o.value;
+                opt.textContent         = o.text;
+                opt.dataset.especialidad = o.esp;
+                selMedico.appendChild(opt);
+            });
+            
+            selMedico.disabled = false;
+            
+            if (medicoARestaurar) {
+                selMedico.value = medicoARestaurar;
+            }
+        }
+        
+        /* ── Cargar horas disponibles ───────────────────── */
+        async function cargarHoras(horaARestaurar) {
+            const medicoId = selMedico.value;
+            const fecha    = inputFecha.value;
+            
+            if (!medicoId || !fecha) {
+                selHora.innerHTML = '<option value="">— Selecciona médico y fecha primero —</option>';
+                selHora.disabled = true;
+                return;
+            }
+            
+            selHora.innerHTML = '<option value="">Cargando horarios...</option>';
+            selHora.disabled  = true;
+            
+            try {
+                const resp = await fetch(`/api/disponibilidad-medico/?medico_id=${medicoId}&fecha=${fecha}`);
+                const data = await resp.json();
+                
+                const hoyStr  = new Date().toISOString().split('T')[0];
+                const esHoy   = (fecha === hoyStr);
+                const ahora   = new Date();
+                const umbral  = new Date(ahora.getTime() + 2 * 60 * 60 * 1000);
+                
+                // ID de la cita que estamos editando (para no bloquear su propia hora)
+                const citaId = {{ object.id_agendamiento }};
+                
+                selHora.innerHTML = '<option value="">— Selecciona una hora —</option>';
+                let hayDisponibles = false;
+                
+                data.horarios.forEach(h => {
+                    const opt = document.createElement('option');
+                    opt.value = h.hora;
+                    
+                    // Si es la hora actual de ESTA cita → siempre disponible (la excluimos del chequeo)
+                    const esHoraPropia = (h.hora === valorHoraActual && fecha === "{{ object.fecha|date:'Y-m-d' }}");
+                    
+                    if (!h.disponible && !esHoraPropia) {
+                        opt.textContent = `${h.hora} (Ocupado)`;
+                        opt.disabled    = true;
+                        opt.style.color = '#e53e3e';
+                        selHora.appendChild(opt);
+                        return;
+                    }
+                    
+                    if (esHoy && !esHoraPropia) {
+                        const [hh, mm] = h.hora.split(':').map(Number);
+                        const horaCita = new Date(ahora);
+                        horaCita.setHours(hh, mm, 0, 0);
+                        if (horaCita <= umbral) {
+                            opt.textContent = `${h.hora} (No disponible)`;
+                            opt.disabled    = true;
+                            opt.style.color = '#a0aec0';
+                            selHora.appendChild(opt);
+                            return;
+                        }
+                    }
+                    
+                    opt.textContent = h.hora;
+                    selHora.appendChild(opt);
+                    hayDisponibles = true;
+                });
+                
+                if (!hayDisponibles) {
+                    const opt = document.createElement('option');
+                    opt.disabled    = true;
+                    opt.textContent = 'Sin horarios disponibles para este día';
+                    selHora.appendChild(opt);
+                }
+                
+                selHora.disabled = false;
+                
+                if (horaARestaurar) {
+                    selHora.value = horaARestaurar;
+                }
+                
+            } catch (err) {
+                selHora.innerHTML = '<option value="">Error al cargar horarios</option>';
+            }
+        }
+        
+        /* ── Listeners ──────────────────────────────────── */
+        selCita.addEventListener('change', () => {
+            filtrarMedicos(null);
+            setHint('h_cita', 'f_cita', '', false);
+            cargarHoras(null);
+        });
+        
+        selMedico.addEventListener('change', () => {
+            setHint('h_id_medico', 'f_id_medico', '', false);
+            cargarHoras(null);
+        });
+        
+        inputFecha.addEventListener('change', () => {
+            setHint('h_fecha', 'f_fecha', '', false);
+            cargarHoras(null);
+        });
+        
+        selPaciente.addEventListener('change', () =>
+        setHint('h_id_paciente', 'f_id_paciente', '', false)
+        );
+        
+        selHora.addEventListener('change', () =>
+        setHint('h_hora', 'f_hora', '', false)
+        );
+        
+        /* ── Validación al enviar ────────────────────────── */
+        document.getElementById('form-agenda').addEventListener('submit', function (e) {
+            let ok = true;
+            if (!selCita.value)     { setHint('h_cita',        'f_cita',        'Este campo es obligatorio.', true); ok = false; }
+            if (!selMedico.value)   { setHint('h_id_medico',   'f_id_medico',   'Este campo es obligatorio.', true); ok = false; }
+            if (!selPaciente.value) { setHint('h_id_paciente', 'f_id_paciente', 'Este campo es obligatorio.', true); ok = false; }
+            if (!inputFecha.value)  { setHint('h_fecha',       'f_fecha',       'Este campo es obligatorio.', true); ok = false; }
+            if (!selHora.value)     { setHint('h_hora',        'f_hora',        'Selecciona una hora disponible.', true); ok = false; }
+            if (!ok) e.preventDefault();
+        });
+        
+        /* ── Init: cargar médicos y horas del objeto actual ─ */
+        (function init() {
+            const espActual    = "{{ object.cita }}";
+            const medicoActual = "{{ object.id_medico.pk }}";
+            const fechaActual  = "{{ object.fecha|date:'Y-m-d' }}";
+            
+            if (espActual) {
+                filtrarMedicos(medicoActual);
+            }
+            if (medicoActual && fechaActual) {
+                cargarHoras(valorHoraActual);
+            }
+        })();
+        
+    })();
 </script>
+
 {% endblock %}

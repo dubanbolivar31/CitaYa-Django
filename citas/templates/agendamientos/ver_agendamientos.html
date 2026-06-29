@@ -107,7 +107,7 @@
     {% endif %}
     <a href="{% url 'ver_agendamientos' %}" class="btn-reset-filters">Limpiar todo</a>
 </div>
-<p class="search-info">{{ citas|length }} registro(s) encontrado(s).</p>
+<p class="search-info">{{ paginator.count }} registro(s) encontrado(s).</p>
 {% endif %}
 
 <div class="card">
@@ -158,6 +158,39 @@
             </tbody>
         </table>
     </div>
+
+    {# ── PAGINACIÓN ── #}
+    {% if is_paginated %}
+    <style>
+        .pag-wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px;padding:14px 4px 4px;border-top:1px solid rgba(255,255,255,0.06);}
+        .pag-info{color:var(--text-muted);font-size:0.85rem;}
+        .pag-nav{display:flex;gap:6px;flex-wrap:wrap;}
+        .pag-btn{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);color:var(--text-muted);text-decoration:none;font-size:0.85rem;transition:.15s;}
+        .pag-btn:hover{background:rgba(255,255,255,0.06);color:var(--text-primary);}
+        .pag-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+    </style>
+    <div class="pag-wrap">
+        <div class="pag-info">
+            Página {{ page_obj.number }} de {{ paginator.num_pages }} &middot; {{ paginator.count }} registro(s) en total
+        </div>
+        <div class="pag-nav">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&q={{ q }}&tipo_cita={{ tipo_cita }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="pag-btn" title="Primera"><i class="fa-solid fa-angles-left"></i></a>
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&tipo_cita={{ tipo_cita }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="pag-btn" title="Anterior"><i class="fa-solid fa-angle-left"></i></a>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                <a href="?page={{ num }}&q={{ q }}&tipo_cita={{ tipo_cita }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+                   class="pag-btn {% if num == page_obj.number %}active{% endif %}">{{ num }}</a>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&tipo_cita={{ tipo_cita }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="pag-btn" title="Siguiente"><i class="fa-solid fa-angle-right"></i></a>
+                <a href="?page={{ paginator.num_pages }}&q={{ q }}&tipo_cita={{ tipo_cita }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="pag-btn" title="Última"><i class="fa-solid fa-angles-right"></i></a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <script>
