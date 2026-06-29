@@ -2,73 +2,304 @@
 {% block title %}Nueva Cita | Cita Ya{% endblock %}
 {% block content %}
 
+<style>
+  .field-hint{font-size:11px;margin-top:4px;min-height:16px;display:block;color:transparent;transition:color .15s}
+  .field-hint.error{color:#e53e3e}.field-hint.success{color:#38a169}
+
+  /* ── Search box ── */
+  .sb-wrap{position:relative}
+  .sb-input{width:100%;padding:10px 38px 10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:13.5px;outline:none;transition:border-color .14s,box-shadow .14s}
+  .sb-input:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+  .sb-input::placeholder{color:var(--text-3)}
+  .sb-input.input-error{border-color:#e53e3e!important}
+  .sb-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:13px;pointer-events:none}
+  .sb-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);z-index:500;max-height:220px;overflow-y:auto;display:none}
+  .sb-dropdown.open{display:block}
+  .sb-item{padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;display:flex;flex-direction:column;gap:2px}
+  .sb-item:last-child{border-bottom:none}
+  .sb-item:hover,.sb-item.kb-active{background:var(--accent-lt);color:var(--accent)}
+  .sb-item-main{font-weight:600;font-size:13.5px}
+  .sb-item-sub{font-size:11.5px;color:var(--text-3)}
+  .sb-item:hover .sb-item-sub,.sb-item.kb-active .sb-item-sub{color:var(--accent);opacity:.75}
+  .sb-empty{padding:14px;font-size:13px;color:var(--text-3);text-align:center}
+  /* chip */
+  .sb-chip{display:none;align-items:center;gap:8px;margin-top:6px;padding:7px 12px;background:var(--accent-lt);border:1px solid #bfdbfe;border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--accent)}
+  .sb-chip.show{display:flex}
+  .sb-clear{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--accent);font-size:14px;line-height:1;transition:color .12s}
+  .sb-clear:hover{color:var(--red)}
+  select:disabled{opacity:.5;cursor:not-allowed}
+</style>
+
 <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-calendar-plus"></i> Nueva Cita</h1>
-    <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">← Volver</a>
+  <h1 class="page-title"><i class="fa-solid fa-calendar-plus"></i> Nueva Cita</h1>
+  <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">← Volver</a>
 </div>
 
 <div class="form-card">
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="form-grid">
+  <form method="post" novalidate id="form-agenda">
+    {% csrf_token %}
 
-            <div class="form-group full">
-                <label>Tipo de Cita</label>
-                <select name="{{ form.cita.html_name }}">
-                    <option value="">— Seleccionar tipo —</option>
-                    <option value="Consulta General" {% if form.cita.value == "Consulta General" %}selected{% endif %}>Consulta General</option>
-                    <option value="Consulta Especializada" {% if form.cita.value == "Consulta Especializada" %}selected{% endif %}>Consulta Especializada</option>
-                    <option value="Control" {% if form.cita.value == "Control" %}selected{% endif %}>Control</option>
-                    <option value="Urgencias" {% if form.cita.value == "Urgencias" %}selected{% endif %}>Urgencias</option>
-                    <option value="Procedimiento" {% if form.cita.value == "Procedimiento" %}selected{% endif %}>Procedimiento</option>
-                    <option value="Examen de laboratorio" {% if form.cita.value == "Examen de laboratorio" %}selected{% endif %}>Examen de laboratorio</option>
-                </select>
-                {{ form.cita.errors }}
-            </div>
+    {% if form.non_field_errors %}
+    <div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px 16px;margin-bottom:18px;color:#c53030;font-size:13.5px;">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+    </div>
+    {% endif %}
 
-            <div class="form-group">
-                <label>Fecha</label>
-                <input type="date" name="{{ form.fecha.html_name }}" value="{{ form.fecha.value|default:'' }}">
-                {{ form.fecha.errors }}
-            </div>
+    <div class="form-grid">
 
-            <div class="form-group">
-                <label>Hora</label>
-                <input type="time" name="{{ form.hora.html_name }}" value="{{ form.hora.value|default:'' }}">
-                {{ form.hora.errors }}
-            </div>
+      <!-- Especialidad -->
+      <div class="form-group full">
+        <label>Tipo de Cita / Especialidad</label>
+        <select name="{{ form.cita.html_name }}" id="f_cita">
+          <option value="">— Seleccionar tipo —</option>
+          {% for val,lbl in form.cita.field.choices %}{% if val %}<option value="{{ val }}" {% if form.cita.value == val %}selected{% endif %}>{{ lbl }}</option>{% endif %}{% endfor %}
+        </select>
+        <span class="field-hint {% if form.cita.errors %}error{% endif %}" id="h_cita">{% if form.cita.errors %}{{ form.cita.errors|join:", " }}{% endif %}</span>
+      </div>
 
-            <div class="form-group">
-                <label>Paciente</label>
-                <select name="{{ form.id_paciente.html_name }}">
-                    <option value="">— Seleccionar paciente —</option>
-                    {% for p in form.id_paciente.field.queryset %}
-                    <option value="{{ p.pk }}" {% if form.id_paciente.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
-                        {{ p.nombre }} {{ p.apellido }} ({{ p.numero_doc }})
-                    </option>
-                    {% endfor %}
-                </select>
-                {{ form.id_paciente.errors }}
-            </div>
-
-            <div class="form-group">
-                <label>Médico</label>
-                <select name="{{ form.id_medico.html_name }}">
-                    <option value="">— Seleccionar médico —</option>
-                    {% for m in form.id_medico.field.queryset %}
-                    <option value="{{ m.pk }}" {% if form.id_medico.value|stringformat:"s" == m.pk|stringformat:"s" %}selected{% endif %}>
-                        Dr. {{ m.nombre }} {{ m.apellido }} — {{ m.especialidad }}
-                    </option>
-                    {% endfor %}
-                </select>
-                {{ form.id_medico.errors }}
-            </div>
-
+      <!-- Médico searchbox -->
+      <input type="hidden" name="{{ form.id_medico.html_name }}" id="f_id_medico">
+      <div class="form-group full">
+        <label>Médico <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-3)">(busca por nombre o especialidad)</span></label>
+        <div class="sb-wrap">
+          <input class="sb-input" id="sb-med-q" type="text" placeholder="Escribe nombre, apellido o especialidad…" autocomplete="off">
+          <i class="fa-solid fa-magnifying-glass sb-icon"></i>
+          <div class="sb-dropdown" id="sb-med-drop"></div>
         </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Agendar Cita</button>
-            <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+        <div class="sb-chip" id="sb-med-chip">
+          <i class="fa-solid fa-user-doctor"></i>
+          <span id="sb-med-chip-txt"></span>
+          <button type="button" class="sb-clear" id="sb-med-clear" title="Cambiar"><i class="fa-solid fa-xmark"></i></button>
         </div>
-    </form>
+        <span class="field-hint {% if form.id_medico.errors %}error{% endif %}" id="h_id_medico">{% if form.id_medico.errors %}{{ form.id_medico.errors|join:", " }}{% endif %}</span>
+      </div>
+
+      <!-- Paciente searchbox -->
+      <input type="hidden" name="{{ form.id_paciente.html_name }}" id="f_id_paciente">
+      <div class="form-group full">
+        <label>Paciente <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-3)">(busca por nombre o documento)</span></label>
+        <div class="sb-wrap">
+          <input class="sb-input" id="sb-pac-q" type="text" placeholder="Escribe nombre, apellido o número de documento…" autocomplete="off">
+          <i class="fa-solid fa-magnifying-glass sb-icon"></i>
+          <div class="sb-dropdown" id="sb-pac-drop"></div>
+        </div>
+        <div class="sb-chip" id="sb-pac-chip">
+          <i class="fa-solid fa-user"></i>
+          <span id="sb-pac-chip-txt"></span>
+          <button type="button" class="sb-clear" id="sb-pac-clear" title="Cambiar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <span class="field-hint {% if form.id_paciente.errors %}error{% endif %}" id="h_id_paciente">{% if form.id_paciente.errors %}{{ form.id_paciente.errors|join:", " }}{% endif %}</span>
+      </div>
+
+      <!-- Fecha -->
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" name="{{ form.fecha.html_name }}" id="f_fecha" value="{{ form.fecha.value|default:'' }}">
+        <span class="field-hint {% if form.fecha.errors %}error{% endif %}" id="h_fecha">{% if form.fecha.errors %}{{ form.fecha.errors|join:", " }}{% endif %}</span>
+      </div>
+
+      <!-- Hora -->
+      <div class="form-group">
+        <label>Hora disponible</label>
+        <select name="{{ form.hora.html_name }}" id="f_hora" disabled>
+          <option value="">— Selecciona médico y fecha primero —</option>
+        </select>
+        <span class="field-hint {% if form.hora.errors %}error{% endif %}" id="h_hora">{% if form.hora.errors %}{{ form.hora.errors|join:", " }}{% endif %}</span>
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Agendar Cita</button>
+      <a href="{% url 'ver_agendamientos' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
 </div>
+
+<!-- Datos para el JS -->
+<script>
+const MEDICOS_DATA = [{% for m in form.id_medico.field.queryset %}{id:{{m.pk}},nombre:"{{m.nombre|escapejs}} {{m.apellido|escapejs}}",esp:"{{m.especialidad|escapejs}}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+const PACS_DATA    = [{% for p in form.id_paciente.field.queryset %}{id:{{p.pk}},nombre:"{{p.nombre|escapejs}} {{p.apellido|escapejs}}",doc:"{{p.numero_doc|escapejs}}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+/* ── util ── */
+const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+function hl(text, q) {
+  const t = text, nt = norm(t), nq = norm(q);
+  const i = nt.indexOf(nq);
+  if(i<0||!nq) return t;
+  return t.slice(0,i)+`<mark style="background:var(--accent-lt);color:var(--accent);border-radius:2px;padding:0 1px">${t.slice(i,i+nq.length)}</mark>`+t.slice(i+nq.length);
+}
+
+function hint(id, msg, err){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=msg;
+  el.className='field-hint'+(msg?(err?' error':' success'):'');
+}
+
+/* ── Fábrica de searchbox ── */
+function SearchBox({pool, keys, inputId, dropId, hiddenId, chipId, chipTxtId, clearId, hintId, onSelect, mainFn, subFn}){
+  const input  = document.getElementById(inputId);
+  const drop   = document.getElementById(dropId);
+  const hidden = document.getElementById(hiddenId);
+  const chip   = document.getElementById(chipId);
+  const chipT  = document.getElementById(chipTxtId);
+  const clrBtn = document.getElementById(clearId);
+
+  let matches=[], ki=-1;
+
+  const render = (items) => {
+    matches=items; ki=-1;
+    drop.innerHTML = items.length
+      ? items.slice(0,40).map((it,i)=>`<div class="sb-item" data-i="${i}"><span class="sb-item-main">${mainFn(it,input.value)}</span><span class="sb-item-sub">${subFn(it,input.value)}</span></div>`).join('')
+      : '<div class="sb-empty"><i class="fa-solid fa-circle-xmark"></i> Sin resultados.</div>';
+    drop.classList.add('open');
+    drop.querySelectorAll('.sb-item').forEach(el=>el.addEventListener('mousedown',e=>{e.preventDefault();pick(matches[+el.dataset.i]);}));
+  };
+
+  const search = q => {
+    const nq=norm(q.trim());
+    if(!nq){drop.classList.remove('open');return;}
+    render(pool.filter(it=>keys.some(k=>norm(it[k]||'').includes(nq))));
+  };
+
+  const pick = it => {
+    hidden.value   = it.id;
+    chipT.textContent = it._label;
+    chip.classList.add('show');
+    input.value='';
+    input.style.display='none';
+    drop.classList.remove('open');
+    hint(hintId,'',false);
+    if(onSelect) onSelect(it);
+  };
+
+  const clear = () => {
+    hidden.value='';
+    chip.classList.remove('show');
+    input.style.display='';
+    input.value='';
+    input.focus();
+    drop.classList.remove('open');
+    if(onSelect) onSelect(null);
+  };
+
+  input.addEventListener('input', ()=>search(input.value));
+  input.addEventListener('focus', ()=>{if(input.value.trim())search(input.value);});
+  input.addEventListener('keydown', e=>{
+    const els=drop.querySelectorAll('.sb-item');
+    if(e.key==='ArrowDown'){e.preventDefault();ki=Math.min(ki+1,els.length-1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();ki=Math.max(ki-1,0);}
+    else if(e.key==='Enter'){e.preventDefault();if(ki>=0&&matches[ki])pick(matches[ki]);return;}
+    else if(e.key==='Escape'){drop.classList.remove('open');return;}
+    else return;
+    els.forEach((el,i)=>el.classList.toggle('kb-active',i===ki));
+    if(els[ki])els[ki].scrollIntoView({block:'nearest'});
+  });
+  document.addEventListener('click', e=>{if(!input.closest('.sb-wrap').contains(e.target))drop.classList.remove('open');});
+  clrBtn.addEventListener('click', clear);
+
+  return {pick, clear, setPool(p){pool=p;}};
+}
+
+/* ── Médico ── */
+const medPool = () => {
+  const esp = document.getElementById('f_cita').value;
+  return esp ? MEDICOS_DATA.filter(m=>m.esp===esp) : MEDICOS_DATA;
+};
+
+MEDICOS_DATA.forEach(m=>m._label=`Dr. ${m.nombre} — ${m.esp}`);
+PACS_DATA.forEach(p=>p._label=`${p.nombre} — Doc: ${p.doc}`);
+
+const medBox = SearchBox({
+  pool: medPool(),
+  keys: ['nombre','esp'],
+  inputId:'sb-med-q', dropId:'sb-med-drop', hiddenId:'f_id_medico',
+  chipId:'sb-med-chip', chipTxtId:'sb-med-chip-txt', clearId:'sb-med-clear', hintId:'h_id_medico',
+  mainFn:(it,q)=>hl(`Dr. ${it.nombre}`,q),
+  subFn: (it,q)=>hl(it.esp,q),
+  onSelect(){ cargarHoras(null); }
+});
+
+/* ── Paciente ── */
+const pacBox = SearchBox({
+  pool: PACS_DATA,
+  keys: ['nombre','doc'],
+  inputId:'sb-pac-q', dropId:'sb-pac-drop', hiddenId:'f_id_paciente',
+  chipId:'sb-pac-chip', chipTxtId:'sb-pac-chip-txt', clearId:'sb-pac-clear', hintId:'h_id_paciente',
+  mainFn:(it,q)=>hl(it.nombre,q),
+  subFn: (it,q)=>`Doc: ${hl(it.doc,q)}`,
+});
+
+/* ── Cambio especialidad ── */
+document.getElementById('f_cita').addEventListener('change', function(){
+  medBox.clear();
+  medBox.setPool(medPool());
+  hint('h_cita','',false);
+  const sh=document.getElementById('f_hora');
+  sh.innerHTML='<option value="">— Selecciona médico y fecha primero —</option>';
+  sh.disabled=true;
+});
+
+/* ── Horas dinámicas ── */
+const inputFecha=document.getElementById('f_fecha');
+const hoyStr=new Date().toISOString().split('T')[0];
+const maxF=new Date(); maxF.setFullYear(maxF.getFullYear()+1);
+inputFecha.min=hoyStr; inputFecha.max=maxF.toISOString().split('T')[0];
+
+async function cargarHoras(restaurar){
+  const medId=document.getElementById('f_id_medico').value;
+  const fecha=inputFecha.value;
+  const sel=document.getElementById('f_hora');
+  if(!medId||!fecha){sel.innerHTML='<option value="">— Selecciona médico y fecha primero —</option>';sel.disabled=true;return;}
+  sel.innerHTML='<option value="">Cargando horarios…</option>';sel.disabled=true;
+  try{
+    const d=await(await fetch(`/api/disponibilidad-medico/?medico_id=${medId}&fecha=${fecha}`)).json();
+    const esHoy=fecha===hoyStr;
+    const ahora=new Date();
+    const umbral=new Date(ahora.getTime()+2*60*60*1000);
+    sel.innerHTML='<option value="">— Selecciona una hora —</option>';
+    let hay=false;
+    d.horarios.forEach(h=>{
+      const opt=document.createElement('option');
+      opt.value=h.hora;
+      if(!h.disponible){opt.textContent=`${h.hora} (Ocupado)`;opt.disabled=true;opt.style.color='#e53e3e';sel.appendChild(opt);return;}
+      if(esHoy){const[hh,mm]=h.hora.split(':').map(Number);const hc=new Date(ahora);hc.setHours(hh,mm,0,0);if(hc<=umbral){opt.textContent=`${h.hora} (No disponible)`;opt.disabled=true;opt.style.color='#a0aec0';sel.appendChild(opt);return;}}
+      opt.textContent=h.hora;sel.appendChild(opt);hay=true;
+    });
+    if(!hay){const o=document.createElement('option');o.disabled=true;o.textContent='Sin horarios disponibles';sel.appendChild(o);}
+    sel.disabled=false;
+    if(restaurar)sel.value=restaurar;
+  }catch{sel.innerHTML='<option value="">Error al cargar</option>';}
+}
+
+inputFecha.addEventListener('change',()=>{hint('h_fecha','',false);cargarHoras(null);});
+document.getElementById('f_hora').addEventListener('change',()=>hint('h_hora','',false));
+
+/* ── Submit ── */
+document.getElementById('form-agenda').addEventListener('submit',function(e){
+  let ok=true;
+  if(!document.getElementById('f_cita').value){hint('h_cita','Este campo es obligatorio.',true);ok=false;}
+  if(!document.getElementById('f_id_medico').value){hint('h_id_medico','Debes seleccionar un médico.',true);ok=false;}
+  if(!document.getElementById('f_id_paciente').value){hint('h_id_paciente','Debes seleccionar un paciente.',true);ok=false;}
+  if(!inputFecha.value){hint('h_fecha','Este campo es obligatorio.',true);ok=false;}
+  if(!document.getElementById('f_hora').value){hint('h_hora','Selecciona una hora disponible.',true);ok=false;}
+  if(!ok)e.preventDefault();
+});
+
+/* ── Init: restaurar tras error backend ── */
+(function(){
+  const medVal  = "{{ form.id_medico.value|default:'' }}";
+  const pacVal  = "{{ form.id_paciente.value|default:'' }}";
+  const fechaV  = "{{ form.fecha.value|default:'' }}";
+  const horaV   = "{{ form.hora.value|default:''|time:'H:i' }}";
+
+  if(medVal){ const m=MEDICOS_DATA.find(x=>String(x.id)===medVal); if(m) medBox.pick(m); }
+  if(pacVal){ const p=PACS_DATA.find(x=>String(x.id)===pacVal);    if(p) pacBox.pick(p); }
+  if(medVal && fechaV){ inputFecha.value=fechaV; cargarHoras(horaV||null); }
+})();
+</script>
+
 {% endblock %}
