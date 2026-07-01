@@ -821,29 +821,13 @@ function openModal(id) {
     document.getElementById(id)?.classList.add('show');
 }
 
-/*
- * CORRECCIÓN PRINCIPAL — CIERRE DE MODALES:
- *
- * Antes, el listener de [data-close] se enganchaba UNA sola vez al cargar
- * la página con querySelectorAll(). El problema: varios botones "Cerrar"
- * (footer-paciente, body-perfil, etc.) se recrean después dinámicamente
- * con innerHTML, así que nunca recibían el evento y no respondían al clic.
- *
- * La solución es delegación de eventos: el listener vive en `document`,
- * así que detecta clics en CUALQUIER botón [data-close], sin importar si
- * ya existía en el HTML o si se creó después dinámicamente.
- */
 document.addEventListener('click', e => {
-    const closeBtn = e.target.closest('[data-close]');
-    if (closeBtn) {
-        closeBtn.closest('.modal-overlay')?.classList.remove('show');
-        return;
-    }
-    // Cierra si se hace clic directamente sobre el fondo oscuro del modal
-    if (e.target.classList.contains('modal-overlay')) {
-        e.target.classList.remove('show');
-    }
+    const btn = e.target.closest('[data-close]');
+    if (btn) btn.closest('.modal-overlay').classList.remove('show');
 });
+document.querySelectorAll('.modal-overlay').forEach(ov =>
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); })
+);
 
 document.getElementById('avatarBtn').addEventListener('click', e => {
     e.stopPropagation();
