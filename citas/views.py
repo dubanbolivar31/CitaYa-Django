@@ -902,6 +902,7 @@ class AdminListView(AdminRequiredMixin, ListView):
     model               = Administrador
     template_name       = 'administradores/ver_administrador.html'
     context_object_name = 'admins'
+    paginate_by         = 10  
 
     def get_queryset(self):
         qs       = super().get_queryset()
@@ -992,6 +993,7 @@ class MedicoListView(AdminRequiredMixin, ListView):
     model               = Medico
     template_name       = 'medicos/ver_medicos.html'
     context_object_name = 'medicos'
+    paginate_by         = 10  
 
     def get_queryset(self):
         qs           = super().get_queryset()
@@ -1090,6 +1092,7 @@ class PacienteListView(AdminRequiredMixin, ListView):
     model               = Paciente
     template_name       = 'pacientes/ver_pacientes.html'
     context_object_name = 'pacientes'
+    paginate_by         = 10  
 
     def get_queryset(self):
         qs          = super().get_queryset()
@@ -1187,6 +1190,7 @@ class AgendamientoListView(AdminRequiredMixin, ListView):
     model               = Agendamiento
     template_name       = 'agendamientos/ver_agendamientos.html'
     context_object_name = 'citas'
+    paginate_by         = 10  
 
     def get_queryset(self):
         qs          = super().get_queryset().select_related('id_paciente', 'id_medico')
@@ -1283,6 +1287,7 @@ class HistorialListView(AdminRequiredMixin, ListView):
     model               = Historial_Clinico
     template_name       = 'historial_clinico/ver_historiales.html'
     context_object_name = 'historiales'
+    paginate_by         = 10  
 
     def get_queryset(self):
         qs           = super().get_queryset().select_related('id_paciente', 'id_medico')

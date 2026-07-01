@@ -429,47 +429,127 @@ class PacienteForm(UniqueFieldsMixin, forms.ModelForm):
 # ══════════════════════════════════════════════════════════════════════════════
 
 class AgendamientoForm(forms.ModelForm):
+
+    TIPOS_CITA = [
+        ('', '— Seleccionar tipo —'),
+        ('Medicina General',      'Medicina General'),
+        ('Ortopedia',             'Ortopedia'),
+        ('Psicología',            'Psicología'),
+        ('Cardiología',           'Cardiología'),
+        ('Pediatría',             'Pediatría'),
+        ('Dermatología',          'Dermatología'),
+    ]
+
+    # Sobreescribimos el widget de cita para usar el select con las especialidades
+    cita = forms.ChoiceField(
+        choices=TIPOS_CITA,
+        label='Tipo de Cita / Especialidad',
+    )
+
     class Meta:
         model  = Agendamiento
         fields = '__all__'
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
-            'hora':  forms.TimeInput(attrs={'type': 'time'}),
+            'hora':  forms.TimeInput(attrs={'type': 'time', 'step': '1800'}),  # step 30 min
         }
 
+    # ── Tipo de cita ──────────────────────────────────────────────────────────
     def clean_cita(self):
         v = _limpiar(self.cleaned_data.get('cita', ''))
         if not v:
             raise ValidationError('El tipo de cita es obligatorio.')
-        if len(v) < 3:
-            raise ValidationError('El tipo de cita debe tener al menos 3 caracteres.')
-        if re.search(r'[<>{}[\]|]', v):
-            raise ValidationError('El tipo de cita contiene caracteres no permitidos.')
         return v
 
+    # ── Fecha ─────────────────────────────────────────────────────────────────
     def clean_fecha(self):
+        from datetime import date
         fecha = self.cleaned_data.get('fecha')
         if not fecha:
             raise ValidationError('La fecha es obligatoria.')
+        if fecha < date.today():
+            raise ValidationError('No puedes agendar una cita en el pasado.')
         return fecha
 
+    # ── Hora ──────────────────────────────────────────────────────────────────
     def clean_hora(self):
+        from datetime import datetime, date, time as dtime, timedelta
         hora = self.cleaned_data.get('hora')
         if not hora:
             raise ValidationError('La hora es obligatoria.')
+
+        # Debe ser en intervalo de 30 minutos exactos (00 o 30)
+        if hora.minute not in (0, 30) or hora.second != 0:
+            raise ValidationError('La hora debe ser en intervalos de 30 minutos (ej: 08:00, 08:30, 09:00…).')
+
+        # Rango horario permitido: 06:00 – 18:00
+        if hora < dtime(6, 0) or hora >= dtime(18, 0):
+            raise ValidationError('El horario de atención es de 06:00 a 18:00.')
+
         return hora
 
+    # ── Paciente ──────────────────────────────────────────────────────────────
     def clean_id_paciente(self):
         v = self.cleaned_data.get('id_paciente')
         if not v:
             raise ValidationError('El paciente es obligatorio.')
         return v
 
+    # ── Médico ────────────────────────────────────────────────────────────────
     def clean_id_medico(self):
         v = self.cleaned_data.get('id_medico')
         if not v:
             raise ValidationError('El médico es obligatorio.')
         return v
+
+    # ── Validaciones cruzadas (fecha + hora + médico + paciente) ──────────────
+    def clean(self):
+        from datetime import datetime, date, timedelta
+
+        cleaned = super().clean()
+        fecha      = cleaned.get('fecha')
+        hora       = cleaned.get('hora')
+        medico     = cleaned.get('id_medico')
+        paciente   = cleaned.get('id_paciente')
+
+        # Si algún campo individual falló, no seguir (evita AttributeError)
+        if not all([fecha, hora, medico, paciente]):
+            return cleaned
+
+        ahora = datetime.now()
+
+        # ── Mínimo 2 horas de anticipación si la cita es hoy ─────────────────
+        if fecha == date.today():
+            momento_cita  = datetime.combine(fecha, hora)
+            minimo_desde  = ahora + timedelta(hours=2)
+            if momento_cita < minimo_desde:
+                raise ValidationError(
+                    'Las citas deben agendarse con al menos 2 horas de anticipación. '
+                    f'El primer horario disponible hoy es a partir de las '
+                    f'{minimo_desde.strftime("%H:%M")}.'
+                )
+
+        # ── El médico no puede tener otra cita a la misma fecha/hora ─────────
+        qs_medico = Agendamiento.objects.filter(id_medico=medico, fecha=fecha, hora=hora)
+        if self.instance and self.instance.pk:
+            qs_medico = qs_medico.exclude(pk=self.instance.pk)
+        if qs_medico.exists():
+            raise ValidationError(
+                f'El médico ya tiene una cita agendada el {fecha.strftime("%d/%m/%Y")} '
+                f'a las {hora.strftime("%H:%M")}. Selecciona otro horario.'
+            )
+
+        # ── El paciente no puede tener otra cita a la misma fecha/hora ───────
+        qs_paciente = Agendamiento.objects.filter(id_paciente=paciente, fecha=fecha, hora=hora)
+        if self.instance and self.instance.pk:
+            qs_paciente = qs_paciente.exclude(pk=self.instance.pk)
+        if qs_paciente.exists():
+            raise ValidationError(
+                f'El paciente ya tiene una cita agendada el {fecha.strftime("%d/%m/%Y")} '
+                f'a las {hora.strftime("%H:%M")}. Selecciona otro horario.'
+            )
+
+        return cleaned
 
 
 # ══════════════════════════════════════════════════════════════════════════════
